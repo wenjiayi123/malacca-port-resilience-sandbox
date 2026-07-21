@@ -1,6 +1,6 @@
 # 控制算法模型卡
 
-版本：`dataset-calibrated-port-control.v2`  
+版本：`dataset-calibrated-port-control.v2`
 用途：港口到港需求、排队、延误、碳强度、气象风险和恢复能力的研究型控制基线比较。
 
 ## 方法
