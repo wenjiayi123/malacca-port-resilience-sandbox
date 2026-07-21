@@ -1,0 +1,55 @@
+:root {
+  --asset-malacca-background: url("/assets/backgrounds/malacca-operations-grid.svg");
+
+  --font-sans:
+    "PingFang SC",
+    "Microsoft YaHei",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+
+  --color-bg-deep: #020915;
+  --color-bg-panel: rgba(3, 28, 58, 0.72);
+  --color-bg-panel-strong: rgba(2, 40, 82, 0.86);
+  --color-cyan: #2bd9ff;
+  --color-cyan-soft: #8fe8ff;
+  --color-blue: #0078ff;
+  --color-ink: #eaf7ff;
+  --color-ink-muted: rgba(222, 244, 255, 0.82);
+  --color-warning: #ffbd45;
+  --color-danger: #ff4c47;
+  --color-success: #23e6a8;
+  --color-magenta: #b46bff;
+  --color-panel-highlight: rgba(38, 209, 255, 0.18);
+
+  --line-cyan: rgba(58, 201, 255, 0.46);
+  --line-cyan-soft: rgba(58, 201, 255, 0.22);
+  --line-cyan-bright: rgba(121, 229, 255, 0.86);
+  --shadow-cyan-soft: 0 0 22px rgba(0, 148, 255, 0.18);
+  --shadow-cyan-panel:
+    inset 0 0 16px rgba(40, 182, 255, 0.22),
+    0 0 22px rgba(0, 148, 255, 0.18);
+  --shadow-cyan-strong:
+    inset 0 0 24px rgba(76, 219, 255, 0.3),
+    0 0 32px rgba(0, 154, 255, 0.28);
+  --shadow-cyan-title: 0 0 22px rgba(57, 207, 255, 0.5);
+
+  --radius-tight: 6px;
+  --panel-border: 1px solid var(--line-cyan);
+  --panel-border-strong: 1px solid var(--line-cyan-bright);
+  --panel-surface:
+    linear-gradient(180deg, rgba(5, 49, 92, 0.92), rgba(2, 17, 43, 0.96)),
+    rgba(2, 20, 48, 0.86);
+  --panel-surface-soft:
+    linear-gradient(180deg, rgba(3, 39, 77, 0.78), rgba(1, 19, 47, 0.88)),
+    rgba(2, 19, 46, 0.82);
+  --panel-fill:
+    linear-gradient(180deg, rgba(0, 104, 172, 0.54), rgba(2, 28, 61, 0.74)),
+    rgba(5, 32, 66, 0.7);
+  --button-fill:
+    linear-gradient(180deg, rgba(0, 121, 196, 0.68), rgba(3, 37, 80, 0.86)),
+    rgba(3, 32, 72, 0.76);
+  --button-fill-active:
+    linear-gradient(180deg, rgba(0, 154, 241, 0.8), rgba(2, 55, 112, 0.92)),
+    rgba(3, 50, 103, 0.88);
+}

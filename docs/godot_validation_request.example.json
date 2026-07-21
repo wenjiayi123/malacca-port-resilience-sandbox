@@ -1,0 +1,50 @@
+{
+  "requestId": "malacca-validation-20260706-001",
+  "vesselId": "vessel-eagle",
+  "vesselName": "Eagle Strait",
+  "imo": "IMO9334211",
+  "category": "container",
+  "routeId": "route-port-klang-singapore",
+  "channelId": "channel-main-malacca",
+  "origin": {
+    "portId": "port-klang",
+    "portName": "巴生港",
+    "geo": {
+      "lat": 2.999,
+      "lon": 101.392
+    }
+  },
+  "destination": {
+    "portId": "singapore",
+    "portName": "新加坡港",
+    "geo": {
+      "lat": 1.264,
+      "lon": 103.84
+    }
+  },
+  "speedProfile": {
+    "initialKnots": 14.2,
+    "targetKnots": 12.5,
+    "minSafeKnots": 8,
+    "maxSafeKnots": 18
+  },
+  "headingDeg": 122,
+  "progressPercent": 58,
+  "riskEvents": [
+    {
+      "id": "risk-main-channel-closure",
+      "type": "channel-closure",
+      "label": "马六甲主航道事故封航",
+      "affectedArea": "马六甲主航道中段",
+      "severity": "danger",
+      "startMinute": 12,
+      "expectedDurationMinutes": 90,
+      "recommendedAction": "降速至 12.5 节并切换至备选航道等待复航"
+    }
+  ],
+  "dispatchStrategyIds": [
+    "slow-steaming-main-channel",
+    "route-adjustment-east-channel"
+  ],
+  "createdAt": "2026-07-06T10:00:00+08:00"
+}

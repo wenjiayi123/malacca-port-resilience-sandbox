@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1536 1024" role="img" aria-labelledby="title desc">
+  <title id="title">Malacca Strait operations grid</title>
+  <desc id="desc">Original vector background showing a stylized Malacca Strait, coastal silhouettes, traffic lanes and an operational grid.</desc>
+  <defs>
+    <linearGradient id="ocean" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#020b1d"/>
+      <stop offset="0.52" stop-color="#06274a"/>
+      <stop offset="1" stop-color="#031225"/>
+    </linearGradient>
+    <linearGradient id="land" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#123f4e"/>
+      <stop offset="1" stop-color="#071d2d"/>
+    </linearGradient>
+    <pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M64 0H0V64" fill="none" stroke="#5cdcf7" stroke-opacity=".055"/>
+    </pattern>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="1536" height="1024" fill="url(#ocean)"/>
+  <rect width="1536" height="1024" fill="url(#grid)"/>
+  <g fill="url(#land)" stroke="#4bbbd2" stroke-opacity=".28" stroke-width="2">
+    <path d="M-60 120C150 84 302 126 434 208c118 74 213 155 339 206 136 55 237 66 345 137l-71 91c-108-62-226-75-363-127-144-55-252-146-376-214C194 238 70 218-60 248Z"/>
+    <path d="M-50 1024V694c144-82 257-104 379-91 166 18 256 105 412 141 124 29 231 25 330 86l-43 194Z"/>
+    <path d="M1170 492c134-68 261-77 426-38v-520h-119c-31 94-46 177-81 257-47 109-110 198-226 301Z"/>
+  </g>
+  <g fill="none" stroke-linecap="round">
+    <path d="M128 585C378 504 555 533 754 624c217 99 407 84 656-31" stroke="#1ac9ef" stroke-opacity=".12" stroke-width="30"/>
+    <path d="M128 585C378 504 555 533 754 624c217 99 407 84 656-31" stroke="#70e7ff" stroke-opacity=".48" stroke-width="2" stroke-dasharray="14 18"/>
+    <path d="M176 655C392 590 559 620 733 701c195 91 379 78 613-25" stroke="#1bb8e8" stroke-opacity=".11" stroke-width="24"/>
+    <path d="M176 655C392 590 559 620 733 701c195 91 379 78 613-25" stroke="#42c8f5" stroke-opacity=".34" stroke-width="2" stroke-dasharray="8 22"/>
+  </g>
+  <g fill="#8deeff" filter="url(#glow)">
+    <circle cx="258" cy="553" r="4"/><circle cx="523" cy="562" r="4"/>
+    <circle cx="782" cy="635" r="4"/><circle cx="1028" cy="651" r="4"/>
+    <circle cx="1291" cy="613" r="4"/>
+  </g>
+  <g fill="none" stroke="#35b9d9" stroke-opacity=".18">
+    <circle cx="1176" cy="603" r="88"/><circle cx="1176" cy="603" r="144"/>
+    <path d="M1000 603h352M1176 427v352"/>
+  </g>
+  <g fill="#6fdcf2" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16" opacity=".46">
+    <text x="82" y="88">01°–06° N / 099°–105° E</text>
+    <text x="1270" y="954">OPS GRID · UTC+08</text>
+  </g>
+</svg>

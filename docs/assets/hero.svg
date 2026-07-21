@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 620" role="img" aria-labelledby="title desc">
+  <title id="title">Malacca Port Resilience Sandbox</title>
+  <desc id="desc">Project hero presenting the evidence-aware port digital-twin, five control baselines and human-gated decision workflow.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#031127"/><stop offset=".55" stop-color="#062f51"/><stop offset="1" stop-color="#061326"/></linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#33e5ff"/><stop offset="1" stop-color="#2b7dff"/></linearGradient>
+    <pattern id="grid" width="44" height="44" patternUnits="userSpaceOnUse"><path d="M44 0H0V44" fill="none" stroke="#72eaff" stroke-opacity=".055"/></pattern>
+    <filter id="glow"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="1440" height="620" rx="28" fill="url(#bg)"/>
+  <rect width="1440" height="620" rx="28" fill="url(#grid)"/>
+  <path d="M-20 420C238 326 389 354 601 446c219 96 409 81 666-35 71-32 133-39 193-33" fill="none" stroke="#2dd9f5" stroke-opacity=".16" stroke-width="48"/>
+  <path d="M-20 420C238 326 389 354 601 446c219 96 409 81 666-35 71-32 133-39 193-33" fill="none" stroke="#68eaff" stroke-opacity=".65" stroke-width="3" stroke-dasharray="15 22" filter="url(#glow)"/>
+  <g font-family="Inter, PingFang SC, Microsoft YaHei, sans-serif" fill="#effcff">
+    <text x="86" y="106" font-size="20" letter-spacing="5" fill="#67e5ff">EVIDENCE-AWARE PORT DIGITAL TWIN</text>
+    <text x="86" y="184" font-size="54" font-weight="760">港航网络韧性数字孪生沙盘</text>
+    <text x="86" y="235" font-size="31" font-weight="560" fill="#b9e8f4">Malacca Port Resilience Sandbox</text>
+    <text x="88" y="287" font-size="19" fill="#8fb9cc">Auditable scenario orchestration · Headless training · Held-out evaluation · Human approval</text>
+  </g>
+  <g font-family="Inter, PingFang SC, Microsoft YaHei, sans-serif" font-size="16">
+    <g transform="translate(88 334)"><rect width="232" height="82" rx="14" fill="#072a48" stroke="#34d9f2" stroke-opacity=".6"/><text x="20" y="31" fill="#5ee5fa">DATA CONTRACT</text><text x="20" y="57" fill="#f0fbff">Public / Replay / Authorized</text></g>
+    <g transform="translate(340 334)"><rect width="232" height="82" rx="14" fill="#072a48" stroke="#34d9f2" stroke-opacity=".6"/><text x="20" y="31" fill="#5ee5fa">FIVE BASELINES</text><text x="20" y="57" fill="#f0fbff">4 RL + 1 MPC</text></g>
+    <g transform="translate(592 334)"><rect width="232" height="82" rx="14" fill="#072a48" stroke="#34d9f2" stroke-opacity=".6"/><text x="20" y="31" fill="#5ee5fa">EVALUATION</text><text x="20" y="57" fill="#f0fbff">70 / 15 / 15 chronological</text></g>
+    <g transform="translate(844 334)"><rect width="232" height="82" rx="14" fill="#072a48" stroke="#34d9f2" stroke-opacity=".6"/><text x="20" y="31" fill="#5ee5fa">GOVERNANCE</text><text x="20" y="57" fill="#f0fbff">Checkpoint + SHA-256</text></g>
+  </g>
+  <g transform="translate(1125 74)" fill="none" stroke="url(#accent)">
+    <circle cx="118" cy="118" r="105" stroke-opacity=".22"/><circle cx="118" cy="118" r="72" stroke-opacity=".4"/><path d="M118 0v236M0 118h236" stroke-opacity=".18"/>
+    <path d="M42 154c39-70 92-81 156-53" stroke-width="5" stroke-dasharray="8 10" filter="url(#glow)"/>
+    <circle cx="42" cy="154" r="8" fill="#35e0f7"/><circle cx="198" cy="101" r="8" fill="#4e8fff"/>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" fill="#77dff2" opacity=".72"><text x="88" y="560">APACHE-2.0 · REACT 19 · TYPESCRIPT · NODE 24</text><text x="1095" y="560">RESEARCH / ENGINEERING VALIDATION</text></g>
+</svg>

@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability / 安全漏洞
+    url: https://github.com/wenjiayi123/malacca-port-resilience-sandbox/security/advisories/new
+    about: Report vulnerabilities privately; never disclose credentials in a public issue.
