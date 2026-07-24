@@ -19,6 +19,27 @@
   <img alt="Status" src="https://img.shields.io/badge/status-research%20benchmark-19b5a5" />
 </p>
 
+<table>
+  <tr>
+    <th align="center">公开月度记录<br /><sub>PUBLIC RECORDS</sub></th>
+    <th align="center">统一策略矩阵<br /><sub>CONTROL MATRIX</sub></th>
+    <th align="center">模型延误<br /><sub>MODEL DELAY</sub></th>
+    <th align="center">模型拥堵<br /><sub>MODEL CONGESTION</sub></th>
+    <th align="center">吞吐保持<br /><sub>THROUGHPUT RETENTION</sub></th>
+  </tr>
+  <tr>
+    <td align="center"><strong>377</strong><br />MPA + ERA5</td>
+    <td align="center"><strong>4 RL + MPC</strong><br />3 seeds / sealed test</td>
+    <td align="center"><strong>−66.00%</strong><br />MPC vs hold-plan</td>
+    <td align="center"><strong>−66.27%</strong><br />closed-loop replay</td>
+    <td align="center"><strong>99.03%</strong><br />deferred backlog 4.97%</td>
+  </tr>
+</table>
+
+<p align="center">
+  <sub><strong>证据边界 / Evidence scope:</strong> 公开聚合数据驱动的离线模型回放；不是“韧性准确率”、VTS/TOS实测KPI或自动生产下发证明。</sub>
+</p>
+
 <a id="中文"></a>
 
 # 港航网络韧性数字孪生沙盘
@@ -48,6 +69,21 @@
 - **可替换港口而非写死港口**：CSV/JSON 字段合同、港口选择、单位和质量规则独立于算法实现。
 - **面向发布的工程边界**：只读静态服务、Bearer 门禁、强 Token 校验、请求上限、限流、探针、
   结构化日志、SHA-256 检查点、容器非 root 运行与固定 SHA 的供应链工作流。
+
+## 固定韧性基准 / Pinned resilience benchmark
+
+| 协议项 / Protocol | 固定设置 / Pinned setting |
+|---|---|
+| 数据 / Data | MPA月度到港统计 + ERA5风场，共377条，1995-01至2026-05 |
+| 时间隔离 / Temporal isolation | 263 train / 57 validation / 57 sealed test，不随机打乱 |
+| RL调参 / RL tuning | 每候选600 episodes、3组超参数、3个随机种子 |
+| 方法 / Methods | Q-Learning、SARSA、Expected SARSA、Dyna-Q、三步MPC |
+| 选型规则 / Selection | 验证前段调参、验证后段选型，最终测试不参与选择 |
+| 声明门禁 / Claim gate | 吞吐、期望安全风险、延误、拥堵、跨种子稳定性、递延积压6/6通过 |
+
+验证选出的Expected SARSA在封存闭环回放中暴露出跨种子不稳定，系统因此不把它包装为业务收益；稳定的MPC对照在同一测试段实现模型延误降低66.00%、拥堵降低66.27%、吞吐保持99.03%、期望安全违规率3.67%，最终递延积压为平均月到港量的4.97%。完整五算法结果、负向结果和源码指纹均保存在[`reports/rl-benchmark-balanced-resilience.md`](reports/rl-benchmark-balanced-resilience.md)。
+
+The validation-selected Expected SARSA policy becomes unstable across seeds on the sealed closed-loop replay and is therefore rejected as a resume benefit claim. The deterministic MPC comparator passes all six declared claim gates on the same test window. Full positive and negative results remain visible in the versioned report instead of being reduced to a cherry-picked headline.
 
 ## 系统画面
 
