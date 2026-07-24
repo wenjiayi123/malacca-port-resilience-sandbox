@@ -85,6 +85,12 @@ const applicationReferences = [
   await readFile(path.join(root, 'src/styles/global.css'), 'utf8'),
   await readFile(path.join(root, 'src/App.tsx'), 'utf8'),
 ].join('\n');
+if (
+  !applicationReferences.includes('等待接入港口 · 仿真回退')
+  || !applicationReferences.includes('公开数据驱动仿真 · 等待接入港口')
+) {
+  errors.push('开源沙盘缺少港口未接入时的显式真实性状态');
+}
 for (const legacyAsset of [
   'malacca_background_clean.png',
   'malacca_background_selected.png',

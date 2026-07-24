@@ -122,17 +122,17 @@ const statusColorByTone: Record<StatusTone, string> = {
 };
 
 const portDataStatusLabel: Record<PortDataConnectionStatus, string> = {
-  demo: '合成示例',
+  demo: '仿真沙盘 · 等待接入港口',
   connecting: '数据同步中',
-  public: '公开实证数据',
+  public: '公开数据驱动仿真 · 等待接入港口',
   live: '实时港口数据',
-  fallback: '合成数据回退',
+  fallback: '等待接入港口 · 仿真回退',
 };
 
 const portDataStatusTone: Record<PortDataConnectionStatus, StatusTone> = {
   demo: 'ok',
   connecting: 'warning',
-  public: 'ok',
+  public: 'warning',
   live: 'ok',
   fallback: 'warning',
 };
@@ -3351,7 +3351,7 @@ export function App() {
         setPortDataObservedAt(null);
         setPortDataStatus('fallback');
         setPortDataMessage(
-          `${error instanceof Error ? error.message : '数据接口不可用'}，已回退到明确标注的合成示例；不作为实证数据`,
+          `${error instanceof Error ? error.message : '数据接口不可用'}；等待接入港口，当前仅保留明确标注的仿真沙盘，不作为实证数据`,
         );
       }
     };
