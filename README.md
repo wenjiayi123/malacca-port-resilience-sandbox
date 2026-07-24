@@ -42,11 +42,11 @@
 
 # 港航网络韧性数字孪生沙盘 / Malacca Port Resilience Sandbox
 
-面向港口群、关键航道与船舶流的**证据感知型数字孪生研究栈**。项目把宏观沙盘推演、受控事件
+面向港口群、关键航道与船舶流的<strong>证据感知型数字孪生研究栈</strong>。项目把宏观沙盘推演、受控事件
 编排、公开数据网关、可替换港口数据契约、五基线控制实验、严格时间留出评估、可恢复检查点与
 人工审批闭环放进同一套 React + TypeScript + Node 系统。
 
-An **evidence-aware digital-twin research stack** for port clusters, critical waterways, and vessel flows. It unifies macro network simulation, controlled-event orchestration, public-data gateways, replaceable port-data contracts, five-method control experiments, strict chronological holdout evaluation, recoverable checkpoints, and human approval in one React + TypeScript + Node system.
+An <strong>evidence-aware digital-twin research stack</strong> for port clusters, critical waterways, and vessel flows. It unifies macro network simulation, controlled-event orchestration, public-data gateways, replaceable port-data contracts, five-method control experiments, strict chronological holdout evaluation, recoverable checkpoints, and human approval in one React + TypeScript + Node system.
 
 它不是一张只播放动画的大屏：训练进度来自服务器实际完成的 episode、环境步与参数更新；
 训练阶段不渲染策略效果；只有任务完成后，显式评估接口才读取封存测试段并返回可回放 trace。
@@ -61,23 +61,23 @@ This is not an animation-only dashboard. Training progress comes from completed 
 
 ## 为什么这个项目值得关注 / Why this project matters
 
-- **从态势到证据闭环**：港口、航道、船舶、拥堵、延误、碳排与韧性状态共同进入事件推演，
+- <strong>从态势到证据闭环</strong>：港口、航道、船舶、拥堵、延误、碳排与韧性状态共同进入事件推演，
   结果保留数据模式、时间、算法、检查点和人工确认信息。<br>
   *Ports, channels, vessels, congestion, delay, carbon, and resilience enter one event simulation, whose result retains data mode, time, algorithm, checkpoint, and human confirmation.*
-- **可审计的五基线实验**：Q-Learning、SARSA、Expected SARSA、Dyna-Q 与 MPC 共享状态、动作、
+- <strong>可审计的五基线实验</strong>：Q-Learning、SARSA、Expected SARSA、Dyna-Q 与 MPC 共享状态、动作、
   奖励、训练段和评估段；MPC 被明确标为控制理论基线，不伪装成 RL。<br>
   *Q-Learning, SARSA, Expected SARSA, Dyna-Q, and MPC share state, action, reward, training, and evaluation contracts; MPC is identified as control theory, not disguised as RL.*
-- **防止未来信息泄漏**：默认 377 条 MPA 月度记录与 ERA5 风场按时间 70%/15%/15% 切分；容量代理只用训练段
+- <strong>防止未来信息泄漏</strong>：默认 377 条 MPA 月度记录与 ERA5 风场按时间 70%/15%/15% 切分；容量代理只用训练段
   校准，验证前段调超参数、后段选算法，最终测试段保持封存。<br>
   *The 377 MPA monthly records and ERA5 forcing use a 70/15/15 temporal split. Capacity proxies fit on train only; the first validation segment tunes and the second selects; final test remains sealed.*
-- **训练与展示解耦**：训练过程为 headless；测试完成后才由真实留出轨迹驱动地图回放。<br>
+- <strong>训练与展示解耦</strong>：训练过程为 headless；测试完成后才由真实留出轨迹驱动地图回放。<br>
   *Training is headless; only completed holdout traces drive map replay.*
-- **受控的小懿联动**：白名单界面执行器与 RL 参数顾问是两个独立层；自动步骤完成后生成执行
+- <strong>受控的小懿联动</strong>：白名单界面执行器与 RL 参数顾问是两个独立层；自动步骤完成后生成执行
   报告，最终由人工确认或归档异常。<br>
   *The allowlisted Xiaoyi UI executor and RL advisor are separate layers. Automation produces an execution report, followed by human confirmation or exception archiving.*
-- **可替换港口而非写死港口**：CSV/JSON 字段合同、港口选择、单位和质量规则独立于算法实现。<br>
+- <strong>可替换港口而非写死港口</strong>：CSV/JSON 字段合同、港口选择、单位和质量规则独立于算法实现。<br>
   *CSV/JSON contracts, port selection, units, and quality rules are independent of algorithm code.*
-- **面向发布的工程边界**：只读静态服务、Bearer 门禁、强 Token 校验、请求上限、限流、探针、
+- <strong>面向发布的工程边界</strong>：只读静态服务、Bearer 门禁、强 Token 校验、请求上限、限流、探针、
   结构化日志、SHA-256 检查点、容器非 root 运行与固定 SHA 的供应链工作流。<br>
   *Read-only static delivery, Bearer gates, strong-token checks, request bounds, rate limits, probes, structured logs, SHA-256 checkpoints, non-root containers, and SHA-pinned supply-chain workflows.*
 
@@ -156,7 +156,7 @@ The objective jointly constrains delay, congestion, carbon index, safety, resili
 
 ## 数据证据与替换合同 / Data evidence and replacement contract
 
-默认离线快照包含新加坡海事及港务管理局发布的 **Vessel Arrivals (>75 GT), Monthly** 数据：
+默认离线快照包含新加坡海事及港务管理局发布的 <strong>Vessel Arrivals (>75 GT), Monthly</strong> 数据：
 
 - 377 条 MPA 月度记录按月对齐 ERA5 海面网格高风暴露特征，时间范围 `1995-01` 至 `2026-05`；<br>
   *377 MPA monthly records aligned to ERA5 sea-grid high-wind exposure, from `1995-01` to `2026-05`.*
