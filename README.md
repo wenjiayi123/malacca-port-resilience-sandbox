@@ -19,6 +19,10 @@
   <img alt="Status" src="https://img.shields.io/badge/status-research%20benchmark-19b5a5" />
 </p>
 
+<p align="center">
+  <strong>研发作者：</strong>温家懿 · <strong>Research Author:</strong> Wen Jiayi
+</p>
+
 <table>
   <tr>
     <th align="center">公开月度记录<br /><sub>PUBLIC RECORDS</sub></th>
