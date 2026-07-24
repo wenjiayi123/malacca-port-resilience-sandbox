@@ -1,0 +1,11 @@
+Malacca Port Resilience Sandbox
+Copyright 2026 Malacca Port Resilience Sandbox contributors
+
+This distribution includes a transformed snapshot of the Singapore Maritime
+and Port Authority dataset "Vessel Arrivals (>75 GT), Monthly" obtained from
+data.gov.sg under the Singapore Open Data Licence. The source agency does not
+endorse this project.
+
+Weather and marine model data displayed at runtime may be provided by
+Open-Meteo under CC BY 4.0 and may require attribution to the underlying
+national weather service. See https://open-meteo.com/en/license.

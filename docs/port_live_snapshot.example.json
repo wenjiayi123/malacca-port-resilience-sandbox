@@ -1,0 +1,36 @@
+{
+  "protocolVersion": "port-digital-twin.snapshot.v1",
+  "observedAt": "2026-07-11T16:30:00+08:00",
+  "source": "port-operations-data-platform",
+  "telemetry": {
+    "overview": {
+      "monitoredVesselCount": 2418
+    },
+    "weather": {
+      "windSpeedMs": 10.8,
+      "windDirection": "东南风",
+      "waveHeightM": 1.1,
+      "visibilityKm": 9.4
+    },
+    "ports": [
+      {
+        "id": "singapore",
+        "vesselCount": 552,
+        "congestionPercent": 72,
+        "berthUtilizationPercent": 88,
+        "queueVessels": 57,
+        "averageWaitingHours": 3.9,
+        "status": "拥堵",
+        "tone": "danger"
+      }
+    ],
+    "vessels": [
+      {
+        "id": "vessel-001",
+        "speedKnots": 14.7,
+        "progressPercent": 24,
+        "headingDeg": 136
+      }
+    ]
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "name": "malacca-port-resilience-sandbox",
+  "private": false,
+  "version": "1.0.0",
+  "description": "Evidence-aware port digital-twin sandbox with auditable control baselines, held-out evaluation and human-gated orchestration.",
+  "license": "Apache-2.0",
+  "author": "Wen Jiayi",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wenjiayi123/malacca-port-resilience-sandbox.git"
+  },
+  "bugs": {
+    "url": "https://github.com/wenjiayi123/malacca-port-resilience-sandbox/issues"
+  },
+  "homepage": "https://github.com/wenjiayi123/malacca-port-resilience-sandbox#readme",
+  "keywords": [
+    "port-digital-twin",
+    "maritime",
+    "reinforcement-learning",
+    "model-predictive-control",
+    "reproducible-research",
+    "human-in-the-loop"
+  ],
+  "packageManager": "pnpm@11.9.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc -b && vite build",
+    "start": "node --experimental-strip-types --experimental-specifier-resolution=node server/productionServer.ts",
+    "lint": "eslint .",
+    "test": "node --experimental-strip-types --experimental-specifier-resolution=node --test tests/*.test.ts",
+    "benchmark:rl": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/rl/runResumeBenchmark.ts",
+    "benchmark:rl:verify": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/rl/verifyBenchmarkReport.ts",
+    "check": "pnpm lint && pnpm test && pnpm build",
+    "release:check": "pnpm check && pnpm benchmark:rl:verify && node scripts/release/check.mjs",
+    "data:sync:mpa": "node scripts/data/sync_mpa_dataset.mjs",
+    "preview": "vite preview --host 127.0.0.1",
+    "demo:web": "bash scripts/demo/start_web_demo.sh",
+    "demo:check": "bash scripts/demo/check_environment.sh",
+    "demo:godot": "bash scripts/demo/open_godot_project.sh",
+    "demo:godot:web": "bash scripts/demo/export_godot_web.sh",
+    "demo:bundle": "bash scripts/demo/prepare_web_bundle.sh"
+  },
+  "engines": {
+    "node": ">=24",
+    "pnpm": ">=11"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.25.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "recharts": "^3.9.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.1.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "eslint": "^10.7.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "globals": "^17.7.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.64.0",
+    "vite": "^8.1.5"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "backgrounds": {
+    "operationsGrid": {
+      "path": "/assets/backgrounds/malacca-operations-grid.svg",
+      "source": "project-original-vector",
+      "width": 1536,
+      "height": 1024,
+      "purpose": "Stylized Malacca Strait operations grid"
+    }
+  },
+  "characters": {
+    "xiaoyiMaritimeOfficer": {
+      "path": "/assets/xiaoyi-maritime-officer.svg",
+      "source": "project-original-vector",
+      "width": 360,
+      "height": 480,
+      "purpose": "Xiaoyi controlled-assistant avatar"
+    }
+  },
+  "reserved": {
+    "icons": "/assets/icons/",
+    "ships": "/assets/ships/",
+    "ui": "/assets/ui/"
+  }
+}

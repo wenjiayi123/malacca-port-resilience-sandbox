@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:malacca-port-resilience:port-call-event:v1",
+  "title": "Port Call Event v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocolVersion", "portCallID", "vesselVisitReference", "UNLocationCode", "vessel",
+    "portCallServiceTypeCode", "eventTypeCode", "eventClassifierCode", "eventDateTime",
+    "facility", "source", "quality"
+  ],
+  "properties": {
+    "protocolVersion": { "const": "port-call-event.v1" },
+    "portCallID": { "type": "string", "minLength": 1 },
+    "vesselVisitReference": { "type": "string", "minLength": 1 },
+    "UNLocationCode": { "type": "string", "pattern": "^[A-Z]{2}[A-Z0-9]{3}$" },
+    "vessel": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "IMO": { "type": "string", "pattern": "^[0-9]{7}$" },
+        "MMSI": { "type": "string", "pattern": "^[0-9]{9}$" },
+        "name": { "type": "string", "minLength": 1 }
+      },
+      "anyOf": [{ "required": ["IMO"] }, { "required": ["MMSI"] }, { "required": ["name"] }]
+    },
+    "portCallServiceTypeCode": {
+      "enum": ["BERTH", "PILOTAGE", "TOWAGE", "MOORING", "BUNKERING", "CARGO_OPERATIONS", "ANCHORAGE"]
+    },
+    "eventTypeCode": { "enum": ["ARRIVAL", "DEPARTURE", "START", "END"] },
+    "eventClassifierCode": { "enum": ["EST", "REQ", "PLN", "ACT"] },
+    "eventDateTime": { "type": "string", "format": "date-time" },
+    "facility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["facilityTypeCode", "facilityCode"],
+      "properties": {
+        "facilityTypeCode": { "enum": ["BERTH", "ANCHORAGE", "PILOT_BOARDING_PLACE", "TERMINAL"] },
+        "facilityCode": { "type": "string", "minLength": 1 },
+        "facilityName": { "type": "string", "minLength": 1 }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["system", "recordID", "observedAt"],
+      "properties": {
+        "system": { "type": "string", "minLength": 1 },
+        "recordID": { "type": "string", "minLength": 1 },
+        "observedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "confidence"],
+      "properties": {
+        "status": { "enum": ["VERIFIED", "ESTIMATED", "UNVERIFIED"] },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    }
+  }
+}

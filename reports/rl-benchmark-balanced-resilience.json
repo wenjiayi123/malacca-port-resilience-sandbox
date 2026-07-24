@@ -1,0 +1,1421 @@
+{
+  "schemaVersion": "resume-rl-benchmark.v1",
+  "generatedAt": "2026-07-24T11:00:06.891Z",
+  "evidenceLabel": "OFFLINE_MODEL_REPLAY_NOT_FIELD_KPI",
+  "claimBoundary": [
+    "This report is a real execution of the repository training code, not a fabricated result.",
+    "The input is monthly aggregate public data; capacity is a train-only empirical proxy.",
+    "ERA5 monthly P95 daily-maximum wind coverage is reported separately from complete wind/wave/visibility coverage.",
+    "Wave, visibility and safety fields are absent in the default dataset; weather-stress tests add documented synthetic disturbances.",
+    "Action effects are declared scenario assumptions, not coefficients calibrated from measured intervention outcomes.",
+    "Deterministic test safety is the expected modeled violation rate, not a claim of observed zero incidents.",
+    "Metrics are model-replay comparisons and are not field accuracy, production savings, or certified resilience."
+  ],
+  "modelContract": {
+    "observations": [
+      "queue_to_capacity",
+      "delay_hours",
+      "carbon_index",
+      "deferred_backlog_to_capacity",
+      "demand_trend",
+      "weather_risk"
+    ],
+    "actions": [
+      {
+        "id": "hold-plan",
+        "deferredDemandFraction": 0,
+        "divertedDemandFraction": 0,
+        "capacityMultiplier": 1,
+        "carbonMultiplier": 1,
+        "safetyProbabilityModifier": 0,
+        "evidenceLevel": "declared_scenario_assumption"
+      },
+      {
+        "id": "eco-speed",
+        "deferredDemandFraction": 0.07,
+        "divertedDemandFraction": 0,
+        "capacityMultiplier": 0.99,
+        "carbonMultiplier": 0.88,
+        "safetyProbabilityModifier": -0.02,
+        "evidenceLevel": "declared_scenario_assumption"
+      },
+      {
+        "id": "arrival-window",
+        "deferredDemandFraction": 0.16,
+        "divertedDemandFraction": 0,
+        "capacityMultiplier": 1.02,
+        "carbonMultiplier": 0.94,
+        "safetyProbabilityModifier": -0.03,
+        "evidenceLevel": "declared_scenario_assumption"
+      },
+      {
+        "id": "port-diversion",
+        "deferredDemandFraction": 0,
+        "divertedDemandFraction": 0.2,
+        "capacityMultiplier": 0.98,
+        "carbonMultiplier": 1.08,
+        "safetyProbabilityModifier": 0.01,
+        "evidenceLevel": "declared_scenario_assumption"
+      },
+      {
+        "id": "capacity-control",
+        "deferredDemandFraction": 0.02,
+        "divertedDemandFraction": 0,
+        "capacityMultiplier": 1.14,
+        "carbonMultiplier": 1.04,
+        "safetyProbabilityModifier": 0.025,
+        "evidenceLevel": "declared_scenario_assumption"
+      }
+    ],
+    "evaluationSafetyMetric": "mean expected violation probability per time step"
+  },
+  "dataset": {
+    "id": "mpa-vessel-arrivals-monthly",
+    "label": "MPA 月度到港船舶 + ERA5 风场公开数据",
+    "portId": "SGSIN-AGGREGATE",
+    "source": "Maritime and Port Authority of Singapore / data.gov.sg + Open-Meteo ERA5",
+    "sourceUrl": "https://data.gov.sg/collections/394/view ; https://open-meteo.com/en/docs/historical-weather-api",
+    "license": "Singapore Open Data Licence",
+    "fingerprint": "1135cd3ceac593a7",
+    "samplingInterval": "monthly",
+    "evidenceLevel": "public-aggregate-proxy",
+    "quality": {
+      "rawRecordCount": 377,
+      "rejectedRecordCount": 0,
+      "availablePortIds": [
+        "SGSIN-AGGREGATE"
+      ],
+      "duplicateTimestampCount": 0,
+      "capacityCoveragePercent": 0,
+      "windCoveragePercent": 100,
+      "waveCoveragePercent": 0,
+      "visibilityCoveragePercent": 0,
+      "weatherCoveragePercent": 0,
+      "safetyCoveragePercent": 0,
+      "capacityMode": "empirical-proxy",
+      "capacityProxyCalibratedOn": "train-only",
+      "operationalClaimAllowed": false,
+      "validationArrivalDriftPercent": -6.05,
+      "testArrivalDriftPercent": -10.26
+    },
+    "recordCount": 377,
+    "trainRecordCount": 263,
+    "validationRecordCount": 57,
+    "testRecordCount": 57,
+    "trainRange": [
+      "1995-01",
+      "2016-11"
+    ],
+    "validationRange": [
+      "2016-12",
+      "2021-08"
+    ],
+    "validationTuningRange": [
+      "2016-12",
+      "2019-09"
+    ],
+    "validationSelectionRange": [
+      "2019-10",
+      "2021-08"
+    ],
+    "testRange": [
+      "2021-09",
+      "2026-05"
+    ]
+  },
+  "sourceFingerprint": {
+    "algorithm": "sha256",
+    "digest": "7ecb96fe9738382d8fecd15c5de0099ad99aa4c3c4c2f03473543c306df88dc8",
+    "files": {
+      "server/rlTrainingEngine.ts": "77bd10500402b4738df508c2c09af93617fa90731eb24f8f682b8a3483fc8f3b",
+      "server/portTrainingDataset.ts": "1d4a46fe33304f96c9bb9d56f3e26c37d1848c516294f1c157846a809552b78b",
+      "shared/rlObjectivePresets.ts": "a29b942a4e5b44c8a26bf69e684567d837dba825b008c3380ffa9b07fbda2dc9",
+      "scripts/rl/runResumeBenchmark.ts": "0dd92f654d8271ac35fa7721d285ff2e372d4cdb8757d736add6b6fc7d83c960",
+      "package.json": "093d9b382c3f134a7cb6a2efd83c14b6c650acb8188e1276882ff24d03fb1c7f",
+      "pnpm-lock.yaml": "653ced97756eb1c2a19a2ae60f55f84e704ba6731fc83a47f30fb318f8f5a0d6"
+    }
+  },
+  "runtime": {
+    "node": "v24.14.0",
+    "platform": "darwin",
+    "architecture": "x64"
+  },
+  "protocol": {
+    "objectiveId": "balanced-resilience",
+    "objectiveWeights": {
+      "delay": 0.2,
+      "congestion": 0.18,
+      "carbon": 0.14,
+      "safety": 0.16,
+      "resilience": 0.14,
+      "throughput": 0.18
+    },
+    "algorithms": [
+      {
+        "id": "q-learning",
+        "family": "reinforcement-learning"
+      },
+      {
+        "id": "sarsa",
+        "family": "reinforcement-learning"
+      },
+      {
+        "id": "expected-sarsa",
+        "family": "reinforcement-learning"
+      },
+      {
+        "id": "dyna-q",
+        "family": "reinforcement-learning"
+      },
+      {
+        "id": "mpc",
+        "family": "control-theory"
+      }
+    ],
+    "episodesPerCandidate": 600,
+    "tuningTrials": 3,
+    "seeds": [
+      240520,
+      240521,
+      240522
+    ],
+    "algorithmSelection": "mean validation-selection reward across seeds; final test never used for selection",
+    "selectedRlAlgorithmId": "expected-sarsa"
+  },
+  "validationByAlgorithm": {
+    "q-learning": {
+      "family": "reinforcement-learning",
+      "meanReward": {
+        "mean": 2.928,
+        "std": 0.002,
+        "min": 2.926,
+        "max": 2.931,
+        "samples": 3
+      },
+      "selectedLearningRate": [
+        0.12,
+        0.12,
+        0.12
+      ],
+      "selectedDiscountGamma": [
+        0.97,
+        0.97,
+        0.97
+      ],
+      "selectedScore": {
+        "mean": 2.645,
+        "std": 0.011,
+        "min": 2.631,
+        "max": 2.659,
+        "samples": 3
+      },
+      "algorithmSelectionScore": {
+        "mean": 2.868,
+        "std": 0.002,
+        "min": 2.867,
+        "max": 2.872,
+        "samples": 3
+      }
+    },
+    "sarsa": {
+      "family": "reinforcement-learning",
+      "meanReward": {
+        "mean": 2.915,
+        "std": 0.023,
+        "min": 2.882,
+        "max": 2.931,
+        "samples": 3
+      },
+      "selectedLearningRate": [
+        0.12,
+        0.0864,
+        0.12
+      ],
+      "selectedDiscountGamma": [
+        0.97,
+        0.985,
+        0.97
+      ],
+      "selectedScore": {
+        "mean": 2.635,
+        "std": 0.025,
+        "min": 2.601,
+        "max": 2.659,
+        "samples": 3
+      },
+      "algorithmSelectionScore": {
+        "mean": 2.801,
+        "std": 0.1,
+        "min": 2.659,
+        "max": 2.872,
+        "samples": 3
+      }
+    },
+    "expected-sarsa": {
+      "family": "reinforcement-learning",
+      "meanReward": {
+        "mean": 2.939,
+        "std": 0.01,
+        "min": 2.931,
+        "max": 2.954,
+        "samples": 3
+      },
+      "selectedLearningRate": [
+        0.12,
+        0.12,
+        0.1536
+      ],
+      "selectedDiscountGamma": [
+        0.97,
+        0.97,
+        0.95
+      ],
+      "selectedScore": {
+        "mean": 2.634,
+        "std": 0.027,
+        "min": 2.597,
+        "max": 2.659,
+        "samples": 3
+      },
+      "algorithmSelectionScore": {
+        "mean": 2.88,
+        "std": 0.01,
+        "min": 2.872,
+        "max": 2.895,
+        "samples": 3
+      }
+    },
+    "dyna-q": {
+      "family": "reinforcement-learning",
+      "meanReward": {
+        "mean": 3.002,
+        "std": 0.068,
+        "min": 2.913,
+        "max": 3.079,
+        "samples": 3
+      },
+      "selectedLearningRate": [
+        0.12,
+        0.12,
+        0.0864
+      ],
+      "selectedDiscountGamma": [
+        0.97,
+        0.97,
+        0.985
+      ],
+      "selectedScore": {
+        "mean": 2.52,
+        "std": 0.152,
+        "min": 2.305,
+        "max": 2.63,
+        "samples": 3
+      },
+      "algorithmSelectionScore": {
+        "mean": 2.8,
+        "std": 0.123,
+        "min": 2.629,
+        "max": 2.914,
+        "samples": 3
+      }
+    },
+    "mpc": {
+      "family": "control-theory",
+      "meanReward": {
+        "mean": 3.349,
+        "std": 0,
+        "min": 3.349,
+        "max": 3.349,
+        "samples": 3
+      },
+      "selectedLearningRate": [
+        null,
+        null,
+        null
+      ],
+      "selectedDiscountGamma": [
+        null,
+        null,
+        null
+      ],
+      "selectedScore": {
+        "mean": 2.566,
+        "std": 0,
+        "min": 2.566,
+        "max": 2.566,
+        "samples": 3
+      },
+      "algorithmSelectionScore": {
+        "mean": 3.33,
+        "std": 0,
+        "min": 3.33,
+        "max": 3.33,
+        "samples": 3
+      }
+    }
+  },
+  "heldOutTest": {
+    "q-learning": {
+      "closed-loop-replay": {
+        "delayReductionPercent": {
+          "mean": -54.02,
+          "std": 43.558,
+          "min": -115.62,
+          "max": -23.22,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": -72.693,
+          "std": 45.74,
+          "min": -137.38,
+          "max": -40.35,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": -2.907,
+          "std": 0.804,
+          "min": -3.51,
+          "max": -1.77,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": -0.773,
+          "std": 0.153,
+          "min": -0.99,
+          "max": -0.66,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 97.905,
+          "std": 0.236,
+          "min": 97.572,
+          "max": 98.072,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 97.68,
+          "std": 0.341,
+          "min": 97.241,
+          "max": 98.072,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 1.183,
+          "std": 0.542,
+          "min": 0.8,
+          "max": 1.95,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 652.5,
+          "std": 0,
+          "min": 652.5,
+          "max": 652.5,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 6.019,
+          "std": 0.22,
+          "min": 5.709,
+          "max": 6.183,
+          "samples": 3
+        }
+      },
+      "peak-congestion-stress": {
+        "delayReductionPercent": {
+          "mean": 49.003,
+          "std": 22.486,
+          "min": 27.04,
+          "max": 79.9,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 48.837,
+          "std": 22.518,
+          "min": 26.85,
+          "max": 79.78,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": 6.63,
+          "std": 2.164,
+          "min": 5.06,
+          "max": 9.69,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": 17.787,
+          "std": 9.556,
+          "min": 8.37,
+          "max": 30.89,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 59.908,
+          "std": 9.496,
+          "min": 50.033,
+          "max": 72.727,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 85.848,
+          "std": 0.727,
+          "min": 84.82,
+          "max": 86.389,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 162.53,
+          "std": 51.251,
+          "min": 90.85,
+          "max": 207.67,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 4.68,
+          "std": 0.423,
+          "min": 4.113,
+          "max": 5.13,
+          "samples": 3
+        }
+      },
+      "weather-disturbance-generalization": {
+        "delayReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 98.64,
+          "std": 0,
+          "min": 98.64,
+          "max": 98.64,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 99.593,
+          "std": 0,
+          "min": 99.593,
+          "max": 99.593,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 3.73,
+          "std": 0,
+          "min": 3.73,
+          "max": 3.73,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 7.58,
+          "std": 0,
+          "min": 7.58,
+          "max": 7.58,
+          "samples": 3
+        }
+      }
+    },
+    "sarsa": {
+      "closed-loop-replay": {
+        "delayReductionPercent": {
+          "mean": -23.397,
+          "std": 63.367,
+          "min": -87.8,
+          "max": 62.77,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": -39.73,
+          "std": 72.232,
+          "min": -113.07,
+          "max": 58.52,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": -3.357,
+          "std": 0.135,
+          "min": -3.54,
+          "max": -3.22,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": -0.54,
+          "std": 0.424,
+          "min": -0.93,
+          "max": 0.05,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 98.294,
+          "std": 0.571,
+          "min": 97.801,
+          "max": 99.094,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 94.591,
+          "std": 4.43,
+          "min": 88.327,
+          "max": 97.801,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 0.68,
+          "std": 0.282,
+          "min": 0.29,
+          "max": 0.95,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 513.2,
+          "std": 197,
+          "min": 234.6,
+          "max": 652.5,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 5.87,
+          "std": 0.337,
+          "min": 5.394,
+          "max": 6.113,
+          "samples": 3
+        }
+      },
+      "peak-congestion-stress": {
+        "delayReductionPercent": {
+          "mean": 47.85,
+          "std": 9.322,
+          "min": 34.67,
+          "max": 54.68,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 47.613,
+          "std": 9.287,
+          "min": 34.48,
+          "max": 54.27,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": 6.2,
+          "std": 1.012,
+          "min": 4.77,
+          "max": 6.97,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": 17.007,
+          "std": 3.421,
+          "min": 12.35,
+          "max": 20.47,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 59.936,
+          "std": 3.676,
+          "min": 55.066,
+          "max": 63.946,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 85.296,
+          "std": 1.803,
+          "min": 82.795,
+          "max": 86.979,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 174.21,
+          "std": 17.034,
+          "min": 159.41,
+          "max": 198.07,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 4.727,
+          "std": 0.18,
+          "min": 4.587,
+          "max": 4.981,
+          "samples": 3
+        }
+      },
+      "weather-disturbance-generalization": {
+        "delayReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 98.64,
+          "std": 0,
+          "min": 98.64,
+          "max": 98.64,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 99.593,
+          "std": 0,
+          "min": 99.593,
+          "max": 99.593,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 3.73,
+          "std": 0,
+          "min": 3.73,
+          "max": 3.73,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 7.58,
+          "std": 0,
+          "min": 7.58,
+          "max": 7.58,
+          "samples": 3
+        }
+      }
+    },
+    "expected-sarsa": {
+      "closed-loop-replay": {
+        "delayReductionPercent": {
+          "mean": -88.827,
+          "std": 77.818,
+          "min": -198.15,
+          "max": -23.22,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": -110.73,
+          "std": 82.952,
+          "min": -227.2,
+          "max": -40.35,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": -2.96,
+          "std": 0.549,
+          "min": -3.51,
+          "max": -2.21,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": -0.963,
+          "std": 0.366,
+          "min": -1.48,
+          "max": -0.67,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 97.588,
+          "std": 0.626,
+          "min": 96.704,
+          "max": 98.072,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 97.473,
+          "std": 0.554,
+          "min": 96.704,
+          "max": 97.987,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 1.973,
+          "std": 1.659,
+          "min": 0.8,
+          "max": 4.32,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 652.5,
+          "std": 0,
+          "min": 652.5,
+          "max": 652.5,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 5.967,
+          "std": 0.241,
+          "min": 5.63,
+          "max": 6.183,
+          "samples": 3
+        }
+      },
+      "peak-congestion-stress": {
+        "delayReductionPercent": {
+          "mean": 36.457,
+          "std": 7.214,
+          "min": 26.88,
+          "max": 44.29,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 36.247,
+          "std": 7.234,
+          "min": 26.62,
+          "max": 44.06,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": 4.87,
+          "std": 0.569,
+          "min": 4.26,
+          "max": 5.63,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": 12.303,
+          "std": 2.992,
+          "min": 8.19,
+          "max": 15.22,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 54.739,
+          "std": 3.508,
+          "min": 49.862,
+          "max": 57.963,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 85.962,
+          "std": 1.085,
+          "min": 84.485,
+          "max": 87.062,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 193.703,
+          "std": 10.879,
+          "min": 181.2,
+          "max": 207.72,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 4.595,
+          "std": 0.317,
+          "min": 4.148,
+          "max": 4.85,
+          "samples": 3
+        }
+      },
+      "weather-disturbance-generalization": {
+        "delayReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 98.64,
+          "std": 0,
+          "min": 98.64,
+          "max": 98.64,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 99.593,
+          "std": 0,
+          "min": 99.593,
+          "max": 99.593,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 3.73,
+          "std": 0,
+          "min": 3.73,
+          "max": 3.73,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 7.58,
+          "std": 0,
+          "min": 7.58,
+          "max": 7.58,
+          "samples": 3
+        }
+      }
+    },
+    "dyna-q": {
+      "closed-loop-replay": {
+        "delayReductionPercent": {
+          "mean": -35.773,
+          "std": 169.169,
+          "min": -274.98,
+          "max": 87.37,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": -41.193,
+          "std": 176.826,
+          "min": -291.23,
+          "max": 87.35,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": -0.04,
+          "std": 2.501,
+          "min": -1.99,
+          "max": 3.49,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": -0.167,
+          "std": 0.95,
+          "min": -1.51,
+          "max": 0.54,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 98.596,
+          "std": 1.65,
+          "min": 96.264,
+          "max": 99.816,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 90.926,
+          "std": 1.856,
+          "min": 88.703,
+          "max": 93.245,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 0.937,
+          "std": 0.846,
+          "min": 0,
+          "max": 2.05,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 354.933,
+          "std": 501.952,
+          "min": 0,
+          "max": 1064.8,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 4.172,
+          "std": 0.079,
+          "min": 4.078,
+          "max": 4.271,
+          "samples": 3
+        }
+      },
+      "peak-congestion-stress": {
+        "delayReductionPercent": {
+          "mean": 37.18,
+          "std": 18.119,
+          "min": 12.56,
+          "max": 55.64,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 37.09,
+          "std": 18.081,
+          "min": 12.52,
+          "max": 55.51,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": 5.55,
+          "std": 1.648,
+          "min": 3.6,
+          "max": 7.63,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": 11.927,
+          "std": 5.639,
+          "min": 4.34,
+          "max": 17.85,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 53.623,
+          "std": 5.545,
+          "min": 46.101,
+          "max": 59.303,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 83.099,
+          "std": 0.901,
+          "min": 81.92,
+          "max": 84.107,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 187.907,
+          "std": 30.479,
+          "min": 155,
+          "max": 228.47,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 4.04,
+          "std": 0.238,
+          "min": 3.709,
+          "max": 4.262,
+          "samples": 3
+        }
+      },
+      "weather-disturbance-generalization": {
+        "delayReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 98.64,
+          "std": 0,
+          "min": 98.64,
+          "max": 98.64,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 99.593,
+          "std": 0,
+          "min": 99.593,
+          "max": 99.593,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 3.73,
+          "std": 0,
+          "min": 3.73,
+          "max": 3.73,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 7.58,
+          "std": 0,
+          "min": 7.58,
+          "max": 7.58,
+          "samples": 3
+        }
+      }
+    },
+    "mpc": {
+      "closed-loop-replay": {
+        "delayReductionPercent": {
+          "mean": 66,
+          "std": 0,
+          "min": 66,
+          "max": 66,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 66.27,
+          "std": 0,
+          "min": 66.27,
+          "max": 66.27,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": 0.34,
+          "std": 0,
+          "min": 0.34,
+          "max": 0.34,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": 0.52,
+          "std": 0,
+          "min": 0.52,
+          "max": 0.52,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 99.627,
+          "std": 0,
+          "min": 99.627,
+          "max": 99.627,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 99.032,
+          "std": 0,
+          "min": 99.032,
+          "max": 99.032,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 1.16,
+          "std": 0,
+          "min": 1.16,
+          "max": 1.16,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 493.1,
+          "std": 0,
+          "min": 493.1,
+          "max": 493.1,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 3.674,
+          "std": 0,
+          "min": 3.674,
+          "max": 3.674,
+          "samples": 3
+        }
+      },
+      "peak-congestion-stress": {
+        "delayReductionPercent": {
+          "mean": 95.47,
+          "std": 0,
+          "min": 95.47,
+          "max": 95.47,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 95.56,
+          "std": 0,
+          "min": 95.56,
+          "max": 95.56,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": 11.26,
+          "std": 0,
+          "min": 11.26,
+          "max": 11.26,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": 46.51,
+          "std": 0,
+          "min": 46.51,
+          "max": 46.51,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 91.11,
+          "std": 0,
+          "min": 91.11,
+          "max": 91.11,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 83.914,
+          "std": 0,
+          "min": 83.914,
+          "max": 83.914,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 25.05,
+          "std": 0,
+          "min": 25.05,
+          "max": 25.05,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 4.604,
+          "std": 0,
+          "min": 4.604,
+          "max": 4.604,
+          "samples": 3
+        }
+      },
+      "weather-disturbance-generalization": {
+        "delayReductionPercent": {
+          "mean": 66,
+          "std": 0,
+          "min": 66,
+          "max": 66,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 66.27,
+          "std": 0,
+          "min": 66.27,
+          "max": 66.27,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": 0.34,
+          "std": 0,
+          "min": 0.34,
+          "max": 0.34,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": 0.52,
+          "std": 0,
+          "min": 0.52,
+          "max": 0.52,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 99.627,
+          "std": 0,
+          "min": 99.627,
+          "max": 99.627,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 99.032,
+          "std": 0,
+          "min": 99.032,
+          "max": 99.032,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 1.16,
+          "std": 0,
+          "min": 1.16,
+          "max": 1.16,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 493.1,
+          "std": 0,
+          "min": 493.1,
+          "max": 493.1,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 7.545,
+          "std": 0,
+          "min": 7.545,
+          "max": 7.545,
+          "samples": 3
+        }
+      }
+    }
+  },
+  "provisionalResumeMetric": {
+    "allowedOnlyWithOfflineReplayQualifier": true,
+    "selectedRlAlgorithmId": "expected-sarsa",
+    "recommendedMethodId": "mpc",
+    "rationale": "MPC is the only method with stable delay, congestion, throughput and safety results in the sealed closed-loop replay.",
+    "closedLoopDelayReductionPercent": {
+      "mean": 66,
+      "std": 0,
+      "min": 66,
+      "max": 66,
+      "samples": 3
+    },
+    "closedLoopCongestionReductionPercent": {
+      "mean": 66.27,
+      "std": 0,
+      "min": 66.27,
+      "max": 66.27,
+      "samples": 3
+    },
+    "closedLoopThroughputRetentionPercent": {
+      "mean": 99.032,
+      "std": 0,
+      "min": 99.032,
+      "max": 99.032,
+      "samples": 3
+    },
+    "closedLoopSafetyViolationRatePercent": {
+      "mean": 3.674,
+      "std": 0,
+      "min": 3.674,
+      "max": 3.674,
+      "samples": 3
+    },
+    "finalDeferredBacklogVessels": {
+      "mean": 493.1,
+      "std": 0,
+      "min": 493.1,
+      "max": 493.1,
+      "samples": 3
+    },
+    "finalDeferredBacklogToMeanArrivalPercent": 4.97,
+    "selectedRlPeakStressDelayReductionPercent": {
+      "mean": 36.457,
+      "std": 7.214,
+      "min": 26.88,
+      "max": 44.29,
+      "samples": 3
+    },
+    "selectedRlPeakStressCongestionReductionPercent": {
+      "mean": 36.247,
+      "std": 7.234,
+      "min": 26.62,
+      "max": 44.06,
+      "samples": 3
+    }
+  },
+  "claimEligibility": {
+    "methodId": "mpc",
+    "thresholds": {
+      "minimumThroughputRetentionPercent": 95,
+      "maximumExpectedSafetyViolationRatePercent": 5,
+      "minimumDelayReductionPercent": 5,
+      "minimumCongestionReductionPercent": 5,
+      "maximumAcrossSeedStandardDeviationPercentagePoints": 5,
+      "maximumFinalDeferredBacklogToMeanArrivalPercent": 5
+    },
+    "checks": {
+      "throughputRetention": true,
+      "expectedSafetyRisk": true,
+      "delayReduction": true,
+      "congestionReduction": true,
+      "seedStability": true,
+      "deferredBacklog": true
+    },
+    "passed": true,
+    "scope": "offline_model_replay_only"
+  }
+}

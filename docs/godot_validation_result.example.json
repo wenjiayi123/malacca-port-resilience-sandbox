@@ -1,0 +1,24 @@
+{
+  "requestId": "malacca-validation-20260706-001",
+  "vesselId": "vessel-eagle",
+  "status": "passed",
+  "safePass": true,
+  "estimatedTravelMinutes": 62.99,
+  "riskLevel": "high",
+  "recommendedSpeedKnots": 10.2,
+  "simulatedDurationSeconds": 2,
+  "reachedDestination": false,
+  "averageSpeedKnots": 0,
+  "minClearanceMeters": 24.82,
+  "collisionCount": 0,
+  "groundingCount": 0,
+  "riskEventResolvedCount": 1,
+  "delayDeltaMinutes": 22.5,
+  "carbonDeltaTons": -0.71,
+  "loadedScene": {
+    "routePointCount": 2,
+    "riskZoneCount": 1,
+    "temporaryObstacleCount": 1
+  },
+  "summary": "验证通过：外部船舶参数已适配到 Godot，当前验证窗口内未触发碰撞或搁浅。"
+}
