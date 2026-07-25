@@ -10,11 +10,11 @@
   },
   "characters": {
     "xiaoyiMaritimeOfficer": {
-      "path": "/assets/xiaoyi-maritime-officer.svg",
-      "source": "project-original-vector",
-      "width": 360,
-      "height": 480,
-      "purpose": "Xiaoyi controlled-assistant avatar"
+      "path": "/assets/xiaoyi-ai-port-hero.png",
+      "source": "Xiaoyi AI original repository asset",
+      "width": 1024,
+      "height": 1536,
+      "purpose": "Canonical Xiaoyi maritime officer identity"
     }
   },
   "reserved": {

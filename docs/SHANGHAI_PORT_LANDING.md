@@ -147,5 +147,5 @@ INFORE Piraeus 数据源 DOI 为 `10.5281/zenodo.3754481`，许可为 CC BY-NC-N
 
 ## 小懿形象
 
-训练助理和操作助手继续引用 `public/assets/xiaoyi-maritime-officer.svg` 的小懿 Q 版形象。场景
+训练助理和操作助手继续引用 `public/assets/xiaoyi-ai-port-hero.png` 的小懿原版 Q 版形象。场景
 切换不得替换人物身份资产；只允许修复清晰度、布局、无障碍文本和状态联动。

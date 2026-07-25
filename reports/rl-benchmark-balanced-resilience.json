@@ -1,6 +1,6 @@
 {
   "schemaVersion": "resume-rl-benchmark.v1",
-  "generatedAt": "2026-07-25T07:07:31.584Z",
+  "generatedAt": "2026-07-25T07:41:25.524Z",
   "evidenceLabel": "OFFLINE_MODEL_REPLAY_NOT_FIELD_KPI",
   "claimBoundary": [
     "This report is a real execution of the repository training code, not a fabricated result.",
@@ -125,14 +125,14 @@
   },
   "sourceFingerprint": {
     "algorithm": "sha256",
-    "digest": "7675c6ff95d7e97d61d149b209c05e96e78e3f22bf4a88ad987c86b1a8341899",
+    "digest": "4d03051640d938bf6a4e01889c4b57c2849f52bf0a691ac6b030d4f11b0d72a1",
     "files": {
       "server/rlTrainingEngine.ts": "77bd10500402b4738df508c2c09af93617fa90731eb24f8f682b8a3483fc8f3b",
       "server/portTrainingDataset.ts": "1d4a46fe33304f96c9bb9d56f3e26c37d1848c516294f1c157846a809552b78b",
       "shared/rlObjectivePresets.ts": "a29b942a4e5b44c8a26bf69e684567d837dba825b008c3380ffa9b07fbda2dc9",
       "scripts/rl/runResumeBenchmark.ts": "0dd92f654d8271ac35fa7721d285ff2e372d4cdb8757d736add6b6fc7d83c960",
       "package.json": "6fc15c8143af1638ba3f6a7a3b124e6fb898946d270f7063e79275ca42cccf31",
-      "pnpm-lock.yaml": "653ced97756eb1c2a19a2ae60f55f84e704ba6731fc83a47f30fb318f8f5a0d6"
+      "pnpm-lock.yaml": "14809379f8d98cb6ef084952ddfb761f5f964abfcf1726e11ada2a1e14906e08"
     }
   },
   "runtime": {

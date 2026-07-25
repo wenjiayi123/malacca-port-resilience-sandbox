@@ -7,13 +7,15 @@
 |---|---|---|---|
 | `public/assets/backgrounds/malacca-operations-grid.svg` | 沙盘背景 | 项目原创矢量图 | 可按 Apache-2.0 再分发 |
 | `public/assets/backgrounds/shanghai-operations-grid.svg` | 上海场景背景 | 项目原创矢量图 | 可按 Apache-2.0 再分发 |
-| `public/assets/xiaoyi-maritime-officer.svg` | 小懿操作助手形象 | 项目原创矢量图 | 可按 Apache-2.0 再分发 |
-| `public/assets/xiaoyi-maritime-officer.png` | 小懿操作助手 Q 版导出 | 同源形象的栅格导出 | 可按 Apache-2.0 再分发 |
+| `public/assets/xiaoyi-ai-port-hero.png` | 小懿操作助手原版形象 | 小懿 AI 原项目同名素材，SHA-256 `620e4f4092d2bbcf9efc1dc002a4164a2453c5aa3b996faa1d04c446d5c093a2` | 随本项目发布 |
+| `public/assets/xiaoyi-maritime-officer.svg` | 旧版替代矢量图 | 项目原创矢量图；仅保留历史兼容，不用于界面身份展示 | 可按 Apache-2.0 再分发 |
+| `public/assets/xiaoyi-maritime-officer.png` | 旧版替代栅格图 | 同源历史导出；不用于界面身份展示 | 可按 Apache-2.0 再分发 |
 | `docs/assets/hero.svg` | GitHub 头图 | 项目原创矢量图 | 可按 Apache-2.0 再分发 |
 | `docs/assets/*.jpg` | 应用截图 | 从本仓库本地运行版本采集 | 可按 Apache-2.0 再分发 |
 
 原工作目录中的参考 PNG、软著材料、构建产物、导出包和 Godot Web 二进制不进入独立开源副本。
 若以后通过 Release 分发 Godot 构建物，仍需对模型、贴图、字体、音频和插件逐项建立许可清单。
 
-The release copy contains only project-original SVG artwork and screenshots captured from this repository.
-Historical reference images, registration materials, exports and Godot binaries are intentionally excluded.
+The release copy uses the canonical Xiaoyi AI repository image for the assistant identity. Other release
+artwork is project-original, and interface screenshots are captured from this repository. Registration
+materials, unrelated reference exports and Godot binaries are intentionally excluded.

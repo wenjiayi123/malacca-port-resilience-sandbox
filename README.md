@@ -215,19 +215,27 @@ See [`docs/DATASET_CONTRACT.md`](docs/DATASET_CONTRACT.md) for fields, units, ti
 
 ## 快速开始 / Quick start
 
-要求 Node.js 24+ 与 pnpm 11+。<br>
-Requires Node.js 24+ and pnpm 11+.
+要求 Node.js 24+。一键脚本会依次使用已安装的 pnpm、Corepack 或 npx，因此不要求全局安装
+pnpm；缺少 `node_modules` 时会按锁文件自动安装依赖并打开浏览器。<br>
+Requires Node.js 24+. The launcher uses an installed pnpm, Corepack, or npx in that order, so a global
+pnpm installation is not required. It installs locked dependencies when needed and opens the browser.
 
 ```bash
-corepack enable
-pnpm install --frozen-lockfile
-pnpm release:check
-pnpm dev
+bash scripts/demo/start_web_demo.sh
 ```
 
-打开 <http://127.0.0.1:5174>。进入“沙盘推演”，打开“训练中心”，先完成训练，再运行训练后策略
+用于完整复现发布校验的命令：<br>
+For a complete release-gate reproduction:
+
+```bash
+corepack pnpm install --frozen-lockfile
+corepack pnpm release:check
+```
+
+一键脚本默认打开 <http://127.0.0.1:5180>。进入“沙盘推演”，打开“训练中心”，先完成训练，再运行训练后策略
 测试或检查点推理。<br>
-Open <http://127.0.0.1:5174>, enter the sandbox, open the training centre, complete training, and only then run post-training policy evaluation or checkpoint inference.
+The launcher opens <http://127.0.0.1:5180>. Enter the sandbox, open the training centre, complete
+training, and only then run post-training policy evaluation or checkpoint inference.
 
 生产式本机运行使用独立 Node 服务：<br>
 For a production-shaped local runtime, use the standalone Node service:

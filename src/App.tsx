@@ -10251,7 +10251,7 @@ export function App() {
             <div className="xiaoyi-rl-assistant__mini-handle" onMouseDown={startXiaoyiAssistantDrag}>
               <GripVertical size={12} />
               <button aria-label="展开小懿RL训练助手" onClick={() => setIsXiaoyiAssistantMinimized(false)} type="button">
-                <img alt="小懿AI港航训练助手" src="/assets/xiaoyi-maritime-officer.svg" />
+                <img alt="小懿AI港航训练助手" src="/assets/xiaoyi-ai-port-hero.png" />
                 <span>小懿</span>
               </button>
             </div>
@@ -10272,7 +10272,7 @@ export function App() {
                 </button>
               </header>
               <div className="xiaoyi-rl-assistant__hero">
-                <img alt="小懿AI港航训练助手动画形象" src="/assets/xiaoyi-maritime-officer.svg" />
+                <img alt="小懿AI港航训练助手动画形象" src="/assets/xiaoyi-ai-port-hero.png" />
                 <span className="xiaoyi-rl-assistant__scan" />
                 <i className="xiaoyi-rl-assistant__pulse xiaoyi-rl-assistant__pulse--one" />
                 <i className="xiaoyi-rl-assistant__pulse xiaoyi-rl-assistant__pulse--two" />

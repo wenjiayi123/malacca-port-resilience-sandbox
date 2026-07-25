@@ -5,6 +5,7 @@ const root = process.cwd();
 const errors = [];
 const required = [
   'LICENSE', 'NOTICE', 'README.md', 'SECURITY.md', 'CONTRIBUTING.md', '.env.example',
+  'pnpm-workspace.yaml',
   'CODE_OF_CONDUCT.md', 'GOVERNANCE.md', 'SUPPORT.md', 'CITATION.cff',
   'docs/DATASET_CONTRACT.md', 'docs/RL_ARCHITECTURE.md', 'docs/PORT_CALL_INTEROPERABILITY.md',
   'docs/DEMO_GUIDE.md', 'docs/RESUME_CLAIMS.md',
@@ -12,6 +13,7 @@ const required = [
   'docs/MODEL_CARD.md', 'CHANGELOG.md', 'docs/assets/hero.svg',
   'docs/assets/sandbox-command-center.jpg', 'docs/assets/human-review-gate.jpg',
   'public/assets/backgrounds/malacca-operations-grid.svg', 'public/assets/xiaoyi-maritime-officer.svg',
+  'public/assets/xiaoyi-ai-port-hero.png',
   'shared/rlObjectivePresets.ts', 'scripts/rl/runResumeBenchmark.ts',
   'scripts/rl/verifyBenchmarkReport.ts', 'reports/rl-benchmark-balanced-resilience.json',
   'reports/rl-benchmark-balanced-resilience.md',
@@ -42,6 +44,10 @@ if (packageJson.version !== '1.0.0') errors.push('package.json version 必须与
 if (packageJson.packageManager !== 'pnpm@11.9.0') errors.push('packageManager 必须固定为 pnpm@11.9.0');
 if (!packageJson.scripts?.['benchmark:rl'] || !packageJson.scripts?.['benchmark:rl:verify']) {
   errors.push('package.json 必须提供 RL 基准生成与证据验证命令');
+}
+const pnpmWorkspace = await readFile(path.join(root, 'pnpm-workspace.yaml'), 'utf8');
+if (!pnpmWorkspace.includes('brace-expansion: 5.0.8')) {
+  errors.push('pnpm 工作区必须固定 brace-expansion 安全版本 5.0.8');
 }
 
 const dockerfile = await readFile(path.join(root, 'Dockerfile'), 'utf8');
@@ -109,9 +115,13 @@ for (const legacyAsset of [
   'malacca_background_clean.png',
   'malacca_background_selected.png',
   'ui_reference_selected_clean.png',
+  'xiaoyi-maritime-officer.svg',
   'xiaoyi-maritime-officer.png',
 ]) {
   if (applicationReferences.includes(legacyAsset)) errors.push(`应用仍引用未纳入发布的历史图片：${legacyAsset}`);
+}
+if (!applicationReferences.includes('/assets/xiaoyi-ai-port-hero.png')) {
+  errors.push('应用没有引用小懿 AI 原版港航形象');
 }
 
 for (const error of errors) process.stderr.write(`ERROR ${error}\n`);

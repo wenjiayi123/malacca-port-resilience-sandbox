@@ -1,17 +1,17 @@
 {
   "schemaVersion": "public-dataset-credibility-comparison.v1",
-  "generatedAt": "2026-07-25T07:20:52.857Z",
+  "generatedAt": "2026-07-25T07:41:27.133Z",
   "evidenceLabel": "AIS_TRAFFIC_DENSITY_EXTERNAL_VALIDATION_NOT_PORT_KPI",
   "sourceFingerprint": {
     "algorithm": "sha256",
-    "digest": "4043a4cd84fafd061eb6da225df5ba72b9d54bf7a0be717496b1e55f8f40262c",
+    "digest": "ed7495679f1d909bf4c27f705b492a28e94cdb705efb899fa0a5f59e9e2b70bc",
     "files": {
       "server/rlTrainingEngine.ts": "77bd10500402b4738df508c2c09af93617fa90731eb24f8f682b8a3483fc8f3b",
       "server/portTrainingDataset.ts": "1d4a46fe33304f96c9bb9d56f3e26c37d1848c516294f1c157846a809552b78b",
       "scripts/data/sync_infore_ais.mjs": "79ebb4a862565170115c7f343d8ebd933cfac060fce7b4235d82ea3c352b483f",
       "scripts/rl/runPublicDatasetComparison.ts": "d40ee96de9c05ff069ee706f75aa6589cf5c9f3a35a5b17ae0fbf21b265972ba",
       "package.json": "6fc15c8143af1638ba3f6a7a3b124e6fb898946d270f7063e79275ca42cccf31",
-      "pnpm-lock.yaml": "653ced97756eb1c2a19a2ae60f55f84e704ba6731fc83a47f30fb318f8f5a0d6"
+      "pnpm-lock.yaml": "14809379f8d98cb6ef084952ddfb761f5f964abfcf1726e11ada2a1e14906e08"
     }
   },
   "comparison": {
