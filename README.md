@@ -129,11 +129,44 @@ records** and runs the same five methods with three seeds and chronological hold
 coverage makes it scale evidence, not a Shanghai field KPI or a replacement for the long-horizon MPA
 benchmark.
 
-## 系统画面 / Product surfaces
+## 工程画面与证据锚点 / Engineering surfaces and evidence anchors
+
+<p align="center">
+  <img src="docs/assets/xiaoyi-multi-ui-linkage.jpg" alt="马六甲沙盘、训练中心、小懿训练顾问与系统联动助手同屏" width="100%" />
+</p>
+
+<p align="center">
+  <sub><strong>多层 UI 联动：</strong>主沙盘、五方法训练矩阵、小懿 RL 参数顾问与小懿白名单页面执行器
+  同屏工作。画面明确标出内置规则顾问不是大模型；截图证明交互结构，训练结果仍以服务器任务、
+  检查点和版本化报告为准。<br />
+  <strong>Multi-surface linkage:</strong> the sandbox, five-method matrix, Xiaoyi RL advisor, and
+  allowlisted UI executor operate together. The UI identifies the embedded rule advisor as non-LLM;
+  result claims remain anchored to server jobs, checkpoints, and versioned reports.</sub>
+</p>
+
+<p align="center">
+  <img src="docs/assets/rl-training-complete-evidence.jpg" alt="真实训练完成后的服务器遥测、时间切分与检查点画面" width="100%" />
+</p>
+
+<p align="center">
+  <sub><strong>真实任务完成态：</strong>本次本机任务由服务器返回 7,200 episodes、173,348 环境步、
+  389,032 次参数更新、263/57/57 时间切分和 <code>checkpoint.json</code>；训练时不渲染策略效果，
+  最终测试仍需显式启动。三随机种子的公开基准结果见
+  <a href="reports/rl-benchmark-balanced-resilience.md">版本化证据报告</a>。<br />
+  <strong>Completed backend job:</strong> this local run reports 7,200 episodes, 173,348 environment
+  steps, 389,032 updates, a 263/57/57 temporal split, and a checkpoint artifact. Policy rendering
+  remains disabled during training, and final testing is explicit.</sub>
+</p>
 
 | 港航态势与核心闭环 / Maritime situation and core loop | 小懿执行报告与人工门禁 / Xiaoyi report and human gate |
 |---|---|
 | ![港航态势与核心闭环](docs/assets/sandbox-command-center.jpg) | ![小懿执行报告与人工门禁](docs/assets/human-review-gate.jpg) |
+
+| 画面 / Surface | 可见工程能力 / Visible engineering capability | 证据锚点 / Evidence anchor |
+|---|---|---|
+| 多层 UI + 小懿联动 | 沙盘、训练矩阵、参数顾问、白名单动作执行器 | [`XiaoyiSystemAssistant.tsx`](src/components/XiaoyiSystemAssistant.tsx)、[`xiaoyiRlAdvisorAdapter.ts`](src/integrations/xiaoyiRlAdvisorAdapter.ts) |
+| 训练完成遥测 | episode、环境步、更新数、时间切分、Checkpoint | [`rlTrainingJobs.ts`](server/rlTrainingJobs.ts)、[`rlTrainingEngine.ts`](server/rlTrainingEngine.ts) |
+| 核心闭环与人工门禁 | 事件传播、策略回放、执行报告、最终人工确认 | [`public_evidence_rl_operation.md`](docs/public_evidence_rl_operation.md)、[`MODEL_CARD.md`](docs/MODEL_CARD.md) |
 
 ## 架构 / Architecture
 
@@ -329,7 +362,7 @@ data/rl/                     MPA月度公开快照 / reproducible monthly public
 tests/                       算法、隔离、恢复、合同与安全 / algorithms, isolation, recovery, contracts
 reports/                     带证据等级的RL报告 / evidence-labelled offline RL reports
 docs/                        模型卡、数据契约与审计 / model card, data, interoperability, audit
-public/assets/               项目原创SVG资产 / project-original SVG assets
+public/assets/               小懿原版形象与项目视觉资产 / canonical Xiaoyi and project visuals
 .github/                     CI、安全与发布工作流 / CI, security, release workflows
 ```
 

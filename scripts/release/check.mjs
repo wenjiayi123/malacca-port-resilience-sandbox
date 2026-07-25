@@ -12,6 +12,7 @@ const required = [
   'docs/ASSET_PROVENANCE.md', 'docs/schemas/port-call-event.schema.json', 'Dockerfile',
   'docs/MODEL_CARD.md', 'CHANGELOG.md', 'docs/assets/hero.svg',
   'docs/assets/sandbox-command-center.jpg', 'docs/assets/human-review-gate.jpg',
+  'docs/assets/xiaoyi-multi-ui-linkage.jpg', 'docs/assets/rl-training-complete-evidence.jpg',
   'public/assets/backgrounds/malacca-operations-grid.svg', 'public/assets/xiaoyi-maritime-officer.svg',
   'public/assets/xiaoyi-ai-port-hero.png',
   'shared/rlObjectivePresets.ts', 'scripts/rl/runResumeBenchmark.ts',
