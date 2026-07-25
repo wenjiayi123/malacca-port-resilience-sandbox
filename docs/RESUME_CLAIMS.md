@@ -1,6 +1,6 @@
 # 简历主张与代码证据
 
-更新日期：2026-07-24
+更新日期：2026-07-25
 
 ## 可直接使用的版本
 
@@ -22,6 +22,12 @@ MPC 控制基线，采用 70%/15%/15% 时间切分、训练段容量代理校准
 66.00%/66.27%，吞吐保持率 99.03%、逐步期望安全风险率 3.67%，期末递延积压 493.1 艘；
 全部指标通过预声明离线引用门禁（公开聚合数据与动作参数假设下的模型结果，非港口实测 KPI）。
 
+▸ **规模与迁移验证**：另以 Zenodo `10.5281/zenodo.3754481` 的 371,585 条公开 Piraeus AIS
+消息生成 1,440 条分钟级记录，在相同 70%/15%/15% 协议下完成 4 RL + MPC 外部比较；该结果
+用于证明高频数据处理、训练链路和负结果披露能力，不替代长期 MPA+ERA5 主指标，也不冒充
+上海港数据。通过 `terminal-operations.v2` 清单、37 项运行字段、场景配置和失败关闭门禁，
+可在获得授权 TOS/VTS/AIS、设备、气象与安全数据后接入上海港或其他港口。
+
 ▸ **技术栈**：React 19 + TypeScript + Vite + Node.js Job API + 表格型 RL/MPC + Godot Web +
 SHA-256 检查点与 JSON 数据合同。
 
@@ -39,12 +45,16 @@ SHA-256 检查点与 JSON 数据合同。
   训练段校准的经验代理，天气压力测试中的浪高/能见度扰动是合成值。
 - 验证选优 RL 在封存闭环回放中的延误与碳指标跨种子不稳定，简历不引用其收益；主指标引用同环境
   的确定性 MPC 控制基线，并保留完整 RL 结果供审查。
+- Piraeus AIS 外部比较中四种 RL 的延误/拥堵均值全部恶化，MPC 在代理环境中改善；报告保留这组
+  负结果，不用数据量掩盖缺少现场能力、动作结果和跨日泛化的事实。
+- 上海场景中的公开年吞吐、洋山占比、海铁联运和泊位利用率只用于背景基线；没有授权清单时，
+  队列、船舶、现场效率和“已生产接入”状态均失败关闭。
 - “适配中远全球化航线布局战略”属于求职定位，不是代码或数据能证明的已落地成果。建议改成
   “面向全球干线港航网络的应急决策与拥堵治理场景”。
 - Godot Web 视窗和 Web 侧 `postMessage` 请求/结果监听已经实现；当前可复现的结果闭环仍以
   JSON 导入/回写为主，不能描述为已完成生产级自动双向控制。
-- 当前已建立通过发布门禁的本地基线提交，但尚未配置或推送 GitHub 远端；在仓库实际公开、
-  可下载并由干净环境按 README 复现前，不应把 `[GitHub 源码]` 链接描述为已发布成果。
+- GitHub 公开远端为 `wenjiayi123/malacca-port-resilience-sandbox`；每次发布仍必须由干净检出
+  执行 `pnpm install --frozen-lockfile && pnpm release:check`，通过后才可引用对应提交指标。
 
 ## 证据文件
 
@@ -52,6 +62,10 @@ SHA-256 检查点与 JSON 数据合同。
 - `server/portTrainingDataset.ts`：CSV/JSON 数据合同、训练段容量代理和时间隔离。
 - `reports/rl-benchmark-balanced-resilience.json`：机器可读多随机种子指标。
 - `reports/rl-benchmark-balanced-resilience.md`：简历指标摘要与证据等级。
+- `reports/public-dataset-credibility-comparison.json`：Piraeus AIS 高频外部比较和负结果。
+- `scripts/data/sync_infore_ais.mjs`：公开 AIS 下载、MD5 校验、清洗和分钟聚合。
 - `scripts/rl/verifyBenchmarkReport.ts`：复核数据指纹、核心代码指纹、全部算法/场景和数值完整性。
+- `shared/portOperationalContract.ts`：上海接入字段、观测、动作证据和目标门禁。
+- `docs/SHANGHAI_PORT_LANDING.md`：现实因素、字段映射、公开来源和生产接入步骤。
 - `src/App.tsx`：网络韧性派生评分、RL UI、Godot Web 视窗及请求/结果消息合同。
 - `tests/rlTrainingEngine.test.ts`：数据泄漏、目标权重、参数更新、留出测试与推理验证。

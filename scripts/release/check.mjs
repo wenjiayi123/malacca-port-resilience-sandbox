@@ -15,6 +15,15 @@ const required = [
   'shared/rlObjectivePresets.ts', 'scripts/rl/runResumeBenchmark.ts',
   'scripts/rl/verifyBenchmarkReport.ts', 'reports/rl-benchmark-balanced-resilience.json',
   'reports/rl-benchmark-balanced-resilience.md',
+  'shared/portOperationalContract.ts', 'server/portOperationalManifest.ts',
+  'config/port-profiles/shanghai-international-port.example.json',
+  'docs/SHANGHAI_PORT_LANDING.md',
+  'docs/schemas/terminal-operations-manifest.schema.json',
+  'scripts/data/sync_infore_ais.mjs', 'scripts/rl/runPublicDatasetComparison.ts',
+  'scripts/rl/verifyPublicDatasetComparison.ts',
+  'reports/public-dataset-credibility-comparison.json',
+  'reports/public-dataset-credibility-comparison.md',
+  'public/assets/backgrounds/shanghai-operations-grid.svg',
 ];
 const excluded = new Set(['.git', 'node_modules', 'dist', '.runtime', 'soft_copyright', 'output', 'tmp']);
 
@@ -44,6 +53,11 @@ try {
   JSON.parse(await readFile(path.join(root, 'docs/schemas/port-call-event.schema.json'), 'utf8'));
 } catch (error) {
   errors.push(`港口事件 JSON Schema 无法解析：${error instanceof Error ? error.message : 'unknown error'}`);
+}
+try {
+  JSON.parse(await readFile(path.join(root, 'docs/schemas/terminal-operations-manifest.schema.json'), 'utf8'));
+} catch (error) {
+  errors.push(`码头运行清单 JSON Schema 无法解析：${error instanceof Error ? error.message : 'unknown error'}`);
 }
 
 const candidateFiles = [];

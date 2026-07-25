@@ -46,7 +46,7 @@ import {
   Wind,
   X,
 } from 'lucide-react';
-import { malaccaScenario, monitoredPorts } from './data/malaccaScenario';
+import { defaultPortScenario } from './data/portScenarios';
 import {
   defaultPortDataConfig,
   loadPortTelemetry,
@@ -58,7 +58,9 @@ import {
   cancelRlTrainingJob,
   createRlTrainingJob,
   evaluateRlTrainingJob,
+  fetchPortOperationalContract,
   fetchRlTrainingJob,
+  type PortOperationalContractResponse,
   type RlBenchmarkResponse,
   type RlPolicyEvaluationResponse,
   type RlTrainingJobSnapshot,
@@ -968,7 +970,7 @@ const rlTrainingObjectives: RlTrainingObjectiveOption[] = [
     id: 'port-congestion-relief',
     label: '港口拥堵削峰',
     shortLabel: '拥堵削峰',
-    detail: '针对新加坡港、巴生港等高压节点削峰填谷，抑制拥堵扩散。',
+    detail: '针对高压港区与码头节点削峰填谷，抑制拥堵扩散。',
     rewardFocus: 'peak_congestion_penalty ↑ / diversion_reward ↑',
     tone: 'warning',
   },
@@ -1016,7 +1018,7 @@ const rlTrainingObjectives: RlTrainingObjectiveOption[] = [
     id: 'multi-port-coordination',
     label: '多港协同分流',
     shortLabel: '多港协同',
-    detail: '联合新加坡、巴生、丹戎帕拉帕斯、巴淡岛等节点做跨港分流。',
+    detail: '联合多个港区、码头或邻港节点执行有能力与成本约束的协同分流。',
     rewardFocus: 'multi_port_balance ↑ / transfer_cost ↓',
     tone: 'ok',
   },
@@ -1027,14 +1029,14 @@ const rlPolicyTestCases: RlPolicyTestCase[] = [
     id: 'closed-loop-replay',
     label: '闭环回放测试',
     shortLabel: '闭环',
-    detail: '用训练后策略重放当前马六甲沙盘快照，输出单步动作、奖励、指标回写和 A/B baseline 差异。',
+    detail: '用训练后策略重放当前港航沙盘快照，输出单步动作、奖励、指标回写和 A/B baseline 差异。',
     tone: 'ok',
   },
   {
     id: 'peak-congestion-stress',
     label: '峰值拥堵压力测试',
     shortLabel: '压力',
-    detail: '把新加坡港与东航道流量推到峰值，检查策略在高拥堵、高延误条件下的恢复能力。',
+    detail: '把当前高压港区与关键航路流量推到峰值，检查策略在高拥堵、高延误条件下的恢复能力。',
     tone: 'warning',
   },
   {
@@ -1422,7 +1424,7 @@ const createInitialSandboxPhases = (): SandboxPhaseState[] =>
   Object.entries(sandboxPhaseDefinitions).map(([id, definition], index) => ({
     id: id as SandboxPhaseId,
     status: index === 0 ? 'running' : 'pending',
-    startedAt: index === 0 ? malaccaScenario.currentTime : pendingPhaseStartLabel,
+    startedAt: index === 0 ? defaultPortScenario.currentTime : pendingPhaseStartLabel,
     startedMinute: 0,
     summary: definition.initialSummary,
   }));
@@ -2507,15 +2509,26 @@ function RlTrainingCard({
 }
 
 export function App() {
-  const [baseScenario, setBaseScenario] = useState(malaccaScenario);
+  const [baseScenario, setBaseScenario] = useState(defaultPortScenario);
+  const sceneSupportsBuiltInEvents = baseScenario.profileId === 'malacca-strait';
   const [portDataConfig, setPortDataConfig] = useState<PortDataConfig>(() => ({
     ...defaultPortDataConfig,
+    mode: (import.meta.env.VITE_PORT_DATA_MODE as PortDataConfig['mode'] | undefined) ??
+      (defaultPortScenario.profileId === 'malacca-strait' ? 'public' : 'demo'),
     endpoint: import.meta.env.VITE_PORT_DATA_ENDPOINT || defaultPortDataConfig.endpoint,
   }));
-  const [portDataStatus, setPortDataStatus] = useState<PortDataConnectionStatus>('connecting');
-  const [portDataMessage, setPortDataMessage] = useState('正在获取 MPA、Open-Meteo 与 AIS 研究实证数据');
+  const [portDataStatus, setPortDataStatus] = useState<PortDataConnectionStatus>(
+    defaultPortScenario.profileId === 'malacca-strait' ? 'connecting' : 'demo',
+  );
+  const [portDataMessage, setPortDataMessage] = useState(
+    defaultPortScenario.profileId === 'malacca-strait'
+      ? '正在获取 MPA、Open-Meteo 与 AIS 研究实证数据'
+      : '上海场景模板已加载；等待授权同源快照，未使用马六甲或新加坡遥测填充',
+  );
   const [portDataObservedAt, setPortDataObservedAt] = useState<string | null>(null);
   const [publicEvidence, setPublicEvidence] = useState<PublicEvidenceSummary | null>(null);
+  const [portOperationalContract, setPortOperationalContract] =
+    useState<PortOperationalContractResponse | null>(null);
   const [portDataRefreshToken, setPortDataRefreshToken] = useState(0);
   const baseScenarioTime = useMemo(
     () => new Date(baseScenario.currentTime.replace(' ', 'T')),
@@ -2869,26 +2882,30 @@ export function App() {
           },
         }
       : null;
-  const effectiveWeather = {
-    ...baseScenario.weather,
-    windSpeedMs: Number(
-      clampNumber(baseScenario.weather.windSpeedMs + eventImpact.weather.windSpeedMsDelta, 0, 32).toFixed(1),
-    ),
-    visibilityKm: Number(
-      clampNumber(baseScenario.weather.visibilityKm + eventImpact.weather.visibilityKmDelta, 1, 20).toFixed(1),
-    ),
-    waveHeightM: Number(
-      clampNumber(baseScenario.weather.waveHeightM + eventImpact.weather.waveHeightMDelta, 0.2, 5).toFixed(1),
-    ),
-    currentSpeedKnots: Number(
-      clampNumber(
-        baseScenario.weather.currentSpeedKnots + eventImpact.weather.currentSpeedKnotsDelta,
-        0.1,
-        3,
-      ).toFixed(1),
-    ),
-  };
+  const effectiveWeather = sceneSupportsBuiltInEvents
+    ? {
+        ...baseScenario.weather,
+        windSpeedMs: Number(
+          clampNumber(baseScenario.weather.windSpeedMs + eventImpact.weather.windSpeedMsDelta, 0, 32).toFixed(1),
+        ),
+        visibilityKm: Number(
+          clampNumber(baseScenario.weather.visibilityKm + eventImpact.weather.visibilityKmDelta, 1, 20).toFixed(1),
+        ),
+        waveHeightM: Number(
+          clampNumber(baseScenario.weather.waveHeightM + eventImpact.weather.waveHeightMDelta, 0.2, 5).toFixed(1),
+        ),
+        currentSpeedKnots: Number(
+          clampNumber(
+            baseScenario.weather.currentSpeedKnots + eventImpact.weather.currentSpeedKnotsDelta,
+            0.1,
+            3,
+          ).toFixed(1),
+        ),
+      }
+    : baseScenario.weather;
   const runtimeChannels = baseScenario.channels.map((channel) => {
+    if (!sceneSupportsBuiltInEvents) return channel;
+
     const impact = eventImpact.channelImpactById.get(channel.id);
     const recoveryCongestionRelief = impact ? rlCongestionReliefPoints * 0.72 : 0;
     const recoveryDelayRelief = impact ? rlDelayReliefMinutes * 0.58 : 0;
@@ -2930,6 +2947,8 @@ export function App() {
     };
   });
   const runtimeRouteOverlays = baseScenario.routeOverlays.map((route) => {
+    if (!sceneSupportsBuiltInEvents) return route;
+
     const routeImpact = eventImpact.routeImpactById.get(route.id);
     const channelImpact = eventImpact.channelImpactById.get(route.channelId);
     const isRecoveryRoute = Boolean(routeImpact || channelImpact);
@@ -2971,6 +2990,8 @@ export function App() {
     };
   });
   const runtimePorts = baseScenario.ports.map((port) => {
+    if (!sceneSupportsBuiltInEvents) return port;
+
     const impact = eventImpact.portImpactById.get(port.id);
     const recoveryCongestionRelief = impact ? rlCongestionReliefPoints : 0;
     const recoveryQueueRelief = impact ? rlCongestionReliefPoints * 0.38 : 0;
@@ -3021,6 +3042,8 @@ export function App() {
     };
   });
   const runtimeVesselMarkers = baseScenario.vesselMarkers.map((vessel) => {
+    if (!sceneSupportsBuiltInEvents) return vessel;
+
     const routeImpact = eventImpact.routeImpactById.get(vessel.flowId);
     const channelImpact = eventImpact.channelImpactById.get(vessel.assignedChannelId);
 
@@ -3046,6 +3069,8 @@ export function App() {
     vesselMarkers: runtimeVesselMarkers,
     weather: effectiveWeather,
   };
+  const isOperationalSceneTelemetryPending =
+    scenario.profileId === 'shanghai-international-port' && portDataStatus !== 'live';
 
   useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
@@ -3320,6 +3345,14 @@ export function App() {
   }, [generatedGodotRequest, godotSimulatorStatus, isGodotSimulatorOpen]);
 
   useEffect(() => {
+    const controller = new AbortController();
+    void fetchPortOperationalContract(controller.signal)
+      .then(setPortOperationalContract)
+      .catch(() => setPortOperationalContract(null));
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
     if (portDataConfig.mode === 'demo') return undefined;
 
     let canceled = false;
@@ -3335,7 +3368,7 @@ export function App() {
         const timeout = window.setTimeout(() => activeController?.abort(), 8000);
         const result = await loadPortTelemetry(
           portDataConfig,
-          malaccaScenario,
+          defaultPortScenario,
           activeController.signal,
         ).finally(() => window.clearTimeout(timeout));
         if (canceled) return;
@@ -3346,7 +3379,7 @@ export function App() {
         setPortDataMessage(`${result.source} · ${new Date(result.observedAt).toLocaleString()}`);
       } catch (error) {
         if (canceled) return;
-        setBaseScenario(malaccaScenario);
+        setBaseScenario(defaultPortScenario);
         setPublicEvidence(null);
         setPortDataObservedAt(null);
         setPortDataStatus('fallback');
@@ -3377,7 +3410,7 @@ export function App() {
             : config.endpoint,
     }));
     if (mode === 'demo') {
-      setBaseScenario(malaccaScenario);
+      setBaseScenario(defaultPortScenario);
       setPublicEvidence(null);
       setPortDataObservedAt(null);
       setPortDataStatus('demo');
@@ -3663,11 +3696,13 @@ export function App() {
   const channelById = new Map(scenario.channels.map((channel) => [channel.id, channel]));
   const routeById = new Map(scenario.routeOverlays.map((route) => [route.id, route]));
   const maxRouteVolume = Math.max(...scenario.routeOverlays.map((route) => route.vesselVolume));
-  const trendValues = scenario.carbon.hourlyTrend;
-  const maxTrendValue = Math.max(...trendValues.map((item) => item.value));
+  const trendValues = scenario.carbon.hourlyTrend.length > 0
+    ? scenario.carbon.hourlyTrend
+    : [{ hour: '待接入', value: 0 }];
+  const maxTrendValue = Math.max(1, ...trendValues.map((item) => item.value));
   const trendPolyline = trendValues
     .map((item, index) => {
-      const x = (index / (trendValues.length - 1)) * 260;
+      const x = (index / Math.max(1, trendValues.length - 1)) * 260;
       const y = 96 - (item.value / maxTrendValue) * 72;
       return `${x.toFixed(0)},${y.toFixed(0)}`;
     })
@@ -3685,7 +3720,7 @@ export function App() {
     {
       id: 'wind-speed',
       label: '风速',
-      value: scenario.weather.windSpeedMs,
+      value: isOperationalSceneTelemetryPending ? '--' : scenario.weather.windSpeedMs,
       unit: 'm/s',
       detail: scenario.weather.windDirection,
       icon: Wind,
@@ -3693,7 +3728,7 @@ export function App() {
     {
       id: 'wind-direction',
       label: '风向',
-      value: scenario.weather.windDirection,
+      value: isOperationalSceneTelemetryPending ? '--' : scenario.weather.windDirection,
       unit: '',
       detail: `${windDirectionDeg}°`,
       icon: Compass,
@@ -3701,7 +3736,7 @@ export function App() {
     {
       id: 'wave-height',
       label: '浪高',
-      value: scenario.weather.waveHeightM,
+      value: isOperationalSceneTelemetryPending ? '--' : scenario.weather.waveHeightM,
       unit: 'm',
       detail: '海峡平均',
       icon: Waves,
@@ -3709,7 +3744,7 @@ export function App() {
     {
       id: 'current-speed',
       label: '流速',
-      value: scenario.weather.currentSpeedKnots,
+      value: isOperationalSceneTelemetryPending ? '--' : scenario.weather.currentSpeedKnots,
       unit: 'kn',
       detail: '表层海流',
       icon: Gauge,
@@ -3717,7 +3752,7 @@ export function App() {
     {
       id: 'water-temperature',
       label: '水温',
-      value: scenario.weather.waterTemperatureC,
+      value: isOperationalSceneTelemetryPending ? '--' : scenario.weather.waterTemperatureC,
       unit: '°C',
       detail: '海面温度',
       icon: ThermometerSun,
@@ -3725,7 +3760,7 @@ export function App() {
     {
       id: 'pressure',
       label: '气压',
-      value: scenario.weather.pressureHpa,
+      value: isOperationalSceneTelemetryPending ? '--' : scenario.weather.pressureHpa,
       unit: 'hPa',
       detail: '海平面',
       icon: CloudSun,
@@ -3733,7 +3768,7 @@ export function App() {
     {
       id: 'visibility',
       label: '能见度',
-      value: scenario.weather.visibilityKm,
+      value: isOperationalSceneTelemetryPending ? '--' : scenario.weather.visibilityKm,
       unit: 'km',
       detail: '航道视距',
       icon: CircleGauge,
@@ -3850,7 +3885,9 @@ export function App() {
     ];
   });
   const incidentPressure = eventImpact.incidentPressure;
-  const monitoredRuntimePorts = monitoredPorts.map((port) => portById.get(port.id) ?? port);
+  const monitoredRuntimePorts = baseScenario.ports
+    .filter((port) => port.role !== 'anchorage')
+    .map((port) => portById.get(port.id) ?? port);
   const portCongestionSimulations = monitoredRuntimePorts.map((port, index): PortCongestionSimulation => {
     const cycle = Math.floor(elapsedMinutes / 15) + index;
     const arrivalPulse = 0.88 + (cycle % 5) * 0.06;
@@ -5759,7 +5796,9 @@ export function App() {
       shortLabel: '数据输入',
       status: phaseStatus('event-sensing'),
       value:
-        portDataStatus === 'live'
+        isOperationalSceneTelemetryPending
+          ? '场景模板·未接入'
+          : portDataStatus === 'live'
           ? '生产实时'
           : portDataStatus === 'public'
             ? '公开实证'
@@ -5779,14 +5818,16 @@ export function App() {
       label: '拥堵 / 延误 / 碳排计算',
       shortLabel: '推演计算',
       status: phaseStatus('pressure-spread'),
-      value: `${peakPortCongestion.congestionScore}%`,
+      value: isOperationalSceneTelemetryPending ? '--' : `${peakPortCongestion.congestionScore}%`,
     },
     {
       id: 'resilience',
       label: '网络韧性评估',
       shortLabel: '韧性评估',
       status: phaseStatus('pressure-spread'),
-      value: resilienceAssessment.networkResilienceIndex.toFixed(1),
+      value: isOperationalSceneTelemetryPending
+        ? '--'
+        : resilienceAssessment.networkResilienceIndex.toFixed(1),
     },
     {
       id: 'ai-dispatch',
@@ -5834,7 +5875,7 @@ export function App() {
     const report = {
       protocolVersion: 'malacca-closure-report.v1',
       generatedAt: new Date().toISOString(),
-      title: '马六甲港航网络韧性数字孪生闭环报告',
+      title: `${scenario.regionLabel ?? '港航网络'}韧性数字孪生闭环报告`,
       dataMode: portDataStatus,
       dataEvidence: publicEvidence,
       scenario: {
@@ -7408,7 +7449,7 @@ export function App() {
       tone: item.tone as StatusTone,
       metrics: [
         { label: '数量', value: formatInteger(item.value), unit: item.unit },
-        { label: '核心港口', value: String(monitoredPorts.length), unit: '处' },
+        { label: '核心港口', value: String(monitoredRuntimePorts.length), unit: '处' },
         { label: '可验证船舶', value: String(scenario.vesselMarkers.length), unit: '艘' },
       ],
     });
@@ -7511,13 +7552,15 @@ export function App() {
       title: weatherItem?.label ?? '风场雷达',
       subtitle: weatherItem
         ? `${weatherItem.value}${weatherItem.unit} / ${weatherItem.detail}`
-        : `${scenario.weather.windDirection} ${scenario.weather.windSpeedMs}m/s`,
+        : isOperationalSceneTelemetryPending
+          ? '等待授权港区气象站数据'
+          : `${scenario.weather.windDirection} ${scenario.weather.windSpeedMs}m/s`,
       body: '气象海况已联动应急预案模块，用于判断低能见度、风浪和海流对航段通行窗口的影响。',
       tone: scenario.weather.waveHeightM >= 1.2 || scenario.weather.visibilityKm <= 8 ? 'warning' : 'ok',
       metrics: [
-        { label: '风速', value: String(scenario.weather.windSpeedMs), unit: 'm/s' },
-        { label: '浪高', value: String(scenario.weather.waveHeightM), unit: 'm' },
-        { label: '能见度', value: String(scenario.weather.visibilityKm), unit: 'km' },
+        { label: '风速', value: isOperationalSceneTelemetryPending ? '--' : String(scenario.weather.windSpeedMs), unit: 'm/s' },
+        { label: '浪高', value: isOperationalSceneTelemetryPending ? '--' : String(scenario.weather.waveHeightM), unit: 'm' },
+        { label: '能见度', value: isOperationalSceneTelemetryPending ? '--' : String(scenario.weather.visibilityKm), unit: 'km' },
       ],
       action: { label: '查看天气预案', module: 'emergency' },
     });
@@ -7529,15 +7572,17 @@ export function App() {
     openInspectorPanel({
       id: 'carbon-monitor',
       title: '碳排放监测',
-      subtitle: `今日 ${scenario.carbon.todayEmission}${scenario.carbon.todayUnit}`,
+      subtitle: isOperationalSceneTelemetryPending
+        ? '等待授权燃油、岸电与碳排数据'
+        : `今日 ${scenario.carbon.todayEmission}${scenario.carbon.todayUnit}`,
       body: bestGreenStrategy
         ? `当前推荐${bestGreenStrategy.label}，预计减排 ${bestGreenStrategy.carbonReductionTons.toFixed(0)}t CO₂。`
         : '当前暂无推荐策略，继续监控船速、等待时间和靠泊节奏。',
       tone: emissionPanelTone,
       metrics: [
-        { label: '总碳排', value: totalCarbonTons.toFixed(0), unit: 't' },
-        { label: '较基准', value: `${totalCarbonChangePercent > 0 ? '+' : ''}${totalCarbonChangePercent.toFixed(1)}%`, tone: emissionPanelTone },
-        { label: '峰值时段', value: carbonPeakTrend.hour },
+        { label: '总碳排', value: isOperationalSceneTelemetryPending ? '--' : totalCarbonTons.toFixed(0), unit: 't' },
+        { label: '较基准', value: isOperationalSceneTelemetryPending ? '--' : `${totalCarbonChangePercent > 0 ? '+' : ''}${totalCarbonChangePercent.toFixed(1)}%`, tone: emissionPanelTone },
+        { label: '峰值时段', value: isOperationalSceneTelemetryPending ? '--' : carbonPeakTrend.hour },
       ],
       action: { label: '查看调度优化', module: 'dispatch' },
     });
@@ -7969,26 +8014,30 @@ export function App() {
         </Panel>
       </aside>
 
-      <section className="map-stage" aria-label="马六甲海峡沙盘地图">
-        <div className="map-country map-country--malaysia">
-          <span>🇲🇾</span>
-          <strong>马来西亚</strong>
-          <em>Malaysia</em>
-        </div>
-        <div className="map-country map-country--indonesia">
-          <span>🇮🇩</span>
-          <strong>印度尼西亚</strong>
-          <em>Indonesia</em>
-        </div>
-        <div className="map-country map-country--singapore">
-          <span>🇸🇬</span>
-          <strong>新加坡</strong>
-          <em>Singapore</em>
-        </div>
+      <section
+        className="map-stage"
+        aria-label={`${scenario.regionLabel ?? scenario.name}沙盘地图`}
+        style={{
+          backgroundImage: scenario.mapBackgroundAsset ? `url("${scenario.mapBackgroundAsset}")` : undefined,
+          backgroundPosition: 'center',
+          backgroundSize: 'cover',
+        }}
+      >
+        {(scenario.mapLabels ?? []).map((label) => (
+          <div
+            className="map-country"
+            key={label.id}
+            style={{ left: label.position.x, top: label.position.y }}
+          >
+            <span>{label.flag}</span>
+            <strong>{label.label}</strong>
+            <em>{label.englishName}</em>
+          </div>
+        ))}
 
         <div className="strait-title">
-          <strong>马六甲海峡</strong>
-          <span>Malacca Strait</span>
+          <strong>{scenario.regionLabel ?? scenario.name}</strong>
+          <span>{scenario.regionEnglishName ?? scenario.name}</span>
         </div>
 
         {showCoreClosure && (
@@ -8094,7 +8143,7 @@ export function App() {
           </section>
         )}
 
-        {openMapOverlays.propagation && (
+        {!isOperationalSceneTelemetryPending && openMapOverlays.propagation && (
           <svg className="impact-propagation-layer" viewBox="0 0 1000 720" aria-hidden="true">
             {impactPropagationLinks.map((link) => (
               <g
@@ -8118,7 +8167,7 @@ export function App() {
           </svg>
         )}
 
-        {openMapOverlays.strategy && strategyFlowVectors.length > 0 && (
+        {!isOperationalSceneTelemetryPending && openMapOverlays.strategy && strategyFlowVectors.length > 0 && (
           <svg className="strategy-flow-layer" viewBox="0 0 1000 720" aria-hidden="true">
             {strategyFlowVectors.map((vector) => (
               <g
@@ -8365,7 +8414,7 @@ export function App() {
           );
         })}
 
-        {openMapOverlays.propagation &&
+        {!isOperationalSceneTelemetryPending && openMapOverlays.propagation &&
           impactPropagationNodes.map((node) => (
             <div
               className={`impact-node-halo impact-node-halo--${node.tone}`}
@@ -8457,6 +8506,7 @@ export function App() {
           <button
             aria-pressed={openMapOverlays.propagation}
             className={openMapOverlays.propagation ? 'map-overlay-button map-overlay-button--active' : 'map-overlay-button'}
+            disabled={isOperationalSceneTelemetryPending}
             onClick={() => toggleMapOverlayPanel('propagation')}
             title="打开或关闭影响传播与韧性扩散"
             type="button"
@@ -8465,11 +8515,12 @@ export function App() {
             <strong>
               <BilingualText text="传播" />
             </strong>
-            <em>{resilienceAssessment.riskSpreadRangePercent}%</em>
+            <em>{isOperationalSceneTelemetryPending ? '--' : `${resilienceAssessment.riskSpreadRangePercent}%`}</em>
           </button>
           <button
             aria-pressed={openMapOverlays.congestion}
             className={openMapOverlays.congestion ? 'map-overlay-button map-overlay-button--active' : 'map-overlay-button'}
+            disabled={isOperationalSceneTelemetryPending}
             onClick={() => toggleMapOverlayPanel('congestion')}
             title="打开或关闭港口拥堵推演"
             type="button"
@@ -8478,12 +8529,12 @@ export function App() {
             <strong>
               <BilingualText text="拥堵" />
             </strong>
-            <em>{peakPortCongestion.congestionScore}%</em>
+            <em>{isOperationalSceneTelemetryPending ? '--' : `${peakPortCongestion.congestionScore}%`}</em>
           </button>
           <button
             aria-pressed={openMapOverlays.delay}
             className={openMapOverlays.delay ? 'map-overlay-button map-overlay-button--active' : 'map-overlay-button'}
-            disabled={!peakVesselDelay}
+            disabled={isOperationalSceneTelemetryPending || !peakVesselDelay}
             onClick={() => toggleMapOverlayPanel('delay')}
             title="打开或关闭船舶延误推演"
             type="button"
@@ -8497,7 +8548,7 @@ export function App() {
           <button
             aria-pressed={openMapOverlays.carbon}
             className={openMapOverlays.carbon ? 'map-overlay-button map-overlay-button--active' : 'map-overlay-button'}
-            disabled={!peakVesselEmission}
+            disabled={isOperationalSceneTelemetryPending || !peakVesselEmission}
             onClick={() => toggleMapOverlayPanel('carbon')}
             title="打开或关闭燃油与碳排核算"
             type="button"
@@ -8506,12 +8557,12 @@ export function App() {
             <strong>
               <BilingualText text="碳排" />
             </strong>
-            <em>{totalCarbonTons.toFixed(0)}t</em>
+            <em>{isOperationalSceneTelemetryPending ? '--' : `${totalCarbonTons.toFixed(0)}t`}</em>
           </button>
           <button
             aria-pressed={openMapOverlays.strategy}
             className={openMapOverlays.strategy ? 'map-overlay-button map-overlay-button--active' : 'map-overlay-button'}
-            disabled={!bestGreenStrategy}
+            disabled={isOperationalSceneTelemetryPending || !bestGreenStrategy}
             onClick={() => toggleMapOverlayPanel('strategy')}
             title="打开或关闭绿色调度策略对比"
             type="button"
@@ -8520,13 +8571,13 @@ export function App() {
             <strong>
               <BilingualText text="策略" />
             </strong>
-            <em>{bestGreenStrategy ? bestGreenStrategy.score : '--'}</em>
+            <em>{!isOperationalSceneTelemetryPending && bestGreenStrategy ? bestGreenStrategy.score : '--'}</em>
           </button>
             </section>
           </>
         )}
 
-        {openMapOverlays.propagation && peakPropagationNode && (
+        {!isOperationalSceneTelemetryPending && openMapOverlays.propagation && peakPropagationNode && (
           <section
             aria-label="影响传播与韧性扩散"
             className={`impact-propagation-sim impact-propagation-sim--${propagationTone}`}
@@ -8585,7 +8636,7 @@ export function App() {
           </section>
         )}
 
-        {openMapOverlays.congestion && (
+        {!isOperationalSceneTelemetryPending && openMapOverlays.congestion && (
         <section
           className={`port-congestion-sim port-congestion-sim--${peakPortCongestion.tone}`}
           style={{ '--port-congestion-color': statusColorByTone[peakPortCongestion.tone] } as CSSProperties}
@@ -8677,7 +8728,7 @@ export function App() {
         </section>
         )}
 
-        {peakVesselDelay && openMapOverlays.delay && (
+        {!isOperationalSceneTelemetryPending && peakVesselDelay && openMapOverlays.delay && (
           <section
             className={`vessel-delay-sim vessel-delay-sim--${peakVesselDelay.tone}`}
             style={{ '--vessel-delay-color': statusColorByTone[peakVesselDelay.tone] } as CSSProperties}
@@ -8748,7 +8799,7 @@ export function App() {
           </section>
         )}
 
-        {peakVesselEmission && openMapOverlays.carbon && (
+        {!isOperationalSceneTelemetryPending && peakVesselEmission && openMapOverlays.carbon && (
           <section
             className={`fuel-carbon-sim fuel-carbon-sim--${emissionPanelTone}`}
             style={{ '--fuel-carbon-color': statusColorByTone[emissionPanelTone] } as CSSProperties}
@@ -8828,7 +8879,7 @@ export function App() {
           </section>
         )}
 
-        {bestGreenStrategy && openMapOverlays.strategy && (
+        {!isOperationalSceneTelemetryPending && bestGreenStrategy && openMapOverlays.strategy && (
           <section
             className={`green-strategy-sim green-strategy-sim--${bestGreenStrategy.tone}`}
             style={{ '--green-strategy-color': statusColorByTone[bestGreenStrategy.tone] } as CSSProperties}
@@ -8903,7 +8954,7 @@ export function App() {
 
       </section>
 
-      {activeModule === 'sandbox' && isEventInjectionPanelOpen && (
+      {activeModule === 'sandbox' && isEventInjectionPanelOpen && sceneSupportsBuiltInEvents && (
         <section
           aria-label="事件注入选择面板"
           className={`event-injection-cockpit event-injection-cockpit--${selectedEventTemplate.tone}`}
@@ -9811,7 +9862,7 @@ export function App() {
                       </div>
                       <ol className="rl-training-live-log" aria-label="训练动态详细日志">
                         {rlTrainingDynamicLogs.map((log, index) => (
-                          <li key={log}>
+                          <li key={`${index}-${log}`}>
                             <span>{String(index + 1).padStart(2, '0')}</span>
                             <strong>{log}</strong>
                           </li>
@@ -10074,7 +10125,7 @@ export function App() {
                       </div>
                       <ol className="rl-policy-test__logs" aria-label="策略测试日志">
                         {visibleRlPolicyTestLogs.map((log, index) => (
-                          <li key={`${activeRlPolicyTestCase.id}-${index}`}>
+                          <li key={`${activeRlPolicyTestCase.id}-${index}-${log}`}>
                             <span>{String(index + 1).padStart(2, '0')}</span>
                             <strong>{log}</strong>
                           </li>
@@ -10101,6 +10152,31 @@ export function App() {
                     xiaoyiSelected={xiaoyiAdvisorScope === 'contract'}
                   >
                     <div className="rl-training-contract">
+                      <span>
+                        <small>Environment</small>
+                        <strong>
+                          aggregate-v1
+                          {portOperationalContract?.manifest.configured
+                            ? ' ← terminal-operations.v2 严格投影'
+                            : ' · 公开聚合离线基准'}
+                        </strong>
+                      </span>
+                      <span>
+                        <small>Operational Gate</small>
+                        <strong>
+                          {portOperationalContract
+                            ? portOperationalContract.manifest.readiness.trainingReady
+                              ? `READY · ${portOperationalContract.manifest.manifest?.portId ?? 'operator'} · 字段 ${portOperationalContract.manifest.readiness.fieldCoveragePercent}%`
+                              : `BLOCKED · 缺少 ${portOperationalContract.manifest.readiness.missingTrainingFields.length} 个必需字段`
+                            : '合同状态接口不可用'}
+                        </strong>
+                      </span>
+                      <span>
+                        <small>Scene Profile</small>
+                        <strong>
+                          {scenario.profileId ?? scenario.id} · {scenario.evidenceMode ?? 'unclassified'}
+                        </strong>
+                      </span>
                       <span>
                         <small>Endpoint</small>
                         <strong>{activeRlTrainingRequest.endpoint}</strong>
@@ -10315,7 +10391,11 @@ export function App() {
                 } as CSSProperties
               }
               tabIndex={0}
-              title={`风向 ${scenario.weather.windDirection} / 风速 ${scenario.weather.windSpeedMs} m/s`}
+              title={
+                isOperationalSceneTelemetryPending
+                  ? '等待授权港区气象站数据'
+                  : `风向 ${scenario.weather.windDirection} / 风速 ${scenario.weather.windSpeedMs} m/s`
+              }
             >
               <i>
                 <small className="radar-widget__sweep" aria-hidden="true" />
@@ -10325,7 +10405,11 @@ export function App() {
               </i>
               <span>N</span>
               <strong>{scenario.weather.windDirection}</strong>
-              <em>风速 {scenario.weather.windSpeedMs} m/s</em>
+              <em>
+                {isOperationalSceneTelemetryPending
+                  ? '风速 --'
+                  : `风速 ${scenario.weather.windSpeedMs} m/s`}
+              </em>
             </div>
             {weatherCards.map((item) => {
               const Icon = item.icon;
@@ -10365,15 +10449,22 @@ export function App() {
             <span className="carbon-stat carbon-stat--primary">
               <BilingualText text="今日碳排放" />
               <strong>
-                <RollingMetricValue value={String(scenario.carbon.todayEmission)} />
+                <RollingMetricValue
+                  value={
+                    isOperationalSceneTelemetryPending
+                      ? '--'
+                      : String(scenario.carbon.todayEmission)
+                  }
+                />
               </strong>
               <em>{scenario.carbon.todayUnit}</em>
             </span>
             <span className="carbon-stat">
               <BilingualText text="较昨日" />
               <strong className="tone-ok">
-                {scenario.carbon.changeVsYesterdayPercent > 0 ? '+' : ''}
-                {scenario.carbon.changeVsYesterdayPercent}%
+                {isOperationalSceneTelemetryPending
+                  ? '--'
+                  : `${scenario.carbon.changeVsYesterdayPercent > 0 ? '+' : ''}${scenario.carbon.changeVsYesterdayPercent}%`}
               </strong>
               <em>
                 <BilingualText text="绿色调度后" />
@@ -10392,14 +10483,20 @@ export function App() {
             <span>
               <BilingualText text="当前小时" />
               <strong>
-                <RollingMetricValue value={String(carbonLatestTrend.value)} />
+                <RollingMetricValue
+                  value={isOperationalSceneTelemetryPending ? '--' : String(carbonLatestTrend.value)}
+                />
               </strong>
               <em>{scenario.carbon.trendUnit}</em>
             </span>
             <span>
               <BilingualText text="峰值时段" />
-              <strong>{carbonPeakTrend.hour}</strong>
-              <em>{carbonPeakTrend.value} {scenario.carbon.trendUnit}</em>
+              <strong>{isOperationalSceneTelemetryPending ? '--' : carbonPeakTrend.hour}</strong>
+              <em>
+                {isOperationalSceneTelemetryPending
+                  ? '等待授权数据'
+                  : `${carbonPeakTrend.value} ${scenario.carbon.trendUnit}`}
+              </em>
             </span>
           </div>
         </Panel>
@@ -10571,9 +10668,12 @@ export function App() {
                       aria-pressed={activeDemoCaseId === demoCase.id}
                       className={`demo-case-button demo-case-button--${demoCase.tone}${activeDemoCaseId === demoCase.id ? ' demo-case-button--active' : ''}`}
                       data-xiaoyi-action={`demo-${demoCase.id}`}
+                      disabled={!sceneSupportsBuiltInEvents}
                       key={demoCase.id}
                       onClick={() => handleLoadLinkedDemoCase(demoCase)}
-                      title={`${demoCase.label}\n${demoCase.description}`}
+                      title={sceneSupportsBuiltInEvents
+                        ? `${demoCase.label}\n${demoCase.description}`
+                        : '当前场景模板未配置对应事件拓扑；接入授权快照后再启用'}
                       type="button"
                     >
                       <BilingualText className="demo-case-button__short" text={demoCase.shortLabel} />
@@ -10609,7 +10709,11 @@ export function App() {
                     aria-pressed={isEventInjectionPanelOpen}
                     className={`control-button control-button--warning${isEventInjectionPanelOpen ? ' control-button--active' : ''}`}
                     data-xiaoyi-action="inject-event"
+                    disabled={!sceneSupportsBuiltInEvents}
                     onClick={openEventInjectionPanel}
+                    title={sceneSupportsBuiltInEvents
+                      ? '选择并注入预置事件'
+                      : '当前场景未配置可审计的事件拓扑，按钮失败关闭'}
                     type="button"
                   >
                     <PlusCircle size={16} />

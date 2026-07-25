@@ -1,0 +1,233 @@
+{
+  "schemaVersion": "public-dataset-credibility-comparison.v1",
+  "generatedAt": "2026-07-25T07:20:52.857Z",
+  "evidenceLabel": "AIS_TRAFFIC_DENSITY_EXTERNAL_VALIDATION_NOT_PORT_KPI",
+  "sourceFingerprint": {
+    "algorithm": "sha256",
+    "digest": "4043a4cd84fafd061eb6da225df5ba72b9d54bf7a0be717496b1e55f8f40262c",
+    "files": {
+      "server/rlTrainingEngine.ts": "77bd10500402b4738df508c2c09af93617fa90731eb24f8f682b8a3483fc8f3b",
+      "server/portTrainingDataset.ts": "1d4a46fe33304f96c9bb9d56f3e26c37d1848c516294f1c157846a809552b78b",
+      "scripts/data/sync_infore_ais.mjs": "79ebb4a862565170115c7f343d8ebd933cfac060fce7b4235d82ea3c352b483f",
+      "scripts/rl/runPublicDatasetComparison.ts": "d40ee96de9c05ff069ee706f75aa6589cf5c9f3a35a5b17ae0fbf21b265972ba",
+      "package.json": "6fc15c8143af1638ba3f6a7a3b124e6fb898946d270f7063e79275ca42cccf31",
+      "pnpm-lock.yaml": "653ced97756eb1c2a19a2ae60f55f84e704ba6731fc83a47f30fb318f8f5a0d6"
+    }
+  },
+  "comparison": {
+    "existingMacroBenchmark": {
+      "dataset": "MPA vessel arrivals monthly + Open-Meteo ERA5",
+      "sourceType": "official monthly aggregate",
+      "recordCount": 377,
+      "period": [
+        "1995-01",
+        "2026-05"
+      ],
+      "fingerprint": "1135cd3ceac593a7",
+      "strongestUse": "long-horizon demand and offline control reproducibility",
+      "recommendedMethodId": "mpc"
+    },
+    "highFrequencyBenchmark": {
+      "dataset": "Single Ground Based AIS Receiver Vessel Tracking Dataset",
+      "sourceType": "raw anonymized AIS receiver messages",
+      "source": "University of Piraeus / Zenodo",
+      "sourceUrl": "https://zenodo.org/records/3754481",
+      "doi": "10.5281/zenodo.3754481",
+      "license": "CC BY-NC-ND 4.0",
+      "archiveMd5": "7f33c6f59b4e5979abb3f3f2dbef0090",
+      "rawMessageCount": 371585,
+      "derivedRecordCount": 1440,
+      "period": [
+        "2020-02-29T22:00:01Z",
+        "2020-03-01T21:59:59Z"
+      ],
+      "fingerprint": "e923a105f2313427",
+      "split": {
+        "method": "chronological",
+        "trainRatio": 0.6993055555555555,
+        "validationRatio": 0.15069444444444444,
+        "testRatio": 0.15,
+        "trainRange": [
+          "2020-02-29T22:00:00.000Z",
+          "2020-03-01T14:46:00.000Z"
+        ],
+        "validationRange": [
+          "2020-03-01T14:47:00.000Z",
+          "2020-03-01T18:23:00.000Z"
+        ],
+        "testRange": [
+          "2020-03-01T18:24:00.000Z",
+          "2020-03-01T21:59:00.000Z"
+        ]
+      },
+      "aggregation": "one-minute unique active-vessel density",
+      "demandMode": "ais-active-vessel-density-proxy",
+      "limitations": [
+        "The source covers one receiver near Piraeus for 24 hours; it is not Shanghai or Malacca traffic.",
+        "Active-vessel density is not a port-call or terminal-service event.",
+        "Gross tonnage, berth capacity, weather, safety and intervention outcomes are not present.",
+        "Carbon and field-operation benefit claims are disabled for this package."
+      ],
+      "strongestUse": "high-frequency ingestion, temporal split and algorithm-scale external validation",
+      "selectedMethodId": "mpc",
+      "methods": {
+        "q-learning": {
+          "label": "Q-Learning",
+          "family": "reinforcement-learning",
+          "validationSelectionScore": {
+            "mean": 3.069,
+            "standardDeviation": 0.284,
+            "samples": 3
+          },
+          "environmentSteps": [
+            8640,
+            8640,
+            8640
+          ],
+          "heldOutDelayReductionPercent": {
+            "mean": -923.903,
+            "standardDeviation": 657.243,
+            "samples": 3
+          },
+          "heldOutCongestionReductionPercent": {
+            "mean": -950.667,
+            "standardDeviation": 650.06,
+            "samples": 3
+          },
+          "heldOutThroughputRetentionPercent": {
+            "mean": 94.4,
+            "standardDeviation": 2.919,
+            "samples": 3
+          }
+        },
+        "sarsa": {
+          "label": "SARSA",
+          "family": "reinforcement-learning",
+          "validationSelectionScore": {
+            "mean": 3.286,
+            "standardDeviation": 0.149,
+            "samples": 3
+          },
+          "environmentSteps": [
+            8640,
+            8640,
+            8640
+          ],
+          "heldOutDelayReductionPercent": {
+            "mean": -847.98,
+            "standardDeviation": 548.651,
+            "samples": 3
+          },
+          "heldOutCongestionReductionPercent": {
+            "mean": -883.87,
+            "standardDeviation": 567.803,
+            "samples": 3
+          },
+          "heldOutThroughputRetentionPercent": {
+            "mean": 96.634,
+            "standardDeviation": 1.587,
+            "samples": 3
+          }
+        },
+        "expected-sarsa": {
+          "label": "Expected SARSA",
+          "family": "reinforcement-learning",
+          "validationSelectionScore": {
+            "mean": 2.905,
+            "standardDeviation": 0.142,
+            "samples": 3
+          },
+          "environmentSteps": [
+            8640,
+            8640,
+            8640
+          ],
+          "heldOutDelayReductionPercent": {
+            "mean": -1058.93,
+            "standardDeviation": 322.916,
+            "samples": 3
+          },
+          "heldOutCongestionReductionPercent": {
+            "mean": -1090.5,
+            "standardDeviation": 372.435,
+            "samples": 3
+          },
+          "heldOutThroughputRetentionPercent": {
+            "mean": 91.156,
+            "standardDeviation": 3.464,
+            "samples": 3
+          }
+        },
+        "dyna-q": {
+          "label": "Dyna-Q",
+          "family": "reinforcement-learning",
+          "validationSelectionScore": {
+            "mean": 3.301,
+            "standardDeviation": 0.118,
+            "samples": 3
+          },
+          "environmentSteps": [
+            8640,
+            8640,
+            8640
+          ],
+          "heldOutDelayReductionPercent": {
+            "mean": -114.113,
+            "standardDeviation": 102.23,
+            "samples": 3
+          },
+          "heldOutCongestionReductionPercent": {
+            "mean": -139.143,
+            "standardDeviation": 117.545,
+            "samples": 3
+          },
+          "heldOutThroughputRetentionPercent": {
+            "mean": 94.919,
+            "standardDeviation": 2.353,
+            "samples": 3
+          }
+        },
+        "mpc": {
+          "label": "模型预测控制（MPC）",
+          "family": "control-theory",
+          "validationSelectionScore": {
+            "mean": 3.684,
+            "standardDeviation": 0,
+            "samples": 3
+          },
+          "environmentSteps": [
+            1007,
+            1007,
+            1007
+          ],
+          "heldOutDelayReductionPercent": {
+            "mean": 50.78,
+            "standardDeviation": 0,
+            "samples": 3
+          },
+          "heldOutCongestionReductionPercent": {
+            "mean": 49.33,
+            "standardDeviation": 0,
+            "samples": 3
+          },
+          "heldOutThroughputRetentionPercent": {
+            "mean": 99.755,
+            "standardDeviation": 0,
+            "samples": 3
+          }
+        }
+      }
+    }
+  },
+  "verdict": {
+    "primaryResumeEvidence": "MPA+ERA5 aggregate-v1 benchmark",
+    "secondaryScaleEvidence": "INFORE Piraeus AIS one-minute traffic-density benchmark",
+    "rationale": [
+      "MPA covers more than three decades and represents official vessel-arrival statistics, so it is stronger for long-horizon demand evidence.",
+      "INFORE supplies 371k raw messages and 1,440 minute-level records, so it is stronger for high-frequency ingestion and execution-scale evidence.",
+      "The AIS source covers only 24 hours, has no measured terminal capacity, GT, weather, safety or intervention outcomes, and cannot support carbon or Shanghai field-benefit claims.",
+      "A Shanghai operational claim remains blocked until an authorized CNSHA/SIPG terminal-operations.v2 manifest passes every required field gate."
+    ],
+    "operationalClaimAllowed": false
+  }
+}

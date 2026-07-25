@@ -62,3 +62,35 @@ curl http://127.0.0.1:5174/api/rl/datasets
 对外发布数据前确认再分发许可。不要提交 MMSI/IMO 与商业事件的可重识别组合、客户合同、
 生产 Token、保安区位置或未经授权的 AIS 原始轨迹。建议在港口内网完成聚合，只把匿名训练特征
 交给本项目。
+
+## `terminal-operations.v2` 严格清单
+
+泊位级接入不再只依赖上表的九个聚合字段。设置 `PORT_OPERATIONAL_MANIFEST_PATH` 后，训练任务
+先读取 `terminal-operations.v2` 清单，并验证港区/码头、泊位堆场、岸桥闸口、ETA、通航潮窗、
+引拖、气象海况、安全危险品、岸电燃料与跨港转移字段。任何必需字段或映射缺失时，任务失败关闭。
+清单通过后仍会逐记录检查 24 项训练必需字段、带时区时间戳、0/1 状态、非负数值和百分比范围，
+防止“清单写了但数据没有”的空壳接入。
+
+示例和 Schema：
+
+- `config/port-profiles/shanghai-international-port.example.json`
+- `docs/schemas/terminal-operations-manifest.schema.json`
+- `docs/SHANGHAI_PORT_LANDING.md`
+
+当前控制算法读取严格投影后的六维聚合状态。港口侧应按经审核的业务规则，把泊位、岸桥、
+堆场、闸口、航道、潮窗、引航和拖轮约束合成为 `effective_service_capacity`；适配器不会擅自
+发明这些因果系数。原始运行字段仍进入适配文件和数据指纹，供审计与后续扩展直接奖励维度。
+
+`fair-queueing`、`energy-cost-control` 和 `multi-port-coordination` 仍需要直接公平性、能源成本和
+跨港平衡奖励，当前聚合投影不支持时保持禁用。字段齐全不等于动作可以自动生产执行，生产操作
+仍需 RBAC、审计、港口授权和人工确认。
+
+## 大规模公开 AIS 包
+
+`pnpm data:sync:infore-ais` 从 Zenodo 下载并校验 DOI `10.5281/zenodo.3754481` 的 Piraeus
+单接收站 AIS 数据。仓库不再分发 CC BY-NC-ND 4.0 原始压缩包。脚本处理 371,585 条原始消息，
+输出 1,440 条一分钟船流密度记录到 `.runtime/public-datasets/`。
+
+该包的 `arrivals` 是活跃船舶密度代理，`gross_tonnage` 只是使非碳控制奖励保持中性的尺度值；
+它没有实测 GT、泊位能力、天气、安全或动作结果。公开比较明确把碳与安全权重设为 0，并禁止
+现场收益声明。完整边界见 `reports/public-dataset-credibility-comparison.md`。

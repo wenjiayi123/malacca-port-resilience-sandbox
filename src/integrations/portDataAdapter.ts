@@ -53,6 +53,7 @@ export interface PortTelemetrySnapshot {
   protocolVersion: 'port-digital-twin.snapshot.v1';
   observedAt: string;
   source: string;
+  topologyMode?: 'patch' | 'replace';
   scenario?: Partial<MalaccaScenario>;
   telemetry?: {
     ports?: Array<Partial<PortNode> & Pick<PortNode, 'id'>>;
@@ -100,6 +101,15 @@ export const mergePortTelemetry = (
   const scenarioVessels = scenarioPatch.vesselMarkers as Array<
     Partial<VesselMarker> & Pick<VesselMarker, 'id'>
   > | undefined;
+  const replaceTopology =
+    snapshot.topologyMode === 'replace' ||
+    Boolean(scenarioPatch.profileId && scenarioPatch.profileId !== demoScenario.profileId);
+  const replacementPorts = telemetry.ports ?? scenarioPorts ?? [];
+  const replacementVessels = telemetry.vessels ?? scenarioVessels ?? [];
+
+  if (replaceTopology && replacementPorts.length === 0) {
+    throw new Error('topologyMode=replace 时必须提供至少一个港口节点');
+  }
 
   return {
     ...demoScenario,
@@ -107,10 +117,16 @@ export const mergePortTelemetry = (
     currentTime: snapshot.observedAt || scenarioPatch.currentTime || demoScenario.currentTime,
     overview: { ...demoScenario.overview, ...scenarioPatch.overview, ...telemetry.overview },
     weather: { ...demoScenario.weather, ...scenarioPatch.weather, ...telemetry.weather },
-    ports: mergeById(demoScenario.ports, telemetry.ports ?? scenarioPorts),
-    vesselMarkers: mergeById(demoScenario.vesselMarkers, telemetry.vessels ?? scenarioVessels),
-    channels: scenarioPatch.channels ?? demoScenario.channels,
-    routeOverlays: scenarioPatch.routeOverlays ?? demoScenario.routeOverlays,
+    ports: replaceTopology
+      ? replacementPorts as PortNode[]
+      : mergeById(demoScenario.ports, telemetry.ports ?? scenarioPorts),
+    vesselMarkers: replaceTopology
+      ? replacementVessels as VesselMarker[]
+      : mergeById(demoScenario.vesselMarkers, telemetry.vessels ?? scenarioVessels),
+    channels: replaceTopology ? scenarioPatch.channels ?? [] : scenarioPatch.channels ?? demoScenario.channels,
+    routeOverlays: replaceTopology
+      ? scenarioPatch.routeOverlays ?? []
+      : scenarioPatch.routeOverlays ?? demoScenario.routeOverlays,
     metrics: telemetry.metrics ?? scenarioPatch.metrics ?? demoScenario.metrics,
     riskAlerts: telemetry.riskAlerts ?? scenarioPatch.riskAlerts ?? demoScenario.riskAlerts,
     eventLog: telemetry.eventLog ?? scenarioPatch.eventLog ?? demoScenario.eventLog,

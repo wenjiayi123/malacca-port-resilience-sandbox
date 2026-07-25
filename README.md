@@ -4,6 +4,7 @@
 
 <p align="center">
   <a href="#港航网络韧性数字孪生沙盘--malacca-port-resilience-sandbox">双语说明 / Bilingual guide</a> ·
+  <a href="docs/SHANGHAI_PORT_LANDING.md">上海港接入 / Shanghai landing</a> ·
   <a href="docs/DATASET_CONTRACT.md">数据契约 / Data contract</a> ·
   <a href="docs/RL_ARCHITECTURE.md">算法架构 / RL architecture</a> ·
   <a href="docs/MODEL_CARD.md">模型卡 / Model card</a> ·
@@ -99,6 +100,34 @@ This is not an animation-only dashboard. Training progress comes from completed 
 验证选出的Expected SARSA在封存闭环回放中暴露出跨种子不稳定，系统因此不把它包装为业务收益；稳定的MPC对照在同一测试段实现模型延误降低66.00%、拥堵降低66.27%、吞吐保持99.03%、期望安全违规率3.67%，最终递延积压为平均月到港量的4.97%。完整五算法结果、负向结果和源码指纹均保存在[`reports/rl-benchmark-balanced-resilience.md`](reports/rl-benchmark-balanced-resilience.md)。
 
 The validation-selected Expected SARSA policy becomes unstable across seeds on sealed closed-loop replay and is therefore rejected as a business-benefit claim. On the same test segment, the stable MPC comparator reduces modelled delay by 66.00% and congestion by 66.27%, retains 99.03% throughput, records 3.67% expected safety violation, and ends with deferred backlog equal to 4.97% of mean monthly arrivals. The [versioned benchmark report](reports/rl-benchmark-balanced-resilience.md) preserves full five-method results, negative findings, and source fingerprints rather than a cherry-picked headline.
+
+## 上海港落地合同与大数据外部验证 / Shanghai landing and scale validation
+
+马六甲海峡始终是仓库的默认主场景、产品叙事和启动配置；上海只作为显式启用的可迁移接入样例，
+不会改变项目主体。
+
+项目新增 `terminal-operations.v2` 严格清单，覆盖港区/码头、泊位、堆场、岸桥、闸口、海铁与
+水水中转、ETA、航道潮窗、引拖、气象海况、安全危险品、岸电燃料与跨港转移。上海场景可用
+`VITE_PORT_SCENE_PROFILE=shanghai-international-port` 启动；未配置授权同源快照时保持失败关闭，
+不会用新加坡公开遥测填充上海画面。完整字段映射、官方事实来源和接入步骤见
+[上海港落地手册](docs/SHANGHAI_PORT_LANDING.md)。
+
+The `terminal-operations.v2` manifest covers terminals, berths, yards, quay cranes, gates, rail/water
+transfers, ETA, navigation/tidal windows, pilots, tugs, metocean conditions, safety/hazmat controls,
+shore power, fuels, and inter-port transfer evidence. The Shanghai scene starts fail-closed until an
+authorized same-origin snapshot and data manifest are configured. Malacca remains the default product
+scene; Shanghai is an opt-in portability example only.
+
+第二个公开基准处理了 **371,585 条** Piraeus 原始 AIS 消息，形成 **1,440 条**分钟级记录，并用
+相同的 Q-Learning、SARSA、Expected SARSA、Dyna-Q 与 MPC 做三随机种子时间留出比较。该数据只
+覆盖 24 小时且没有实测泊位能力、GT、天气、安全和动作结果，因此作为高频接入/训练规模证据，
+不替代 31 年 MPA 官方月报主证据，也不支持上海现场收益声明。来源、许可、负向结果和选择结论
+保存在[公开数据可信度比较](reports/public-dataset-credibility-comparison.md)。
+
+The second public benchmark processes **371,585 raw Piraeus AIS messages** into **1,440 minute-level
+records** and runs the same five methods with three seeds and chronological holdout. Its 24-hour
+coverage makes it scale evidence, not a Shanghai field KPI or a replacement for the long-horizon MPA
+benchmark.
 
 ## 系统画面 / Product surfaces
 
@@ -228,6 +257,7 @@ GET    /readyz
 GET    /api/openapi.json
 GET    /api/public-data/snapshot
 GET    /api/rl/datasets
+GET    /api/rl/contracts/terminal-operations
 GET    /api/rl/jobs
 POST   /api/rl/jobs
 GET    /api/rl/jobs/:jobId
@@ -253,6 +283,9 @@ pnpm lint          # ESLint + TypeScript规则 / rules
 pnpm test          # 数据隔离、更新、恢复与安全 / isolation, updates, recovery, safety
 pnpm benchmark:rl  # 3种子离线回放 / three-seed offline replay and evidence
 pnpm benchmark:rl:verify # 数据/代码哈希与全算法指标 / hashes and full-method metrics
+pnpm data:sync:infore-ais # 下载并校验公开AIS包 / fetch and verify public AIS package
+pnpm benchmark:public-data # 公开大数据五方法比较 / large-public-data five-method comparison
+pnpm benchmark:public-data:verify # 数据来源、许可与结果门禁 / provenance and result gate
 pnpm build         # 严格类型检查与生产构建 / strict types and production build
 pnpm release:check # 门禁、密钥、资产与工作流 / gates, secrets, assets, workflows
 pnpm audit --audit-level=moderate

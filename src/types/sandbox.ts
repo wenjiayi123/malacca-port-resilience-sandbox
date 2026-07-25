@@ -166,7 +166,7 @@ export interface PortNode {
   id: string;
   name: string;
   englishName: string;
-  country: 'Malaysia' | 'Indonesia' | 'Singapore';
+  country: 'Malaysia' | 'Indonesia' | 'Singapore' | 'China';
   role: PortRole;
   position: ScreenPosition;
   geo: GeoCoordinate;
@@ -409,6 +409,18 @@ export interface EventLogEntry {
 export interface MalaccaScenario {
   id: string;
   name: string;
+  profileId?: string;
+  regionLabel?: string;
+  regionEnglishName?: string;
+  mapBackgroundAsset?: string;
+  evidenceMode?: 'synthetic-scene-template' | 'public-evidence' | 'operator-live';
+  mapLabels?: Array<{
+    id: string;
+    flag: string;
+    label: string;
+    englishName: string;
+    position: ScreenPosition;
+  }>;
   currentTime: string;
   metrics: MetricCard[];
   overview: NetworkOverview;

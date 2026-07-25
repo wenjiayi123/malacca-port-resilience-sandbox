@@ -70,3 +70,18 @@ environment steps、parameter updates、executed episodes、visited states 和 e
 
 深度 RL 不是当前仓库已经训练好的能力。若新增 PPO/SAC/MAPPO，应实现相同 Job API，并真实
 返回优化器更新、检查点、训练/测试隔离和资源遥测；在接入前不要在 UI 中展示这些算法或 GPU 指标。
+
+## 真实码头投影
+
+配置 `PORT_OPERATIONAL_MANIFEST_PATH` 后，异步任务通过 `server/rlDatasetResolver.ts` 读取
+`terminal-operations.v2` 清单，校验全部必需字段和映射，再把以下现场信息投影到现有共享控制
+状态：
+
+- `effective_service_capacity`：由港口侧合并泊位、岸桥、堆场、闸口、航道、潮窗、引航和拖轮约束；
+- `wind_speed_ms`、`wave_height_m`、`visibility_km`、`safety_incidents`：进入气象与安全风险；
+- `arrivals`、`gross_tonnage`：进入需求、趋势和控制环境；
+- 其他运行字段保存在适配记录与指纹中，用于门禁、审计和后续直接奖励扩展。
+
+四种 RL 和 MPC 仍共享同一投影、时间切分、检查点与留出评估。适配器不会从堆场占用率等字段
+自行猜测港口因果系数；接入方应提供经业务审核的有效能力。接口
+`GET /api/rl/contracts/terminal-operations` 同时返回原始观察、算法投影观察、动作证据和阻断项。

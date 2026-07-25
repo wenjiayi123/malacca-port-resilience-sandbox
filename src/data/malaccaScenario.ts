@@ -3,6 +3,16 @@ import type { MalaccaScenario } from '../types/sandbox';
 export const malaccaScenario: MalaccaScenario = {
   id: 'malacca-baseline-resilience-demo',
   name: '马六甲海峡基准韧性推演场景',
+  profileId: 'malacca-strait',
+  regionLabel: '马六甲海峡',
+  regionEnglishName: 'Malacca Strait',
+  mapBackgroundAsset: '/assets/backgrounds/malacca-operations-grid.svg',
+  evidenceMode: 'synthetic-scene-template',
+  mapLabels: [
+    { id: 'malaysia', flag: '🇲🇾', label: '马来西亚', englishName: 'Malaysia', position: { x: '43%', y: '18%' } },
+    { id: 'indonesia', flag: '🇮🇩', label: '印度尼西亚', englishName: 'Indonesia', position: { x: '10%', y: '68%' } },
+    { id: 'singapore', flag: '🇸🇬', label: '新加坡', englishName: 'Singapore', position: { x: '78%', y: '72%' } },
+  ],
   currentTime: '2024-05-20 14:30:45',
   metrics: [
     {

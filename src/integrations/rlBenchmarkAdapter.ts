@@ -191,6 +191,36 @@ export interface RlPolicyEvaluationResponse {
   notes: string[];
 }
 
+export interface PortOperationalContractResponse {
+  protocolVersion: 'terminal-operations.v2';
+  algorithms: Array<{
+    id: RlBaselineAlgorithmId;
+    family: 'reinforcement-learning' | 'control-theory';
+    usesProjectedControlContract: boolean;
+  }>;
+  rawOperationalObservations: string[];
+  projectedAlgorithmObservations: string[];
+  projectedAlgorithmActions: Array<{ id: string; label: string; detail: string }>;
+  manifest: {
+    configured: boolean;
+    manifest: null | {
+      datasetId: string;
+      portId: string;
+      sceneProfileId: string;
+      evidenceLevel: string;
+    };
+    readiness: {
+      fieldCoveragePercent: number;
+      trainingReady: boolean;
+      missingTrainingFields: string[];
+      actions: Array<{ id: string; enabled: boolean; missingFields: string[] }>;
+      objectives: Array<{ id: string; enabled: boolean; missingFields: string[] }>;
+    };
+  };
+  projectionBoundary: string[];
+  executionBoundary: string;
+}
+
 const authorizedHeaders = (authToken: string, json = false) => ({
   ...(json ? { 'Content-Type': 'application/json' } : {}),
   ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
@@ -242,3 +272,8 @@ export const evaluateRlTrainingJob = async (
     body: JSON.stringify({ algorithmId, testCaseId }),
   },
 ));
+
+export const fetchPortOperationalContract = async (signal?: AbortSignal) =>
+  checkedJson<PortOperationalContractResponse>(await fetch('/api/rl/contracts/terminal-operations', {
+    signal,
+  }));

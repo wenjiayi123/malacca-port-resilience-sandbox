@@ -17,8 +17,21 @@ import {
   listRlTrainingJobs,
   RlTrainingCapacityError,
 } from './rlTrainingJobs.ts';
-import { loadPortTrainingDataset } from './portTrainingDataset.ts';
-import type { RlAlgorithmId, RlPolicyEvaluationResponse, RlTrainingRequest } from './rlTrainingEngine.ts';
+import { loadResolvedRlTrainingDataset } from './rlDatasetResolver.ts';
+import { loadPortOperationalManifest } from './portOperationalManifest.ts';
+import {
+  RL_ACTIONS,
+  RL_OBSERVATION_CONTRACT,
+  type RlAlgorithmId,
+  type RlPolicyEvaluationResponse,
+  type RlTrainingRequest,
+} from './rlTrainingEngine.ts';
+import { getRlObjectivePreset } from '../shared/rlObjectivePresets.ts';
+import {
+  PORT_OPERATIONAL_ACTIONS,
+  PORT_OPERATIONAL_FIELDS,
+  PORT_OPERATIONAL_OBSERVATIONS,
+} from '../shared/portOperationalContract.ts';
 import {
   buildXiaoyiRlAdvisorResponse,
   parseXiaoyiRlExternalDecision,
@@ -117,7 +130,7 @@ const enforceAuthorization = (request: IncomingMessage, pathname: string) => {
   if (!configuredToken || !pathname.startsWith('/api/')) return;
   const publicRoute = pathname === '/healthz' || pathname === '/readyz' ||
     pathname === '/api/public-data/health' || pathname === '/api/public-data/snapshot' ||
-    pathname === '/api/rl/health' ||
+    pathname === '/api/rl/health' || pathname === '/api/rl/contracts/terminal-operations' ||
     pathname === '/api/openapi.json';
   if (publicRoute) return;
   const authorization = request.headers.authorization ?? '';
@@ -167,6 +180,12 @@ const validateTrainingRequest = (value: unknown): RlTrainingRequest => {
     throw new HttpError(422, 'protocolVersion 必须是 rl-training-job.v1');
   }
   if (request.algorithmId && !ALGORITHMS.includes(request.algorithmId)) throw new HttpError(422, '不支持的 algorithmId');
+  if (request.objectiveId && !getRlObjectivePreset(request.objectiveId).supportedByAggregateEnvironment) {
+    throw new HttpError(
+      422,
+      `目标 ${request.objectiveId} 需要尚未进入控制状态的直接业务量；当前投影环境拒绝近似替代`,
+    );
+  }
   const parameters = request.trainingParameters ?? {};
   finiteNumber(parameters.maxEpisodes, 'trainingParameters.maxEpisodes', 120, 5_000);
   if (parameters.maxEpisodes !== undefined && !Number.isInteger(parameters.maxEpisodes)) throw new HttpError(422, 'maxEpisodes 必须是整数');
@@ -458,7 +477,7 @@ export const createPublicEvidenceMiddleware = () => async (
       return;
     }
     if (request.method === 'GET' && url.pathname === '/readyz') {
-      const dataset = await loadPortTrainingDataset();
+      const dataset = await loadResolvedRlTrainingDataset();
       await ensureRlTrainingJobsRestored();
       jsonResponse(response, { status: 'ready', datasetFingerprint: dataset.fingerprint, portId: dataset.portId, requestId });
       return;
@@ -493,6 +512,12 @@ export const createPublicEvidenceMiddleware = () => async (
             get: { summary: '下载带 SHA-256 完整性信息的检查点', security: [{ bearerAuth: [] }], responses: { '200': { description: '检查点 JSON' }, '404': { description: '检查点不存在' } } },
           },
           '/api/rl/inference': { post: { summary: '使用已完成检查点执行策略推理', security: [{ bearerAuth: [] }], responses: { '200': { description: '策略决策' }, '409': { description: '检查点未就绪' } } } },
+          '/api/rl/contracts/terminal-operations': {
+            get: {
+              summary: '读取真实码头数据、观测、动作、目标与门禁状态',
+              responses: { '200': { description: 'terminal-operations.v2 合同和当前清单就绪度' } },
+            },
+          },
           '/api/port-calls/validate': { post: { summary: '校验并规范化 port-call-event.v1 事件', security: [{ bearerAuth: [] }], responses: { '200': { description: '规范化事件' }, '422': { description: '事件合同校验失败' } } } },
         },
         components: {
@@ -532,7 +557,7 @@ export const createPublicEvidenceMiddleware = () => async (
       return;
     }
     if (request.method === 'GET' && url.pathname === '/api/rl/datasets') {
-      const dataset = await loadPortTrainingDataset();
+      const dataset = await loadResolvedRlTrainingDataset();
       jsonResponse(response, {
         protocolVersion: 'port-training-dataset.v1',
         datasets: [{
@@ -550,6 +575,32 @@ export const createPublicEvidenceMiddleware = () => async (
           testRecordCount: dataset.testRecords.length,
           split: dataset.split,
         }],
+      });
+      return;
+    }
+    if (request.method === 'GET' && url.pathname === '/api/rl/contracts/terminal-operations') {
+      const status = await loadPortOperationalManifest();
+      jsonResponse(response, {
+        protocolVersion: 'terminal-operations.v2',
+        algorithms: ALGORITHMS.map((id) => ({
+          id,
+          family: id === 'mpc' ? 'control-theory' : 'reinforcement-learning',
+          usesProjectedControlContract: true,
+        })),
+        fields: PORT_OPERATIONAL_FIELDS,
+        rawOperationalObservations: PORT_OPERATIONAL_OBSERVATIONS,
+        projectedAlgorithmObservations: RL_OBSERVATION_CONTRACT,
+        projectedAlgorithmActions: RL_ACTIONS.map(({ id, label, detail }) => ({ id, label, detail })),
+        operationalActionEvidence: PORT_OPERATIONAL_ACTIONS,
+        manifest: status,
+        projectionBoundary: [
+          'terminal-operations.v2 fields are retained in the adapted dataset fingerprint and readiness audit',
+          'berth, yard, crane, gate, channel, tide, pilot and tug constraints must be consolidated by the operator into effective_service_capacity',
+          'the current five methods consume the six-dimensional audited aggregate control state; objectives requiring direct fairness, energy-cost or multi-port terms remain blocked',
+        ],
+        executionBoundary: status.readiness.trainingReady
+          ? 'operator mapping ready for the shared aggregate control projection; production actions still require human approval and site authorization'
+          : 'fail-closed; aggregate-v1 remains available for offline research only',
       });
       return;
     }

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-label="Abstract Shanghai port operations grid">
+  <defs>
+    <linearGradient id="sea" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#06192c"/>
+      <stop offset="1" stop-color="#032c42"/>
+    </linearGradient>
+    <pattern id="grid" width="56" height="56" patternUnits="userSpaceOnUse">
+      <path d="M56 0H0V56" fill="none" stroke="#2bb8db" stroke-opacity=".12"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="900" fill="url(#sea)"/>
+  <rect width="1600" height="900" fill="url(#grid)"/>
+  <path d="M0 70C210 130 315 88 468 170S735 236 870 328 1094 475 1250 495 1470 455 1600 520V0H0Z" fill="#124b55" fill-opacity=".48"/>
+  <path d="M0 594c235-60 393-43 550 21s330 41 471 2 361-41 579 72v211H0Z" fill="#0d3e49" fill-opacity=".55"/>
+  <path d="M90 260c210 14 357 54 530 129s320 116 470 135 267 90 420 192" fill="none" stroke="#53ddf5" stroke-opacity=".35" stroke-width="14"/>
+  <path d="M1100 650c80 26 152 54 235 118" fill="none" stroke="#50e7c5" stroke-opacity=".42" stroke-width="8" stroke-dasharray="18 14"/>
+  <g fill="#9fefff" fill-opacity=".2">
+    <circle cx="1120" cy="648" r="28"/>
+    <circle cx="1210" cy="704" r="18"/>
+    <circle cx="1300" cy="760" r="14"/>
+  </g>
+</svg>

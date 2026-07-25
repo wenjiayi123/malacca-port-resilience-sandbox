@@ -13,7 +13,8 @@ import {
   type TrainedPolicy,
   type TrainingProgress,
 } from './rlTrainingEngine.ts';
-import { loadPortTrainingDataset, type PortTrainingDataset } from './portTrainingDataset.ts';
+import type { PortTrainingDataset } from './portTrainingDataset.ts';
+import { loadResolvedRlTrainingDataset } from './rlDatasetResolver.ts';
 
 export type RlTrainingJobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
 
@@ -281,7 +282,7 @@ export const ensureRlTrainingJobsRestored = async () => {
   if (!restorePromise) {
     restorePromise = (async () => {
       await mkdir(ARTIFACT_DIR, { recursive: true });
-      const dataset = await loadPortTrainingDataset();
+      const dataset = await loadResolvedRlTrainingDataset();
       const files = (await readdir(ARTIFACT_DIR)).filter((file) => /^rl-[a-zA-Z0-9-]{8,80}\.json$/.test(file));
       for (const file of files) {
         try {
@@ -309,7 +310,7 @@ const runJob = async (job: TrainingJobInternal) => {
   job.message = '正在校验训练集字段、时间顺序与训练/验证/最终测试边界';
   appendLog(job, job.message);
   try {
-    const dataset = await loadPortTrainingDataset();
+    const dataset = await loadResolvedRlTrainingDataset();
     job.datasetInternal = dataset;
     job.dataset = {
       id: dataset.id,
