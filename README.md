@@ -41,6 +41,15 @@
   </tr>
 </table>
 
+> **业务价值 / Business value：** 面向港航拥堵治理与韧性决策，项目以 MPA
+> `Vessel Arrivals (>75 GT) and Shipping Tonnage` 与 Open-Meteo ERA5 构建
+> **31 年、377 个月、统计口径累计 4,064,858 艘次**的长期需求证据，以 Zenodo/INFORE
+> `10.5281/zenodo.3754481` 完成 **371,585 条原始 AIS 消息、1,440 个分钟窗口**的高频接入验证，
+> 并对四种 RL 与三步 MPC 执行 **21,600 episodes** 的时序隔离评测。封存测试会阻止不稳定策略
+> 被包装成收益；保守压力诊断只报告延误绝对减少 **14.0 分钟**、拥堵绝对减少
+> **0.967 个百分点**及 **99.715% 吞吐保持**。`terminal-operations.v2` 进一步固化
+> **37 项港口运行字段**与失败关闭门禁，为授权 TOS/VTS/AIS 数据替换接入真实港口提供边界。
+
 <p align="center">
   <sub><strong>证据边界 / Evidence scope:</strong> 公开聚合数据驱动的离线模型回放；不是“韧性准确率”、VTS/TOS实测KPI或自动生产下发证明。</sub>
 </p>
