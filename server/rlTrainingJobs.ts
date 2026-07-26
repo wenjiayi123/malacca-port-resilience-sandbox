@@ -15,6 +15,7 @@ import {
 } from './rlTrainingEngine.ts';
 import type { PortTrainingDataset } from './portTrainingDataset.ts';
 import { loadResolvedRlTrainingDataset } from './rlDatasetResolver.ts';
+import { RL_OPERATIONAL_CALIBRATION } from '../shared/rlOperationalCalibration.ts';
 
 export type RlTrainingJobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
 
@@ -73,6 +74,7 @@ interface TrainingJobInternal extends RlTrainingJobSnapshot {
 
 const jobs = new Map<string, TrainingJobInternal>();
 const pendingJobs: TrainingJobInternal[] = [];
+const CHECKPOINT_ENGINE_VERSION = 'dataset-calibrated-port-control.v4';
 const ARTIFACT_DIR = path.resolve(process.env.RL_ARTIFACT_DIR || '.runtime/rl-jobs');
 const boundedEnvironmentInteger = (value: string | undefined, fallback: number, minimum: number, maximum: number) => {
   const parsed = Number(value);
@@ -135,7 +137,8 @@ const checkpointCore = (job: TrainingJobInternal) => {
       : { algorithmId, ...policy });
   return {
     protocolVersion: 'rl-port-policy-checkpoint.v1',
-    engineVersion: 'dataset-calibrated-port-control.v3',
+    engineVersion: CHECKPOINT_ENGINE_VERSION,
+    calibrationId: RL_OPERATIONAL_CALIBRATION.id,
     jobId: job.jobId,
     createdAt: job.completedAt ?? new Date().toISOString(),
     request: { ...job.request, trainingParameters: job.request.trainingParameters },
@@ -206,7 +209,8 @@ const hydratePolicy = (stored: StoredPolicy): TrainedPolicy => {
 
 const hydrateCheckpoint = (value: unknown, dataset: PortTrainingDataset): TrainingJobInternal => {
   if (!isRecord(value) || value.protocolVersion !== 'rl-port-policy-checkpoint.v1' ||
-    value.engineVersion !== 'dataset-calibrated-port-control.v3' ||
+    value.engineVersion !== CHECKPOINT_ENGINE_VERSION ||
+    value.calibrationId !== RL_OPERATIONAL_CALIBRATION.id ||
     typeof value.jobId !== 'string' || !validateJobId(value.jobId) ||
     !Array.isArray(value.policies) || !isRecord(value.integrity) ||
     value.integrity.algorithm !== 'sha256' || typeof value.integrity.digest !== 'string') {

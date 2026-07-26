@@ -1,0 +1,2286 @@
+{
+  "schemaVersion": "resume-rl-benchmark.v2",
+  "generatedAt": "2026-07-26T02:53:06.161Z",
+  "evidenceLabel": "OFFLINE_MODEL_REPLAY_NOT_FIELD_KPI",
+  "claimBoundary": [
+    "This report is a real execution of the repository training code, not a fabricated result.",
+    "The input is monthly aggregate public data; capacity is a train-only P90 service-envelope proxy.",
+    "ERA5 monthly P95 daily-maximum wind coverage is reported separately from complete wind/wave/visibility coverage.",
+    "Wave, visibility and safety fields are absent in the default dataset; weather-stress tests add documented synthetic disturbances.",
+    "Action effects are conservative declared bounds, not coefficients calibrated from measured intervention outcomes.",
+    "Relative reductions are not resume-eligible when baseline burden is too small or the small denominator amplifies the percentage.",
+    "Deterministic test safety is the expected modeled violation rate, not a claim of observed zero incidents.",
+    "Metrics are model-replay comparisons and are not field accuracy, production savings, or certified resilience."
+  ],
+  "modelContract": {
+    "calibrationId": "public-aggregate-conservative-v2",
+    "capacityProxy": {
+      "quantile": 0.9,
+      "multiplier": 1,
+      "method": "train-p90-service-envelope"
+    },
+    "stressTest": {
+      "arrivalMultiplier": 1.05,
+      "capacityMultiplier": 0.98,
+      "label": "5% arrival surge with 2% temporary capacity loss"
+    },
+    "observations": [
+      "queue_to_capacity",
+      "delay_hours",
+      "carbon_index",
+      "deferred_backlog_to_capacity",
+      "demand_trend",
+      "weather_risk"
+    ],
+    "actions": [
+      {
+        "id": "hold-plan",
+        "deferredDemandFraction": 0,
+        "divertedDemandFraction": 0,
+        "capacityMultiplier": 1,
+        "carbonMultiplier": 1,
+        "safetyProbabilityModifier": 0,
+        "evidenceLevel": "bounded_scenario_assumption"
+      },
+      {
+        "id": "eco-speed",
+        "deferredDemandFraction": 0.005,
+        "divertedDemandFraction": 0,
+        "capacityMultiplier": 0.997,
+        "carbonMultiplier": 0.98,
+        "safetyProbabilityModifier": -0.002,
+        "evidenceLevel": "bounded_scenario_assumption"
+      },
+      {
+        "id": "arrival-window",
+        "deferredDemandFraction": 0.02,
+        "divertedDemandFraction": 0,
+        "capacityMultiplier": 1,
+        "carbonMultiplier": 0.995,
+        "safetyProbabilityModifier": -0.002,
+        "evidenceLevel": "bounded_scenario_assumption"
+      },
+      {
+        "id": "port-diversion",
+        "deferredDemandFraction": 0,
+        "divertedDemandFraction": 0.01,
+        "capacityMultiplier": 0.995,
+        "carbonMultiplier": 1.01,
+        "safetyProbabilityModifier": 0.002,
+        "evidenceLevel": "bounded_scenario_assumption"
+      },
+      {
+        "id": "capacity-control",
+        "deferredDemandFraction": 0.005,
+        "divertedDemandFraction": 0,
+        "capacityMultiplier": 1.02,
+        "carbonMultiplier": 1.005,
+        "safetyProbabilityModifier": 0.003,
+        "evidenceLevel": "bounded_scenario_assumption"
+      }
+    ],
+    "evaluationSafetyMetric": "mean expected violation probability per time step"
+  },
+  "dataset": {
+    "id": "mpa-vessel-arrivals-monthly",
+    "label": "MPA 月度到港船舶 + ERA5 风场公开数据",
+    "portId": "SGSIN-AGGREGATE",
+    "source": "Maritime and Port Authority of Singapore / data.gov.sg + Open-Meteo ERA5",
+    "sourceUrl": "https://data.gov.sg/collections/394/view ; https://open-meteo.com/en/docs/historical-weather-api",
+    "license": "Singapore Open Data Licence",
+    "fingerprint": "1135cd3ceac593a7",
+    "samplingInterval": "monthly",
+    "evidenceLevel": "public-aggregate-proxy",
+    "quality": {
+      "rawRecordCount": 377,
+      "rejectedRecordCount": 0,
+      "availablePortIds": [
+        "SGSIN-AGGREGATE"
+      ],
+      "duplicateTimestampCount": 0,
+      "capacityCoveragePercent": 0,
+      "windCoveragePercent": 100,
+      "waveCoveragePercent": 0,
+      "visibilityCoveragePercent": 0,
+      "weatherCoveragePercent": 0,
+      "safetyCoveragePercent": 0,
+      "capacityMode": "empirical-proxy",
+      "capacityProxyCalibratedOn": "train-only",
+      "capacityProxyMethod": "train-p90-service-envelope",
+      "capacityProxyValue": 12055,
+      "operationalClaimAllowed": false,
+      "validationArrivalDriftPercent": -6.05,
+      "testArrivalDriftPercent": -10.26
+    },
+    "recordCount": 377,
+    "trainRecordCount": 263,
+    "validationRecordCount": 57,
+    "testRecordCount": 57,
+    "trainRange": [
+      "1995-01",
+      "2016-11"
+    ],
+    "validationRange": [
+      "2016-12",
+      "2021-08"
+    ],
+    "validationTuningRange": [
+      "2016-12",
+      "2019-09"
+    ],
+    "validationSelectionRange": [
+      "2019-10",
+      "2021-08"
+    ],
+    "testRange": [
+      "2021-09",
+      "2026-05"
+    ]
+  },
+  "datasetScale": {
+    "monthlyRecords": 377,
+    "cumulativeVesselArrivals": 4064858,
+    "range": [
+      "1995-01",
+      "2026-05"
+    ]
+  },
+  "sourceFingerprint": {
+    "algorithm": "sha256",
+    "digest": "a69c4100ada0fb5715ae52de0e0de709251345722168b3120f56777424ecd9bd",
+    "files": {
+      "server/rlTrainingEngine.ts": "88ffb3621fef917f7d75a52884d7f9df3d7ebc36317ccdb9bd0ac07b75f6cac0",
+      "server/portTrainingDataset.ts": "9c2df5fba9be0f76117b01a1c736ad30196a2046653b0369e70826402b662757",
+      "shared/rlObjectivePresets.ts": "a29b942a4e5b44c8a26bf69e684567d837dba825b008c3380ffa9b07fbda2dc9",
+      "shared/rlOperationalCalibration.ts": "b6963e043d268f1155ebd897fbfae3cf7e1b2a1fd31f5a1c359ec725cffb0798",
+      "scripts/rl/runResumeBenchmark.ts": "ddec046d31ada413111d40e244188d4139299ef5b802b474fb60f0f5650639d8",
+      "package.json": "6fc15c8143af1638ba3f6a7a3b124e6fb898946d270f7063e79275ca42cccf31",
+      "pnpm-lock.yaml": "14809379f8d98cb6ef084952ddfb761f5f964abfcf1726e11ada2a1e14906e08"
+    }
+  },
+  "runtime": {
+    "node": "v24.14.0",
+    "platform": "darwin",
+    "architecture": "x64"
+  },
+  "protocol": {
+    "objectiveId": "balanced-resilience",
+    "objectiveWeights": {
+      "delay": 0.2,
+      "congestion": 0.18,
+      "carbon": 0.14,
+      "safety": 0.16,
+      "resilience": 0.14,
+      "throughput": 0.18
+    },
+    "algorithms": [
+      {
+        "id": "q-learning",
+        "family": "reinforcement-learning"
+      },
+      {
+        "id": "sarsa",
+        "family": "reinforcement-learning"
+      },
+      {
+        "id": "expected-sarsa",
+        "family": "reinforcement-learning"
+      },
+      {
+        "id": "dyna-q",
+        "family": "reinforcement-learning"
+      },
+      {
+        "id": "mpc",
+        "family": "control-theory"
+      }
+    ],
+    "episodesPerCandidate": 600,
+    "tuningTrials": 3,
+    "seeds": [
+      240520,
+      240521,
+      240522
+    ],
+    "algorithmSelection": "mean validation-selection reward across seeds; final test never used for selection",
+    "selectedRlAlgorithmId": "expected-sarsa"
+  },
+  "validationByAlgorithm": {
+    "q-learning": {
+      "family": "reinforcement-learning",
+      "meanReward": {
+        "mean": 3.384,
+        "std": 0.017,
+        "min": 3.361,
+        "max": 3.397,
+        "samples": 3
+      },
+      "selectedLearningRate": [
+        0.1536,
+        0.12,
+        0.0864
+      ],
+      "selectedDiscountGamma": [
+        0.95,
+        0.97,
+        0.985
+      ],
+      "selectedScore": {
+        "mean": 3.203,
+        "std": 0.001,
+        "min": 3.201,
+        "max": 3.205,
+        "samples": 3
+      },
+      "algorithmSelectionScore": {
+        "mean": 3.358,
+        "std": 0.017,
+        "min": 3.334,
+        "max": 3.371,
+        "samples": 3
+      }
+    },
+    "sarsa": {
+      "family": "reinforcement-learning",
+      "meanReward": {
+        "mean": 3.367,
+        "std": 0.008,
+        "min": 3.359,
+        "max": 3.378,
+        "samples": 3
+      },
+      "selectedLearningRate": [
+        0.12,
+        0.1536,
+        0.1536
+      ],
+      "selectedDiscountGamma": [
+        0.97,
+        0.95,
+        0.95
+      ],
+      "selectedScore": {
+        "mean": 3.178,
+        "std": 0.035,
+        "min": 3.128,
+        "max": 3.204,
+        "samples": 3
+      },
+      "algorithmSelectionScore": {
+        "mean": 3.342,
+        "std": 0.012,
+        "min": 3.332,
+        "max": 3.359,
+        "samples": 3
+      }
+    },
+    "expected-sarsa": {
+      "family": "reinforcement-learning",
+      "meanReward": {
+        "mean": 3.387,
+        "std": 0.017,
+        "min": 3.363,
+        "max": 3.399,
+        "samples": 3
+      },
+      "selectedLearningRate": [
+        0.1536,
+        0.12,
+        0.0864
+      ],
+      "selectedDiscountGamma": [
+        0.95,
+        0.97,
+        0.985
+      ],
+      "selectedScore": {
+        "mean": 3.176,
+        "std": 0.051,
+        "min": 3.104,
+        "max": 3.219,
+        "samples": 3
+      },
+      "algorithmSelectionScore": {
+        "mean": 3.363,
+        "std": 0.019,
+        "min": 3.336,
+        "max": 3.38,
+        "samples": 3
+      }
+    },
+    "dyna-q": {
+      "family": "reinforcement-learning",
+      "meanReward": {
+        "mean": 3.373,
+        "std": 0.017,
+        "min": 3.358,
+        "max": 3.397,
+        "samples": 3
+      },
+      "selectedLearningRate": [
+        0.0864,
+        0.12,
+        0.1536
+      ],
+      "selectedDiscountGamma": [
+        0.985,
+        0.97,
+        0.95
+      ],
+      "selectedScore": {
+        "mean": 3.204,
+        "std": 0.001,
+        "min": 3.203,
+        "max": 3.206,
+        "samples": 3
+      },
+      "algorithmSelectionScore": {
+        "mean": 3.346,
+        "std": 0.018,
+        "min": 3.331,
+        "max": 3.371,
+        "samples": 3
+      }
+    },
+    "mpc": {
+      "family": "control-theory",
+      "meanReward": {
+        "mean": 3.437,
+        "std": 0,
+        "min": 3.437,
+        "max": 3.437,
+        "samples": 3
+      },
+      "selectedLearningRate": [
+        null,
+        null,
+        null
+      ],
+      "selectedDiscountGamma": [
+        null,
+        null,
+        null
+      ],
+      "selectedScore": {
+        "mean": 3.283,
+        "std": 0,
+        "min": 3.283,
+        "max": 3.283,
+        "samples": 3
+      },
+      "algorithmSelectionScore": {
+        "mean": 3.419,
+        "std": 0,
+        "min": 3.419,
+        "max": 3.419,
+        "samples": 3
+      }
+    }
+  },
+  "heldOutTest": {
+    "q-learning": {
+      "closed-loop-replay": {
+        "delayReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "absoluteDelayReductionHours": {
+          "mean": -0.062,
+          "std": 0.025,
+          "min": -0.097,
+          "max": -0.045,
+          "samples": 3
+        },
+        "absoluteCongestionReductionPoints": {
+          "mean": -0.266,
+          "std": 0.103,
+          "min": -0.411,
+          "max": -0.193,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": -0.223,
+          "std": 0.076,
+          "min": -0.33,
+          "max": -0.16,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": -0.153,
+          "std": 0.061,
+          "min": -0.24,
+          "max": -0.11,
+          "samples": 3
+        },
+        "baselineMeanDelayHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "modeledMeanDelayHours": {
+          "mean": 0.062,
+          "std": 0.025,
+          "min": 0.045,
+          "max": 0.097,
+          "samples": 3
+        },
+        "baselineMeanCongestionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "modeledMeanCongestionPercent": {
+          "mean": 0.266,
+          "std": 0.103,
+          "min": 0.193,
+          "max": 0.411,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 99.684,
+          "std": 0.13,
+          "min": 99.5,
+          "max": 99.776,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 99.678,
+          "std": 0.126,
+          "min": 99.5,
+          "max": 99.776,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 0.11,
+          "std": 0,
+          "min": 0.11,
+          "max": 0.11,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 58.6,
+          "std": 0,
+          "min": 58.6,
+          "max": 58.6,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 3.895,
+          "std": 0.075,
+          "min": 3.841,
+          "max": 4.001,
+          "samples": 3
+        },
+        "interventionRatePercent": {
+          "mean": 63.158,
+          "std": 26.061,
+          "min": 43.86,
+          "max": 100,
+          "samples": 3
+        }
+      },
+      "peak-congestion-stress": {
+        "delayReductionPercent": {
+          "mean": 33.743,
+          "std": 6.128,
+          "min": 29.41,
+          "max": 42.41,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 32.857,
+          "std": 5.949,
+          "min": 28.65,
+          "max": 41.27,
+          "samples": 3
+        },
+        "absoluteDelayReductionHours": {
+          "mean": 0.116,
+          "std": 0.021,
+          "min": 0.101,
+          "max": 0.146,
+          "samples": 3
+        },
+        "absoluteCongestionReductionPoints": {
+          "mean": 0.471,
+          "std": 0.085,
+          "min": 0.411,
+          "max": 0.592,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": -0.227,
+          "std": 0.073,
+          "min": -0.33,
+          "max": -0.17,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": 0.193,
+          "std": 0.033,
+          "min": 0.17,
+          "max": 0.24,
+          "samples": 3
+        },
+        "baselineMeanDelayHours": {
+          "mean": 0.344,
+          "std": 0,
+          "min": 0.344,
+          "max": 0.344,
+          "samples": 3
+        },
+        "modeledMeanDelayHours": {
+          "mean": 0.228,
+          "std": 0.021,
+          "min": 0.198,
+          "max": 0.243,
+          "samples": 3
+        },
+        "baselineMeanCongestionPercent": {
+          "mean": 1.435,
+          "std": 0,
+          "min": 1.435,
+          "max": 1.435,
+          "samples": 3
+        },
+        "modeledMeanCongestionPercent": {
+          "mean": 0.964,
+          "std": 0.085,
+          "min": 0.843,
+          "max": 1.024,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 99.063,
+          "std": 0.048,
+          "min": 99.029,
+          "max": 99.13,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 99.472,
+          "std": 0.107,
+          "min": 99.321,
+          "max": 99.556,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 1.63,
+          "std": 0.453,
+          "min": 0.99,
+          "max": 1.95,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 61.6,
+          "std": 0,
+          "min": 61.6,
+          "max": 61.6,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 3.895,
+          "std": 0.075,
+          "min": 3.841,
+          "max": 4.001,
+          "samples": 3
+        },
+        "interventionRatePercent": {
+          "mean": 63.158,
+          "std": 26.061,
+          "min": 43.86,
+          "max": 100,
+          "samples": 3
+        }
+      },
+      "weather-disturbance-generalization": {
+        "delayReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "absoluteDelayReductionHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "absoluteCongestionReductionPoints": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "baselineMeanDelayHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "modeledMeanDelayHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "baselineMeanCongestionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "modeledMeanCongestionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 100,
+          "std": 0,
+          "min": 100,
+          "max": 100,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 100,
+          "std": 0,
+          "min": 100,
+          "max": 100,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 7.58,
+          "std": 0,
+          "min": 7.58,
+          "max": 7.58,
+          "samples": 3
+        },
+        "interventionRatePercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        }
+      }
+    },
+    "sarsa": {
+      "closed-loop-replay": {
+        "delayReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "absoluteDelayReductionHours": {
+          "mean": -0.084,
+          "std": 0.022,
+          "min": -0.101,
+          "max": -0.053,
+          "samples": 3
+        },
+        "absoluteCongestionReductionPoints": {
+          "mean": -0.354,
+          "std": 0.093,
+          "min": -0.428,
+          "max": -0.223,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": -0.397,
+          "std": 0.081,
+          "min": -0.51,
+          "max": -0.33,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": -0.213,
+          "std": 0.045,
+          "min": -0.25,
+          "max": -0.15,
+          "samples": 3
+        },
+        "baselineMeanDelayHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "modeledMeanDelayHours": {
+          "mean": 0.084,
+          "std": 0.022,
+          "min": 0.053,
+          "max": 0.101,
+          "samples": 3
+        },
+        "baselineMeanCongestionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "modeledMeanCongestionPercent": {
+          "mean": 0.354,
+          "std": 0.093,
+          "min": 0.223,
+          "max": 0.428,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 99.564,
+          "std": 0.11,
+          "min": 99.474,
+          "max": 99.719,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 99.418,
+          "std": 0.098,
+          "min": 99.281,
+          "max": 99.5,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 0.113,
+          "std": 0.005,
+          "min": 0.11,
+          "max": 0.12,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 39.067,
+          "std": 27.624,
+          "min": 0,
+          "max": 58.6,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 3.986,
+          "std": 0.021,
+          "min": 3.957,
+          "max": 4.001,
+          "samples": 3
+        },
+        "interventionRatePercent": {
+          "mean": 100,
+          "std": 0,
+          "min": 100,
+          "max": 100,
+          "samples": 3
+        }
+      },
+      "peak-congestion-stress": {
+        "delayReductionPercent": {
+          "mean": 39.807,
+          "std": 2.856,
+          "min": 35.83,
+          "max": 42.41,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 38.843,
+          "std": 2.605,
+          "min": 35.23,
+          "max": 41.27,
+          "samples": 3
+        },
+        "absoluteDelayReductionHours": {
+          "mean": 0.137,
+          "std": 0.01,
+          "min": 0.123,
+          "max": 0.146,
+          "samples": 3
+        },
+        "absoluteCongestionReductionPoints": {
+          "mean": 0.558,
+          "std": 0.037,
+          "min": 0.506,
+          "max": 0.592,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": -0.4,
+          "std": 0.085,
+          "min": -0.52,
+          "max": -0.33,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": 0.22,
+          "std": 0.022,
+          "min": 0.19,
+          "max": 0.24,
+          "samples": 3
+        },
+        "baselineMeanDelayHours": {
+          "mean": 0.344,
+          "std": 0,
+          "min": 0.344,
+          "max": 0.344,
+          "samples": 3
+        },
+        "modeledMeanDelayHours": {
+          "mean": 0.207,
+          "std": 0.01,
+          "min": 0.198,
+          "max": 0.221,
+          "samples": 3
+        },
+        "baselineMeanCongestionPercent": {
+          "mean": 1.435,
+          "std": 0,
+          "min": 1.435,
+          "max": 1.435,
+          "samples": 3
+        },
+        "modeledMeanCongestionPercent": {
+          "mean": 0.877,
+          "std": 0.037,
+          "min": 0.843,
+          "max": 0.929,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 99.106,
+          "std": 0.019,
+          "min": 99.083,
+          "max": 99.13,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 99.199,
+          "std": 0.154,
+          "min": 98.982,
+          "max": 99.321,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 1.153,
+          "std": 0.231,
+          "min": 0.99,
+          "max": 1.48,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 41.067,
+          "std": 29.039,
+          "min": 0,
+          "max": 61.6,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 3.986,
+          "std": 0.021,
+          "min": 3.957,
+          "max": 4.001,
+          "samples": 3
+        },
+        "interventionRatePercent": {
+          "mean": 100,
+          "std": 0,
+          "min": 100,
+          "max": 100,
+          "samples": 3
+        }
+      },
+      "weather-disturbance-generalization": {
+        "delayReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "absoluteDelayReductionHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "absoluteCongestionReductionPoints": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "baselineMeanDelayHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "modeledMeanDelayHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "baselineMeanCongestionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "modeledMeanCongestionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 100,
+          "std": 0,
+          "min": 100,
+          "max": 100,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 100,
+          "std": 0,
+          "min": 100,
+          "max": 100,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 7.58,
+          "std": 0,
+          "min": 7.58,
+          "max": 7.58,
+          "samples": 3
+        },
+        "interventionRatePercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        }
+      }
+    },
+    "expected-sarsa": {
+      "closed-loop-replay": {
+        "delayReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "absoluteDelayReductionHours": {
+          "mean": -0.067,
+          "std": 0.024,
+          "min": -0.101,
+          "max": -0.046,
+          "samples": 3
+        },
+        "absoluteCongestionReductionPoints": {
+          "mean": -0.283,
+          "std": 0.103,
+          "min": -0.428,
+          "max": -0.199,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": -0.227,
+          "std": 0.087,
+          "min": -0.35,
+          "max": -0.16,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": -0.163,
+          "std": 0.062,
+          "min": -0.25,
+          "max": -0.11,
+          "samples": 3
+        },
+        "baselineMeanDelayHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "modeledMeanDelayHours": {
+          "mean": 0.067,
+          "std": 0.024,
+          "min": 0.046,
+          "max": 0.101,
+          "samples": 3
+        },
+        "baselineMeanCongestionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "modeledMeanCongestionPercent": {
+          "mean": 0.283,
+          "std": 0.103,
+          "min": 0.199,
+          "max": 0.428,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 99.653,
+          "std": 0.128,
+          "min": 99.474,
+          "max": 99.767,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 99.653,
+          "std": 0.128,
+          "min": 99.474,
+          "max": 99.767,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 0.113,
+          "std": 0.005,
+          "min": 0.11,
+          "max": 0.12,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 39.067,
+          "std": 27.624,
+          "min": 0,
+          "max": 58.6,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 3.905,
+          "std": 0.068,
+          "min": 3.846,
+          "max": 4.001,
+          "samples": 3
+        },
+        "interventionRatePercent": {
+          "mean": 67.251,
+          "std": 23.552,
+          "min": 45.614,
+          "max": 100,
+          "samples": 3
+        }
+      },
+      "peak-congestion-stress": {
+        "delayReductionPercent": {
+          "mean": 32.583,
+          "std": 6.107,
+          "min": 27.57,
+          "max": 41.18,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 31.687,
+          "std": 5.928,
+          "min": 26.8,
+          "max": 40.03,
+          "samples": 3
+        },
+        "absoluteDelayReductionHours": {
+          "mean": 0.112,
+          "std": 0.021,
+          "min": 0.095,
+          "max": 0.142,
+          "samples": 3
+        },
+        "absoluteCongestionReductionPoints": {
+          "mean": 0.455,
+          "std": 0.085,
+          "min": 0.385,
+          "max": 0.575,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": -0.23,
+          "std": 0.085,
+          "min": -0.35,
+          "max": -0.17,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": 0.183,
+          "std": 0.034,
+          "min": 0.15,
+          "max": 0.23,
+          "samples": 3
+        },
+        "baselineMeanDelayHours": {
+          "mean": 0.344,
+          "std": 0,
+          "min": 0.344,
+          "max": 0.344,
+          "samples": 3
+        },
+        "modeledMeanDelayHours": {
+          "mean": 0.232,
+          "std": 0.021,
+          "min": 0.202,
+          "max": 0.249,
+          "samples": 3
+        },
+        "baselineMeanCongestionPercent": {
+          "mean": 1.435,
+          "std": 0,
+          "min": 1.435,
+          "max": 1.435,
+          "samples": 3
+        },
+        "modeledMeanCongestionPercent": {
+          "mean": 0.98,
+          "std": 0.085,
+          "min": 0.86,
+          "max": 1.05,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 99.032,
+          "std": 0.054,
+          "min": 98.973,
+          "max": 99.104,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 99.405,
+          "std": 0.105,
+          "min": 99.295,
+          "max": 99.547,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 1.603,
+          "std": 0.435,
+          "min": 0.99,
+          "max": 1.95,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 41.067,
+          "std": 29.039,
+          "min": 0,
+          "max": 61.6,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 3.905,
+          "std": 0.068,
+          "min": 3.846,
+          "max": 4.001,
+          "samples": 3
+        },
+        "interventionRatePercent": {
+          "mean": 67.251,
+          "std": 23.552,
+          "min": 45.614,
+          "max": 100,
+          "samples": 3
+        }
+      },
+      "weather-disturbance-generalization": {
+        "delayReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "absoluteDelayReductionHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "absoluteCongestionReductionPoints": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "baselineMeanDelayHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "modeledMeanDelayHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "baselineMeanCongestionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "modeledMeanCongestionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 100,
+          "std": 0,
+          "min": 100,
+          "max": 100,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 100,
+          "std": 0,
+          "min": 100,
+          "max": 100,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 7.58,
+          "std": 0,
+          "min": 7.58,
+          "max": 7.58,
+          "samples": 3
+        },
+        "interventionRatePercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        }
+      }
+    },
+    "dyna-q": {
+      "closed-loop-replay": {
+        "delayReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "absoluteDelayReductionHours": {
+          "mean": -0.078,
+          "std": 0.024,
+          "min": -0.095,
+          "max": -0.045,
+          "samples": 3
+        },
+        "absoluteCongestionReductionPoints": {
+          "mean": -0.335,
+          "std": 0.1,
+          "min": -0.406,
+          "max": -0.193,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": -0.307,
+          "std": 0.09,
+          "min": -0.38,
+          "max": -0.18,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": -0.197,
+          "std": 0.061,
+          "min": -0.24,
+          "max": -0.11,
+          "samples": 3
+        },
+        "baselineMeanDelayHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "modeledMeanDelayHours": {
+          "mean": 0.078,
+          "std": 0.024,
+          "min": 0.045,
+          "max": 0.095,
+          "samples": 3
+        },
+        "baselineMeanCongestionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "modeledMeanCongestionPercent": {
+          "mean": 0.335,
+          "std": 0.1,
+          "min": 0.193,
+          "max": 0.406,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 99.598,
+          "std": 0.126,
+          "min": 99.509,
+          "max": 99.776,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 99.586,
+          "std": 0.122,
+          "min": 99.491,
+          "max": 99.758,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 0.11,
+          "std": 0,
+          "min": 0.11,
+          "max": 0.11,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 58.6,
+          "std": 0,
+          "min": 58.6,
+          "max": 58.6,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 3.952,
+          "std": 0.076,
+          "min": 3.844,
+          "max": 4.008,
+          "samples": 3
+        },
+        "interventionRatePercent": {
+          "mean": 81.287,
+          "std": 25.234,
+          "min": 45.614,
+          "max": 100,
+          "samples": 3
+        }
+      },
+      "peak-congestion-stress": {
+        "delayReductionPercent": {
+          "mean": 38.343,
+          "std": 6.317,
+          "min": 29.41,
+          "max": 42.81,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 37.343,
+          "std": 6.147,
+          "min": 28.65,
+          "max": 41.69,
+          "samples": 3
+        },
+        "absoluteDelayReductionHours": {
+          "mean": 0.132,
+          "std": 0.022,
+          "min": 0.101,
+          "max": 0.147,
+          "samples": 3
+        },
+        "absoluteCongestionReductionPoints": {
+          "mean": 0.536,
+          "std": 0.088,
+          "min": 0.411,
+          "max": 0.598,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": -0.31,
+          "std": 0.092,
+          "min": -0.38,
+          "max": -0.18,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": 0.217,
+          "std": 0.033,
+          "min": 0.17,
+          "max": 0.24,
+          "samples": 3
+        },
+        "baselineMeanDelayHours": {
+          "mean": 0.344,
+          "std": 0,
+          "min": 0.344,
+          "max": 0.344,
+          "samples": 3
+        },
+        "modeledMeanDelayHours": {
+          "mean": 0.212,
+          "std": 0.022,
+          "min": 0.197,
+          "max": 0.243,
+          "samples": 3
+        },
+        "baselineMeanCongestionPercent": {
+          "mean": 1.435,
+          "std": 0,
+          "min": 1.435,
+          "max": 1.435,
+          "samples": 3
+        },
+        "modeledMeanCongestionPercent": {
+          "mean": 0.899,
+          "std": 0.088,
+          "min": 0.837,
+          "max": 1.024,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 99.102,
+          "std": 0.051,
+          "min": 99.029,
+          "max": 99.138,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 99.393,
+          "std": 0.103,
+          "min": 99.312,
+          "max": 99.538,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 1.31,
+          "std": 0.453,
+          "min": 0.99,
+          "max": 1.95,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 61.6,
+          "std": 0,
+          "min": 61.6,
+          "max": 61.6,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 3.952,
+          "std": 0.076,
+          "min": 3.844,
+          "max": 4.008,
+          "samples": 3
+        },
+        "interventionRatePercent": {
+          "mean": 81.287,
+          "std": 25.234,
+          "min": 45.614,
+          "max": 100,
+          "samples": 3
+        }
+      },
+      "weather-disturbance-generalization": {
+        "delayReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "absoluteDelayReductionHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "absoluteCongestionReductionPoints": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "baselineMeanDelayHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "modeledMeanDelayHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "baselineMeanCongestionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "modeledMeanCongestionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 100,
+          "std": 0,
+          "min": 100,
+          "max": 100,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 100,
+          "std": 0,
+          "min": 100,
+          "max": 100,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 7.58,
+          "std": 0,
+          "min": 7.58,
+          "max": 7.58,
+          "samples": 3
+        },
+        "interventionRatePercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        }
+      }
+    },
+    "mpc": {
+      "closed-loop-replay": {
+        "delayReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "absoluteDelayReductionHours": {
+          "mean": -0.004,
+          "std": 0,
+          "min": -0.004,
+          "max": -0.004,
+          "samples": 3
+        },
+        "absoluteCongestionReductionPoints": {
+          "mean": -0.017,
+          "std": 0,
+          "min": -0.017,
+          "max": -0.017,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": 0.07,
+          "std": 0,
+          "min": 0.07,
+          "max": 0.07,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": -0.01,
+          "std": 0,
+          "min": -0.01,
+          "max": -0.01,
+          "samples": 3
+        },
+        "baselineMeanDelayHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "modeledMeanDelayHours": {
+          "mean": 0.004,
+          "std": 0,
+          "min": 0.004,
+          "max": 0.004,
+          "samples": 3
+        },
+        "baselineMeanCongestionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "modeledMeanCongestionPercent": {
+          "mean": 0.017,
+          "std": 0,
+          "min": 0.017,
+          "max": 0.017,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 99.982,
+          "std": 0,
+          "min": 99.982,
+          "max": 99.982,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 99.982,
+          "std": 0,
+          "min": 99.982,
+          "max": 99.982,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 3.702,
+          "std": 0,
+          "min": 3.702,
+          "max": 3.702,
+          "samples": 3
+        },
+        "interventionRatePercent": {
+          "mean": 3.509,
+          "std": 0,
+          "min": 3.509,
+          "max": 3.509,
+          "samples": 3
+        }
+      },
+      "peak-congestion-stress": {
+        "delayReductionPercent": {
+          "mean": 67.94,
+          "std": 0,
+          "min": 67.94,
+          "max": 67.94,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 67.38,
+          "std": 0,
+          "min": 67.38,
+          "max": 67.38,
+          "samples": 3
+        },
+        "absoluteDelayReductionHours": {
+          "mean": 0.234,
+          "std": 0,
+          "min": 0.234,
+          "max": 0.234,
+          "samples": 3
+        },
+        "absoluteCongestionReductionPoints": {
+          "mean": 0.967,
+          "std": 0,
+          "min": 0.967,
+          "max": 0.967,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": 0.08,
+          "std": 0,
+          "min": 0.08,
+          "max": 0.08,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": 0.45,
+          "std": 0,
+          "min": 0.45,
+          "max": 0.45,
+          "samples": 3
+        },
+        "baselineMeanDelayHours": {
+          "mean": 0.344,
+          "std": 0,
+          "min": 0.344,
+          "max": 0.344,
+          "samples": 3
+        },
+        "modeledMeanDelayHours": {
+          "mean": 0.11,
+          "std": 0,
+          "min": 0.11,
+          "max": 0.11,
+          "samples": 3
+        },
+        "baselineMeanCongestionPercent": {
+          "mean": 1.435,
+          "std": 0,
+          "min": 1.435,
+          "max": 1.435,
+          "samples": 3
+        },
+        "modeledMeanCongestionPercent": {
+          "mean": 0.468,
+          "std": 0,
+          "min": 0.468,
+          "max": 0.468,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 99.56,
+          "std": 0,
+          "min": 99.56,
+          "max": 99.56,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 99.715,
+          "std": 0,
+          "min": 99.715,
+          "max": 99.715,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 0.87,
+          "std": 0,
+          "min": 0.87,
+          "max": 0.87,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 61.6,
+          "std": 0,
+          "min": 61.6,
+          "max": 61.6,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 3.734,
+          "std": 0,
+          "min": 3.734,
+          "max": 3.734,
+          "samples": 3
+        },
+        "interventionRatePercent": {
+          "mean": 21.053,
+          "std": 0,
+          "min": 21.053,
+          "max": 21.053,
+          "samples": 3
+        }
+      },
+      "weather-disturbance-generalization": {
+        "delayReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "congestionReductionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "absoluteDelayReductionHours": {
+          "mean": -0.004,
+          "std": 0,
+          "min": -0.004,
+          "max": -0.004,
+          "samples": 3
+        },
+        "absoluteCongestionReductionPoints": {
+          "mean": -0.017,
+          "std": 0,
+          "min": -0.017,
+          "max": -0.017,
+          "samples": 3
+        },
+        "carbonReductionPercent": {
+          "mean": 0.07,
+          "std": 0,
+          "min": 0.07,
+          "max": 0.07,
+          "samples": 3
+        },
+        "resilienceGain": {
+          "mean": -0.01,
+          "std": 0,
+          "min": -0.01,
+          "max": -0.01,
+          "samples": 3
+        },
+        "baselineMeanDelayHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "modeledMeanDelayHours": {
+          "mean": 0.004,
+          "std": 0,
+          "min": 0.004,
+          "max": 0.004,
+          "samples": 3
+        },
+        "baselineMeanCongestionPercent": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "modeledMeanCongestionPercent": {
+          "mean": 0.017,
+          "std": 0,
+          "min": 0.017,
+          "max": 0.017,
+          "samples": 3
+        },
+        "meanServiceLevelPercent": {
+          "mean": 99.982,
+          "std": 0,
+          "min": 99.982,
+          "max": 99.982,
+          "samples": 3
+        },
+        "throughputRetentionPercent": {
+          "mean": 99.982,
+          "std": 0,
+          "min": 99.982,
+          "max": 99.982,
+          "samples": 3
+        },
+        "p95DelayHours": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "finalDeferredBacklogVessels": {
+          "mean": 0,
+          "std": 0,
+          "min": 0,
+          "max": 0,
+          "samples": 3
+        },
+        "safetyViolationRatePercent": {
+          "mean": 7.573,
+          "std": 0,
+          "min": 7.573,
+          "max": 7.573,
+          "samples": 3
+        },
+        "interventionRatePercent": {
+          "mean": 3.509,
+          "std": 0,
+          "min": 3.509,
+          "max": 3.509,
+          "samples": 3
+        }
+      }
+    }
+  },
+  "temporalRobustness": {
+    "methodId": "mpc",
+    "testCaseId": "peak-congestion-stress",
+    "blocks": [
+      {
+        "id": "test-block-1",
+        "range": [
+          "2021-09",
+          "2023-03"
+        ],
+        "baselineMeanDelayHours": 0,
+        "modeledMeanDelayHours": 0,
+        "absoluteDelayReductionHours": 0,
+        "baselineMeanCongestionPercent": 0,
+        "modeledMeanCongestionPercent": 0,
+        "absoluteCongestionReductionPoints": 0,
+        "throughputRetentionPercent": 100,
+        "safetyViolationRatePercent": 3.704,
+        "interventionRatePercent": 0
+      },
+      {
+        "id": "test-block-2",
+        "range": [
+          "2023-04",
+          "2024-10"
+        ],
+        "baselineMeanDelayHours": 0,
+        "modeledMeanDelayHours": 0,
+        "absoluteDelayReductionHours": 0,
+        "baselineMeanCongestionPercent": 0,
+        "modeledMeanCongestionPercent": 0,
+        "absoluteCongestionReductionPoints": 0,
+        "throughputRetentionPercent": 100,
+        "safetyViolationRatePercent": 3.688,
+        "interventionRatePercent": 0
+      },
+      {
+        "id": "test-block-3",
+        "range": [
+          "2024-11",
+          "2026-05"
+        ],
+        "baselineMeanDelayHours": 1.033,
+        "modeledMeanDelayHours": 0.331,
+        "absoluteDelayReductionHours": 0.702,
+        "baselineMeanCongestionPercent": 4.304,
+        "modeledMeanCongestionPercent": 1.404,
+        "absoluteCongestionReductionPoints": 2.9000000000000004,
+        "throughputRetentionPercent": 99.146,
+        "safetyViolationRatePercent": 3.81,
+        "interventionRatePercent": 63.158
+      }
+    ],
+    "absoluteDelayReductionHours": {
+      "mean": 0.234,
+      "std": 0.331,
+      "min": 0,
+      "max": 0.702,
+      "samples": 3
+    },
+    "absoluteCongestionReductionPoints": {
+      "mean": 0.967,
+      "std": 1.367,
+      "min": 0,
+      "max": 2.9,
+      "samples": 3
+    },
+    "interventionRatePercent": {
+      "mean": 21.053,
+      "std": 29.773,
+      "min": 0,
+      "max": 63.158,
+      "samples": 3
+    }
+  },
+  "provisionalResumeMetric": {
+    "allowedOnlyWithOfflineReplayQualifier": true,
+    "relativePercentClaimAllowed": false,
+    "selectedRlAlgorithmId": "expected-sarsa",
+    "recommendedMethodId": "mpc",
+    "scenarioId": "peak-congestion-stress",
+    "rationale": "Normal replay has insufficient baseline burden for a percentage claim; the calibrated stress diagnostic is reported with absolute before/after values.",
+    "baselineMeanDelayHours": {
+      "mean": 0.344,
+      "std": 0,
+      "min": 0.344,
+      "max": 0.344,
+      "samples": 3
+    },
+    "modeledMeanDelayHours": {
+      "mean": 0.11,
+      "std": 0,
+      "min": 0.11,
+      "max": 0.11,
+      "samples": 3
+    },
+    "absoluteDelayReductionHours": {
+      "mean": 0.234,
+      "std": 0,
+      "min": 0.234,
+      "max": 0.234,
+      "samples": 3
+    },
+    "baselineMeanCongestionPercent": {
+      "mean": 1.435,
+      "std": 0,
+      "min": 1.435,
+      "max": 1.435,
+      "samples": 3
+    },
+    "modeledMeanCongestionPercent": {
+      "mean": 0.468,
+      "std": 0,
+      "min": 0.468,
+      "max": 0.468,
+      "samples": 3
+    },
+    "absoluteCongestionReductionPoints": {
+      "mean": 0.967,
+      "std": 0,
+      "min": 0.967,
+      "max": 0.967,
+      "samples": 3
+    },
+    "throughputRetentionPercent": {
+      "mean": 99.715,
+      "std": 0,
+      "min": 99.715,
+      "max": 99.715,
+      "samples": 3
+    },
+    "safetyViolationRatePercent": {
+      "mean": 3.734,
+      "std": 0,
+      "min": 3.734,
+      "max": 3.734,
+      "samples": 3
+    },
+    "interventionRatePercent": {
+      "mean": 21.053,
+      "std": 0,
+      "min": 21.053,
+      "max": 21.053,
+      "samples": 3
+    },
+    "finalDeferredBacklogVessels": {
+      "mean": 61.6,
+      "std": 0,
+      "min": 61.6,
+      "max": 61.6,
+      "samples": 3
+    },
+    "finalDeferredBacklogToMeanArrivalPercent": 0.621
+  },
+  "claimEligibility": {
+    "methodId": "mpc",
+    "claimType": "absolute_stress_diagnostic",
+    "relativePercentClaimAllowed": false,
+    "thresholds": {
+      "minimumThroughputRetentionPercent": 99,
+      "maximumExpectedSafetyViolationRatePercent": 5,
+      "minimumAbsoluteDelayReductionHours": 0.02,
+      "minimumAbsoluteCongestionReductionPoints": 0.1,
+      "maximumInterventionRatePercent": 30,
+      "maximumTemporalBlockInterventionRatePercent": 70,
+      "minimumNormalHoldRatePercent": 90,
+      "maximumFinalDeferredBacklogToMeanArrivalPercent": 1,
+      "minimumBaselineDelayForRelativeClaimHours": 1,
+      "minimumBaselineCongestionForRelativeClaimPercent": 5,
+      "maximumRelativeReductionForPublicAggregateClaimPercent": 30
+    },
+    "checks": {
+      "throughputRetention": true,
+      "expectedSafetyRisk": true,
+      "absoluteDelayReduction": true,
+      "absoluteCongestionReduction": true,
+      "boundedIntervention": true,
+      "boundedTemporalBlockIntervention": true,
+      "normalNoOp": true,
+      "deferredBacklog": true
+    },
+    "passed": true,
+    "scope": "offline_aggregate_stress_diagnostic_only"
+  }
+}

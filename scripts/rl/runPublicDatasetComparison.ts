@@ -66,7 +66,7 @@ if (aisPackage.manifest.grossTonnageMode !== 'neutral-control-scaling-not-observ
 }
 
 const dataset = await loadPortTrainingDataset(inputPath, 'GRPIR-AIS-RECEIVER');
-const episodes = Number(process.env.PUBLIC_DATASET_BENCHMARK_EPISODES || 120);
+const episodes = Number(process.env.PUBLIC_DATASET_BENCHMARK_EPISODES || 600);
 const seeds = (process.env.PUBLIC_DATASET_BENCHMARK_SEEDS || '240520,240521,240522')
   .split(',')
   .map((value) => Number(value.trim()))
@@ -119,6 +119,26 @@ const methods = Object.fromEntries(RL_ALGORITHMS.map((algorithm) => {
     environmentSteps: validation.map((result) => result.training.environmentSteps),
     heldOutDelayReductionPercent: summarize(heldOut.map((result) => result.metrics.delayReductionPercent)),
     heldOutCongestionReductionPercent: summarize(heldOut.map((result) => result.metrics.congestionReductionPercent)),
+    heldOutBaselineMeanDelayHours: summarize(
+      heldOut.map((result) => result.metrics.baseline.meanDelayHours),
+    ),
+    heldOutModeledMeanDelayHours: summarize(
+      heldOut.map((result) => result.metrics.modeled.meanDelayHours),
+    ),
+    heldOutAbsoluteDelayReductionHours: summarize(
+      heldOut.map((result) =>
+        result.metrics.baseline.meanDelayHours - result.metrics.modeled.meanDelayHours),
+    ),
+    heldOutBaselineMeanCongestionPercent: summarize(
+      heldOut.map((result) => result.metrics.baseline.meanCongestionPercent),
+    ),
+    heldOutModeledMeanCongestionPercent: summarize(
+      heldOut.map((result) => result.metrics.modeled.meanCongestionPercent),
+    ),
+    heldOutAbsoluteCongestionReductionPoints: summarize(
+      heldOut.map((result) =>
+        result.metrics.baseline.meanCongestionPercent - result.metrics.modeled.meanCongestionPercent),
+    ),
     heldOutThroughputRetentionPercent: summarize(
       heldOut.map((result) => result.metrics.modeled.throughputRetentionPercent),
     ),
@@ -130,6 +150,12 @@ const methods = Object.fromEntries(RL_ALGORITHMS.map((algorithm) => {
   environmentSteps: number[];
   heldOutDelayReductionPercent: Summary;
   heldOutCongestionReductionPercent: Summary;
+  heldOutBaselineMeanDelayHours: Summary;
+  heldOutModeledMeanDelayHours: Summary;
+  heldOutAbsoluteDelayReductionHours: Summary;
+  heldOutBaselineMeanCongestionPercent: Summary;
+  heldOutModeledMeanCongestionPercent: Summary;
+  heldOutAbsoluteCongestionReductionPoints: Summary;
   heldOutThroughputRetentionPercent: Summary;
 }>;
 
@@ -137,7 +163,7 @@ const selectedMethodId = (Object.entries(methods) as Array<[RlAlgorithmId, typeo
   .sort((left, right) =>
     right[1].validationSelectionScore.mean - left[1].validationSelectionScore.mean)[0][0];
 const existingReport = JSON.parse(await readFile(
-  path.resolve('reports/rl-benchmark-balanced-resilience.json'),
+  path.resolve('reports/rl-benchmark-balanced-resilience-calibrated-v2.json'),
   'utf8',
 )) as {
   dataset: { recordCount: number; trainRange: [string, string]; testRange: [string, string]; fingerprint: string };
@@ -146,6 +172,7 @@ const existingReport = JSON.parse(await readFile(
 const comparisonSourcePaths = [
   'server/rlTrainingEngine.ts',
   'server/portTrainingDataset.ts',
+  'shared/rlOperationalCalibration.ts',
   'scripts/data/sync_infore_ais.mjs',
   'scripts/rl/runPublicDatasetComparison.ts',
   'package.json',
@@ -196,12 +223,18 @@ const report = {
       demandMode: aisPackage.manifest.demandMode,
       limitations: aisPackage.manifest.limitations,
       strongestUse: 'high-frequency ingestion, temporal split and algorithm-scale external validation',
+      trainingProtocol: {
+        episodesPerCandidate: episodes,
+        tuningTrials: 3,
+        seeds,
+        totalRlEpisodes: episodes * 3 * seeds.length * 4,
+      },
       selectedMethodId,
       methods,
     },
   },
   verdict: {
-    primaryResumeEvidence: 'MPA+ERA5 aggregate-v1 benchmark',
+    primaryResumeEvidence: 'MPA+ERA5 calibrated-v2 benchmark',
     secondaryScaleEvidence: 'INFORE Piraeus AIS one-minute traffic-density benchmark',
     rationale: [
       'MPA covers more than three decades and represents official vessel-arrival statistics, so it is stronger for long-horizon demand evidence.',
@@ -215,7 +248,7 @@ const report = {
 
 await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
 const methodRows = (Object.entries(methods) as Array<[RlAlgorithmId, typeof methods[RlAlgorithmId]]>)
-  .map(([, value]) => `| ${value.label} | ${value.family === 'control-theory' ? '控制' : 'RL'} | ${value.validationSelectionScore.mean.toFixed(2)} ± ${value.validationSelectionScore.standardDeviation.toFixed(2)} | ${value.heldOutDelayReductionPercent.mean.toFixed(2)} ± ${value.heldOutDelayReductionPercent.standardDeviation.toFixed(2)}% | ${value.heldOutCongestionReductionPercent.mean.toFixed(2)} ± ${value.heldOutCongestionReductionPercent.standardDeviation.toFixed(2)}% | ${value.heldOutThroughputRetentionPercent.mean.toFixed(2)} ± ${value.heldOutThroughputRetentionPercent.standardDeviation.toFixed(2)}% |`)
+  .map(([, value]) => `| ${value.label} | ${value.family === 'control-theory' ? '控制' : 'RL'} | ${value.validationSelectionScore.mean.toFixed(2)} ± ${value.validationSelectionScore.standardDeviation.toFixed(2)} | ${value.heldOutBaselineMeanDelayHours.mean.toFixed(3)}h → ${value.heldOutModeledMeanDelayHours.mean.toFixed(3)}h | ${value.heldOutBaselineMeanCongestionPercent.mean.toFixed(3)}% → ${value.heldOutModeledMeanCongestionPercent.mean.toFixed(3)}% | ${value.heldOutThroughputRetentionPercent.mean.toFixed(2)} ± ${value.heldOutThroughputRetentionPercent.standardDeviation.toFixed(2)}% |`)
   .join('\n');
 const markdown = `# 公开数据集规模与可信度比较
 
@@ -230,9 +263,10 @@ const markdown = `# 公开数据集规模与可信度比较
 
 ## INFORE 五基线留出比较
 
-训练目标只包含延误、拥堵和吞吐；碳、安全与韧性权重为 0。容量仍为训练段代理，不能解释为码头实测能力。
+训练目标只包含延误、拥堵和吞吐；碳、安全与韧性权重为 0。每个 RL 候选执行 ${episodes} episodes，
+共 ${(episodes * 3 * seeds.length * 4).toLocaleString('en-US')} 个 RL episodes。容量仍为训练段 P90 代理，不能解释为码头实测能力。
 
-| 方法 | 分类 | 验证选择分 | 延误变化 | 拥堵变化 | 吞吐保持 |
+| 方法 | 分类 | 验证选择分 | 代理延误前后值 | 有效拥堵前后值 | 吞吐保持 |
 |---|---|---:|---:|---:|---:|
 ${methodRows}
 

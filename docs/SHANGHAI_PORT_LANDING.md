@@ -137,13 +137,14 @@ INFORE Piraeus 数据源 DOI 为 `10.5281/zenodo.3754481`，许可为 CC BY-NC-N
 原始压缩包；脚本由使用者从 Zenodo 下载并校验 MD5。比较结果见：
 
 - `reports/public-dataset-credibility-comparison.md`
-- `reports/rl-benchmark-balanced-resilience.md`
+- `reports/rl-benchmark-balanced-resilience-calibrated-v2.md`
 
 推荐表述：
 
-> 基于 377 条 MPA+ERA5 长期月度记录完成 4 RL + MPC 的严格时间留出基准，并使用 371,585 条
-> 原始 Piraeus AIS 消息构建 1,440 条分钟级外部验证记录；两个数据集按来源、许可、时间跨度和
-> 现场能力缺口分别标注，不将公开代理结果包装为上海港 KPI。
+> 基于覆盖 1995—2026 年、汇总 4,064,858 艘次到港量的 377 个 MPA+ERA5 月度记录，完成
+> 21,600 个 RL episodes 与三步 MPC 的严格时间留出基准；另使用 371,585 条原始 Piraeus AIS
+> 消息构建 1,440 条分钟级外部验证记录。两个数据集按来源、许可、时间跨度和现场能力缺口分别
+> 标注，不将公开代理结果包装为上海港 KPI。
 
 ## 小懿形象
 

@@ -23,6 +23,8 @@ test('completed checkpoints carry integrity metadata and restore in a fresh proc
   }
   assert.equal(completed?.status, 'completed');
   const payload = JSON.parse(await readFile(path.join(artifactDirectory, `${created.jobId}.json`), 'utf8')) as {
+    engineVersion: string;
+    calibrationId: string;
     integrity: { algorithm: string; digest: string };
     benchmark: { selectionSplit: string };
     policies: Array<{ kind?: string; qA?: Array<[number, number[]]> }>;
@@ -30,6 +32,8 @@ test('completed checkpoints carry integrity metadata and restore in a fresh proc
   };
   const { integrity, ...core } = payload;
   assert.equal(integrity.algorithm, 'sha256');
+  assert.equal(payload.engineVersion, 'dataset-calibrated-port-control.v4');
+  assert.equal(payload.calibrationId, 'public-aggregate-conservative-v2');
   assert.equal(integrity.digest, createHash('sha256').update(JSON.stringify(core)).digest('hex'));
   assert.equal(payload.benchmark.selectionSplit, 'validation');
   assert.equal(payload.policies.length, 5);

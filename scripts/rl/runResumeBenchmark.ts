@@ -15,6 +15,7 @@ import {
   type RlTrainingRequest,
 } from '../../server/rlTrainingEngine.ts';
 import { getRlObjectivePreset, type RlObjectiveId } from '../../shared/rlObjectivePresets.ts';
+import { RL_OPERATIONAL_CALIBRATION } from '../../shared/rlOperationalCalibration.ts';
 
 const round = (value: number, digits = 3) => Number(value.toFixed(digits));
 
@@ -57,10 +58,12 @@ const summarize = (values: number[]): Summary => {
 };
 
 const dataset = await loadPortTrainingDataset();
+const cumulativeArrivals = dataset.records.reduce((sum, record) => sum + record.arrivals, 0);
 const sourceFiles = [
   'server/rlTrainingEngine.ts',
   'server/portTrainingDataset.ts',
   'shared/rlObjectivePresets.ts',
+  'shared/rlOperationalCalibration.ts',
   'scripts/rl/runResumeBenchmark.ts',
   'package.json',
   'pnpm-lock.yaml',
@@ -142,16 +145,30 @@ const evaluations = Object.fromEntries(evaluatedAlgorithms.map((algorithmId) => 
     const metrics = samples.map((sample) => sample.evaluation.metrics);
     const summarizeOperational = (key: keyof RlOperationalMetrics) =>
       summarize(metrics.map((metric) => metric.modeled[key]));
+    const summarizeBaseline = (key: keyof RlOperationalMetrics) =>
+      summarize(metrics.map((metric) => metric.baseline[key]));
     return [testCaseId, {
       delayReductionPercent: summarize(metrics.map((metric) => metric.delayReductionPercent)),
       congestionReductionPercent: summarize(metrics.map((metric) => metric.congestionReductionPercent)),
+      absoluteDelayReductionHours: summarize(metrics.map((metric) =>
+        metric.baseline.meanDelayHours - metric.modeled.meanDelayHours)),
+      absoluteCongestionReductionPoints: summarize(metrics.map((metric) =>
+        metric.baseline.meanCongestionPercent - metric.modeled.meanCongestionPercent)),
       carbonReductionPercent: summarize(metrics.map((metric) => metric.carbonReductionPercent)),
       resilienceGain: summarize(metrics.map((metric) => metric.resilienceGain)),
+      baselineMeanDelayHours: summarizeBaseline('meanDelayHours'),
+      modeledMeanDelayHours: summarizeOperational('meanDelayHours'),
+      baselineMeanCongestionPercent: summarizeBaseline('meanCongestionPercent'),
+      modeledMeanCongestionPercent: summarizeOperational('meanCongestionPercent'),
       meanServiceLevelPercent: summarizeOperational('meanServiceLevelPercent'),
       throughputRetentionPercent: summarizeOperational('throughputRetentionPercent'),
       p95DelayHours: summarizeOperational('p95DelayHours'),
       finalDeferredBacklogVessels: summarizeOperational('finalDeferredBacklogVessels'),
       safetyViolationRatePercent: summarizeOperational('safetyViolationRatePercent'),
+      interventionRatePercent: summarize(samples.map((sample) =>
+        sample.evaluation.trace.filter((point) => point.actionId !== 'hold-plan').length
+        / Math.max(1, sample.evaluation.trace.length)
+        * 100)),
     }];
   })),
 ])) as unknown as Partial<Record<
@@ -160,62 +177,136 @@ const evaluations = Object.fromEntries(evaluatedAlgorithms.map((algorithmId) => 
 >>;
 
 const selectedRlLabel = RL_ALGORITHMS.find((algorithm) => algorithm.id === selectedRlAlgorithmId)!.label;
-const selectedRlEvaluations = evaluations[selectedRlAlgorithmId]!;
 const mpcEvaluations = evaluations.mpc!;
-const closedLoop = selectedRlEvaluations['closed-loop-replay'];
-const peakStress = selectedRlEvaluations['peak-congestion-stress'];
 const mpcClosedLoop = mpcEvaluations['closed-loop-replay'];
+const mpcStress = mpcEvaluations['peak-congestion-stress'];
+const temporalBlocks = Array.from({ length: 3 }, (_, blockIndex) => {
+  const blockSize = Math.ceil(dataset.testRecords.length / 3);
+  const records = dataset.testRecords.slice(blockIndex * blockSize, (blockIndex + 1) * blockSize);
+  return {
+    id: `test-block-${blockIndex + 1}`,
+    range: [records[0].timestamp, records.at(-1)!.timestamp] as [string, string],
+    records,
+  };
+});
+const mpcTemporalStressSamples = temporalBlocks.map((block) => {
+  const evaluation = evaluateTrainedPolicy(
+    `resume-mpc-${block.id}`,
+    'mpc',
+    'peak-congestion-stress',
+    runs[0].artifacts,
+    { ...dataset, testRecords: block.records },
+    runs[0].request,
+  );
+  return {
+    id: block.id,
+    range: block.range,
+    metrics: evaluation.metrics,
+    interventionRatePercent: round(
+      evaluation.trace.filter((point) => point.actionId !== 'hold-plan').length
+      / Math.max(1, evaluation.trace.length)
+      * 100,
+    ),
+  };
+});
+const temporalRobustness = {
+  methodId: 'mpc',
+  testCaseId: 'peak-congestion-stress',
+  blocks: mpcTemporalStressSamples.map((sample) => ({
+    id: sample.id,
+    range: sample.range,
+    baselineMeanDelayHours: sample.metrics.baseline.meanDelayHours,
+    modeledMeanDelayHours: sample.metrics.modeled.meanDelayHours,
+    absoluteDelayReductionHours:
+      sample.metrics.baseline.meanDelayHours - sample.metrics.modeled.meanDelayHours,
+    baselineMeanCongestionPercent: sample.metrics.baseline.meanCongestionPercent,
+    modeledMeanCongestionPercent: sample.metrics.modeled.meanCongestionPercent,
+    absoluteCongestionReductionPoints:
+      sample.metrics.baseline.meanCongestionPercent - sample.metrics.modeled.meanCongestionPercent,
+    throughputRetentionPercent: sample.metrics.modeled.throughputRetentionPercent,
+    safetyViolationRatePercent: sample.metrics.modeled.safetyViolationRatePercent,
+    interventionRatePercent: sample.interventionRatePercent,
+  })),
+  absoluteDelayReductionHours: summarize(mpcTemporalStressSamples.map((sample) =>
+    sample.metrics.baseline.meanDelayHours - sample.metrics.modeled.meanDelayHours)),
+  absoluteCongestionReductionPoints: summarize(mpcTemporalStressSamples.map((sample) =>
+    sample.metrics.baseline.meanCongestionPercent - sample.metrics.modeled.meanCongestionPercent)),
+  interventionRatePercent: summarize(mpcTemporalStressSamples.map((sample) =>
+    sample.interventionRatePercent)),
+};
 const meanTestArrivals = dataset.testRecords.reduce(
   (sum, record) => sum + record.arrivals,
   0,
 ) / Math.max(1, dataset.testRecords.length);
 const finalDeferredBacklogToMeanArrivalPercent =
-  mpcClosedLoop.finalDeferredBacklogVessels.mean
+  mpcStress.finalDeferredBacklogVessels.mean
   / Math.max(1, meanTestArrivals)
   * 100;
 const claimThresholds = {
-  minimumThroughputRetentionPercent: 95,
+  minimumThroughputRetentionPercent: 99,
   maximumExpectedSafetyViolationRatePercent: 5,
-  minimumDelayReductionPercent: 5,
-  minimumCongestionReductionPercent: 5,
-  maximumAcrossSeedStandardDeviationPercentagePoints: 5,
-  maximumFinalDeferredBacklogToMeanArrivalPercent: 5,
+  minimumAbsoluteDelayReductionHours: 0.02,
+  minimumAbsoluteCongestionReductionPoints: 0.1,
+  maximumInterventionRatePercent: 30,
+  maximumTemporalBlockInterventionRatePercent: 70,
+  minimumNormalHoldRatePercent: 90,
+  maximumFinalDeferredBacklogToMeanArrivalPercent: 1,
+  minimumBaselineDelayForRelativeClaimHours: 1,
+  minimumBaselineCongestionForRelativeClaimPercent: 5,
+  maximumRelativeReductionForPublicAggregateClaimPercent: 30,
 };
 const claimChecks = {
   throughputRetention:
-    mpcClosedLoop.throughputRetentionPercent.mean >= claimThresholds.minimumThroughputRetentionPercent,
+    mpcStress.throughputRetentionPercent.mean >= claimThresholds.minimumThroughputRetentionPercent,
   expectedSafetyRisk:
-    mpcClosedLoop.safetyViolationRatePercent.mean <=
+    mpcStress.safetyViolationRatePercent.mean <=
       claimThresholds.maximumExpectedSafetyViolationRatePercent,
-  delayReduction:
-    mpcClosedLoop.delayReductionPercent.mean >= claimThresholds.minimumDelayReductionPercent,
-  congestionReduction:
-    mpcClosedLoop.congestionReductionPercent.mean >= claimThresholds.minimumCongestionReductionPercent,
-  seedStability:
-    mpcClosedLoop.delayReductionPercent.std <=
-      claimThresholds.maximumAcrossSeedStandardDeviationPercentagePoints &&
-    mpcClosedLoop.congestionReductionPercent.std <=
-      claimThresholds.maximumAcrossSeedStandardDeviationPercentagePoints,
+  absoluteDelayReduction:
+    mpcStress.absoluteDelayReductionHours.mean >=
+      claimThresholds.minimumAbsoluteDelayReductionHours,
+  absoluteCongestionReduction:
+    mpcStress.absoluteCongestionReductionPoints.mean >=
+      claimThresholds.minimumAbsoluteCongestionReductionPoints,
+  boundedIntervention:
+    mpcStress.interventionRatePercent.mean <= claimThresholds.maximumInterventionRatePercent,
+  boundedTemporalBlockIntervention:
+    temporalRobustness.interventionRatePercent.max <=
+      claimThresholds.maximumTemporalBlockInterventionRatePercent,
+  normalNoOp:
+    100 - mpcClosedLoop.interventionRatePercent.mean >= claimThresholds.minimumNormalHoldRatePercent,
   deferredBacklog:
     finalDeferredBacklogToMeanArrivalPercent <=
       claimThresholds.maximumFinalDeferredBacklogToMeanArrivalPercent,
 };
+const relativePercentClaimAllowed =
+  mpcStress.baselineMeanDelayHours.mean >=
+    claimThresholds.minimumBaselineDelayForRelativeClaimHours &&
+  mpcStress.baselineMeanCongestionPercent.mean >=
+    claimThresholds.minimumBaselineCongestionForRelativeClaimPercent &&
+  mpcStress.delayReductionPercent.mean <=
+    claimThresholds.maximumRelativeReductionForPublicAggregateClaimPercent &&
+  mpcStress.congestionReductionPercent.mean <=
+    claimThresholds.maximumRelativeReductionForPublicAggregateClaimPercent;
 const report = {
-  schemaVersion: 'resume-rl-benchmark.v1',
+  schemaVersion: 'resume-rl-benchmark.v2',
   generatedAt: process.env.SOURCE_DATE_EPOCH
     ? new Date(Number(process.env.SOURCE_DATE_EPOCH) * 1_000).toISOString()
     : new Date().toISOString(),
   evidenceLabel: 'OFFLINE_MODEL_REPLAY_NOT_FIELD_KPI',
   claimBoundary: [
     'This report is a real execution of the repository training code, not a fabricated result.',
-    'The input is monthly aggregate public data; capacity is a train-only empirical proxy.',
+    'The input is monthly aggregate public data; capacity is a train-only P90 service-envelope proxy.',
     'ERA5 monthly P95 daily-maximum wind coverage is reported separately from complete wind/wave/visibility coverage.',
     'Wave, visibility and safety fields are absent in the default dataset; weather-stress tests add documented synthetic disturbances.',
-    'Action effects are declared scenario assumptions, not coefficients calibrated from measured intervention outcomes.',
+    'Action effects are conservative declared bounds, not coefficients calibrated from measured intervention outcomes.',
+    'Relative reductions are not resume-eligible when baseline burden is too small or the small denominator amplifies the percentage.',
     'Deterministic test safety is the expected modeled violation rate, not a claim of observed zero incidents.',
     'Metrics are model-replay comparisons and are not field accuracy, production savings, or certified resilience.',
   ],
   modelContract: {
+    calibrationId: RL_OPERATIONAL_CALIBRATION.id,
+    capacityProxy: RL_OPERATIONAL_CALIBRATION.capacityProxy,
+    stressTest: RL_OPERATIONAL_CALIBRATION.stressTest,
     observations: RL_OBSERVATION_CONTRACT,
     actions: RL_ACTIONS.map((action) => ({
       id: action.id,
@@ -224,11 +315,16 @@ const report = {
       capacityMultiplier: action.capacityMultiplier,
       carbonMultiplier: action.carbonMultiplier,
       safetyProbabilityModifier: action.safetyModifier,
-      evidenceLevel: 'declared_scenario_assumption',
+      evidenceLevel: RL_OPERATIONAL_CALIBRATION.evidenceLevel,
     })),
     evaluationSafetyMetric: 'mean expected violation probability per time step',
   },
   dataset: runs[0].artifacts.benchmark.dataset,
+  datasetScale: {
+    monthlyRecords: dataset.records.length,
+    cumulativeVesselArrivals: round(cumulativeArrivals, 0),
+    range: [dataset.records[0].timestamp, dataset.records.at(-1)!.timestamp],
+  },
   sourceFingerprint: {
     algorithm: 'sha256',
     digest: sourceDigest,
@@ -251,29 +347,37 @@ const report = {
   },
   validationByAlgorithm,
   heldOutTest: evaluations,
+  temporalRobustness,
   provisionalResumeMetric: {
     allowedOnlyWithOfflineReplayQualifier: true,
+    relativePercentClaimAllowed,
     selectedRlAlgorithmId,
     recommendedMethodId: 'mpc',
-    rationale: 'MPC is the only method with stable delay, congestion, throughput and safety results in the sealed closed-loop replay.',
-    closedLoopDelayReductionPercent: mpcEvaluations['closed-loop-replay'].delayReductionPercent,
-    closedLoopCongestionReductionPercent: mpcEvaluations['closed-loop-replay'].congestionReductionPercent,
-    closedLoopThroughputRetentionPercent: mpcEvaluations['closed-loop-replay'].throughputRetentionPercent,
-    closedLoopSafetyViolationRatePercent: mpcEvaluations['closed-loop-replay'].safetyViolationRatePercent,
-    finalDeferredBacklogVessels: mpcEvaluations['closed-loop-replay'].finalDeferredBacklogVessels,
+    scenarioId: 'peak-congestion-stress',
+    rationale: 'Normal replay has insufficient baseline burden for a percentage claim; the calibrated stress diagnostic is reported with absolute before/after values.',
+    baselineMeanDelayHours: mpcStress.baselineMeanDelayHours,
+    modeledMeanDelayHours: mpcStress.modeledMeanDelayHours,
+    absoluteDelayReductionHours: mpcStress.absoluteDelayReductionHours,
+    baselineMeanCongestionPercent: mpcStress.baselineMeanCongestionPercent,
+    modeledMeanCongestionPercent: mpcStress.modeledMeanCongestionPercent,
+    absoluteCongestionReductionPoints: mpcStress.absoluteCongestionReductionPoints,
+    throughputRetentionPercent: mpcStress.throughputRetentionPercent,
+    safetyViolationRatePercent: mpcStress.safetyViolationRatePercent,
+    interventionRatePercent: mpcStress.interventionRatePercent,
+    finalDeferredBacklogVessels: mpcStress.finalDeferredBacklogVessels,
     finalDeferredBacklogToMeanArrivalPercent: round(
       finalDeferredBacklogToMeanArrivalPercent,
       3,
     ),
-    selectedRlPeakStressDelayReductionPercent: peakStress.delayReductionPercent,
-    selectedRlPeakStressCongestionReductionPercent: peakStress.congestionReductionPercent,
   },
   claimEligibility: {
     methodId: 'mpc',
+    claimType: 'absolute_stress_diagnostic',
+    relativePercentClaimAllowed,
     thresholds: claimThresholds,
     checks: claimChecks,
     passed: Object.values(claimChecks).every(Boolean),
-    scope: 'offline_model_replay_only',
+    scope: 'offline_aggregate_stress_diagnostic_only',
   },
 };
 
@@ -285,23 +389,32 @@ const validationRows = RL_ALGORITHMS.map((algorithm) => {
 }).join('\n');
 const closedLoopRows = RL_ALGORITHMS.map((algorithm) => {
   const metrics = evaluations[algorithm.id]!['closed-loop-replay'];
-  return `| ${algorithm.label} | ${formatSummary(metrics.delayReductionPercent, '%')} | ${formatSummary(metrics.congestionReductionPercent, '%')} | ${formatSummary(metrics.carbonReductionPercent, '%')} | ${formatSummary(metrics.meanServiceLevelPercent, '%')} |`;
+  return `| ${algorithm.label} | ${formatSummary(metrics.baselineMeanDelayHours, 'h')} | ${formatSummary(metrics.modeledMeanDelayHours, 'h')} | ${formatSummary(metrics.baselineMeanCongestionPercent, '%')} | ${formatSummary(metrics.modeledMeanCongestionPercent, '%')} | ${formatSummary(metrics.interventionRatePercent, '%')} |`;
 }).join('\n');
-const markdown = `# RL 简历指标证据报告
+const stressRows = RL_ALGORITHMS.map((algorithm) => {
+  const metrics = evaluations[algorithm.id]!['peak-congestion-stress'];
+  return `| ${algorithm.label} | ${formatSummary(metrics.absoluteDelayReductionHours, 'h')} | ${formatSummary(metrics.absoluteCongestionReductionPoints, 'pp')} | ${formatSummary(metrics.throughputRetentionPercent, '%')} | ${formatSummary(metrics.safetyViolationRatePercent, '%')} | ${formatSummary(metrics.interventionRatePercent, '%')} |`;
+}).join('\n');
+const temporalRows = temporalRobustness.blocks.map((block) =>
+  `| ${block.range.join(' → ')} | ${block.baselineMeanDelayHours.toFixed(3)}h → ${block.modeledMeanDelayHours.toFixed(3)}h | ${block.baselineMeanCongestionPercent.toFixed(3)}% → ${block.modeledMeanCongestionPercent.toFixed(3)}% | ${block.throughputRetentionPercent.toFixed(3)}% | ${block.interventionRatePercent.toFixed(2)}% |`,
+).join('\n');
+const markdown = `# RL 保守校准证据报告 v2
 
 > 证据等级：**离线模型回放，不是现场业务 KPI，也不是“韧性模型准确率”**。
 
 ## 实验协议
 
-- 数据：${dataset.records.length} 条 MPA 月度聚合到港记录，并按月对齐 Open-Meteo ERA5 10 m 风速特征；${dataset.split.trainRange.join(' → ')} 训练、${dataset.split.validationRange.join(' → ')} 验证、${dataset.split.testRange.join(' → ')} 最终测试。
-- 数据指纹：\`${dataset.fingerprint}\`；港口范围：\`${dataset.portId}\`；容量：\`${dataset.quality.capacityMode}\`，且只用训练段校准。
+- 数据：${dataset.records.length} 个 MPA 月度记录，汇总 ${cumulativeArrivals.toLocaleString('en-US')} 艘次到港量，并按月对齐 Open-Meteo ERA5 10 m 风速特征；${dataset.split.trainRange.join(' → ')} 训练、${dataset.split.validationRange.join(' → ')} 验证、${dataset.split.testRange.join(' → ')} 最终测试。
+- 数据指纹：\`${dataset.fingerprint}\`；港口范围：\`${dataset.portId}\`；容量缺失，使用训练段 P90 服务包络 \`${dataset.quality.capacityProxyValue}\`，不读取验证/测试未来值。
 - 方法：Q-Learning、SARSA、Expected SARSA、Dyna-Q 与 MPC；每个 RL 超参数候选 ${episodes} episodes，${tuningTrials} 组候选，${seeds.length} 个随机种子。
 - 目标：\`${objectiveId}\`；验证前段调参，验证后段选算法，最终测试不参与调参或选择。
 - 跨种子验证集最优 RL：**${selectedRlLabel}**。
 - 核心代码指纹：\`${sourceDigest}\`。
 - 状态：${RL_OBSERVATION_CONTRACT.length} 维离散观测（队列/能力、延误、碳指数、递延积压/能力、需求趋势、天气风险）；递延积压进入状态以避免非马尔可夫状态混叠。
 - 安全：确定性测试报告逐步期望违规概率的均值，不用有利随机种子制造“零事故”。
-- 拥堵：按现场队列 + 0.65×递延积压计算有效压力，避免把错峰需求移出可见队列后误报为拥堵消失。
+- 拥堵：按现场队列 + 100% 递延积压计算有效压力，避免把错峰需求移出可见队列后误报为拥堵消失。
+- 干预上限：单步错峰 ≤2%、分流 ≤1%、短时能力增益 ≤2%；常态负荷不足时 MPC 自动保持计划。
+- 压力诊断：到港需求 +5%、临时能力 −2%，仅用于敏感性分析，不代表已发生的现场事故。
 
 ## 验证段透明对比
 
@@ -311,37 +424,55 @@ ${validationRows}
 
 ## 全算法留出闭环回放
 
-| 方法 | 延误变化 | 拥堵变化 | 碳指数变化 | 服务率 |
-|---|---:|---:|---:|---:|
+| 方法 | 基线延误 | 策略延误 | 基线拥堵 | 策略拥堵 | 非保持动作率 |
+|---|---:|---:|---:|---:|---:|
 ${closedLoopRows}
 
-## 留出测试诊断
+常态封存期的保持计划基线没有形成可测延误或拥堵负担，因此不允许使用“下降百分比”。
+MPC 在 ${formatSummary(mpcClosedLoop.interventionRatePercent, '%')} 的时段触发非保持动作，其常态结果只用于验证
+“无负荷不干预”门禁，不包装成收益。
 
-| 场景 | 方法 | 延误变化 | 拥堵变化 | 碳指数变化 | 服务率 | P95 延误 |
-|---|---|---:|---:|---:|---:|---:|
-| 闭环回放 | ${selectedRlLabel} | ${formatSummary(closedLoop.delayReductionPercent, '%')} | ${formatSummary(closedLoop.congestionReductionPercent, '%')} | ${formatSummary(closedLoop.carbonReductionPercent, '%')} | ${formatSummary(closedLoop.meanServiceLevelPercent, '%')} | ${formatSummary(closedLoop.p95DelayHours, 'h')} |
-| 峰值拥堵压力 | ${selectedRlLabel} | ${formatSummary(peakStress.delayReductionPercent, '%')} | ${formatSummary(peakStress.congestionReductionPercent, '%')} | ${formatSummary(peakStress.carbonReductionPercent, '%')} | ${formatSummary(peakStress.meanServiceLevelPercent, '%')} | ${formatSummary(peakStress.p95DelayHours, 'h')} |
-| 闭环回放 | MPC | ${formatSummary(mpcEvaluations['closed-loop-replay'].delayReductionPercent, '%')} | ${formatSummary(mpcEvaluations['closed-loop-replay'].congestionReductionPercent, '%')} | ${formatSummary(mpcEvaluations['closed-loop-replay'].carbonReductionPercent, '%')} | ${formatSummary(mpcEvaluations['closed-loop-replay'].meanServiceLevelPercent, '%')} | ${formatSummary(mpcEvaluations['closed-loop-replay'].p95DelayHours, 'h')} |
+## 保守压力诊断
 
-正数“变化”表示相对保持计划基线下降，负数表示恶化。所有数字是 ${seeds.length} 个随机种子的均值 ± 标准差。
+| 方法 | 延误绝对变化 | 拥堵绝对变化 | 吞吐保持 | 期望安全风险 | 非保持动作率 |
+|---|---:|---:|---:|---:|---:|
+${stressRows}
 
-当前验证选优 RL 在最终闭环回放中的延误和碳指标不稳定，不适合作为简历收益主张。MPC 在同一
-封存测试段的延误、拥堵、吞吐和安全指标方向一致，因此简历只建议引用 MPC，并明确它是确定性
-控制基线而不是强化学习结果。
+MPC 的主诊断值为：代理延误 \`${mpcStress.baselineMeanDelayHours.mean.toFixed(3)}h → ${mpcStress.modeledMeanDelayHours.mean.toFixed(3)}h\`
+（绝对变化 \`${mpcStress.absoluteDelayReductionHours.mean.toFixed(3)}h\`），有效拥堵压力
+\`${mpcStress.baselineMeanCongestionPercent.mean.toFixed(3)}% → ${mpcStress.modeledMeanCongestionPercent.mean.toFixed(3)}%\`
+（绝对变化 \`${mpcStress.absoluteCongestionReductionPoints.mean.toFixed(3)}pp\`），吞吐保持
+\`${mpcStress.throughputRetentionPercent.mean.toFixed(3)}%\`，期望安全风险
+\`${mpcStress.safetyViolationRatePercent.mean.toFixed(3)}%\`，非保持动作率
+\`${mpcStress.interventionRatePercent.mean.toFixed(2)}%\`。
+
+相对延误/拥堵百分比为 \`${mpcStress.delayReductionPercent.mean.toFixed(2)}% / ${mpcStress.congestionReductionPercent.mean.toFixed(2)}%\`，
+但基线负担仅 \`${mpcStress.baselineMeanDelayHours.mean.toFixed(3)}h / ${mpcStress.baselineMeanCongestionPercent.mean.toFixed(3)}%\`，
+触发小分母门禁，\`relativePercentClaimAllowed=${relativePercentClaimAllowed}\`；这些百分比不得出现在简历标题。
+
+## 封存期分块稳健性
+
+确定性 MPC 重复不同随机种子会天然得到零方差，因此本报告不用“跨种子 0 波动”证明 MPC 稳定，
+而是把 57 个月封存期切成三个连续时间块并分别冷启动回放。
+
+| 时间块 | 代理延误 | 有效拥堵压力 | 吞吐保持 | 非保持动作率 |
+|---|---:|---:|---:|---:|
+${temporalRows}
 
 ## 简历使用边界
 
 - 不可写“网络韧性评估模型准确率 89%”：仓库没有带真实韧性标签的监督学习任务，无法定义或验证 accuracy。
-- 可以写“在 MPA+ERA5 公开数据的留出离线模型回放中，三步 MPC……”，并引用其稳定的延误、
-  拥堵、吞吐保持率和期望安全风险率；不得把验证选优 RL 的不稳定闭环结果包装成收益。
+- 可以写“在 MPA+ERA5 公开数据的封存离线压力诊断中，三步 MPC 将代理延误从 A 降到 B、
+  有效拥堵压力从 C 降到 D，同时报告吞吐、安全、动作率和时间分块结果”；不能只摘相对百分比。
 - 五个动作的错峰、分流、能力与碳系数是公开的情景假设，并非来自真实干预 A/B 或因果估计；
   收益必须与这些参数及本报告的 \`claimEligibility\` 门禁一起解释。
 - 默认数据容量、风速、完整风浪能见度、安全覆盖率分别为 ${dataset.quality.capacityCoveragePercent}% / ${dataset.quality.windCoveragePercent}% / ${dataset.quality.weatherCoveragePercent}% / ${dataset.quality.safetyCoveragePercent}%，因此不能外推为泊位级实时业务收益。
+- 旧版 66% 报告保留在 \`reports/rl-benchmark-balanced-resilience.md\`，只作为校准前历史对照，不再作为当前简历证据。
 `;
 
 const reportDirectory = path.resolve('reports');
 await mkdir(reportDirectory, { recursive: true });
-const reportBaseName = `rl-benchmark-${objectiveId}`;
+const reportBaseName = `rl-benchmark-${objectiveId}-calibrated-v2`;
 await writeFile(path.join(reportDirectory, `${reportBaseName}.json`), `${JSON.stringify(report, null, 2)}\n`, 'utf8');
 await writeFile(path.join(reportDirectory, `${reportBaseName}.md`), markdown, 'utf8');
 process.stdout.write(`${path.join(reportDirectory, `${reportBaseName}.json`)}\n${path.join(reportDirectory, `${reportBaseName}.md`)}\n`);

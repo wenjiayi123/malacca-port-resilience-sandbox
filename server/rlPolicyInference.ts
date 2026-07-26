@@ -1,4 +1,5 @@
 import type { RlAlgorithmId, RlBenchmarkResponse } from './rlTrainingEngine.ts';
+import { RL_OPERATIONAL_CALIBRATION } from '../shared/rlOperationalCalibration.ts';
 
 export type RlDisturbanceType = 'none' | 'arrival-surge' | 'weather-shock' | 'capacity-loss';
 export type RlPolicyEventEffectMode = 'queue' | 'hold' | 'slow' | 'divert' | 'eco';
@@ -119,13 +120,7 @@ export interface RlPolicyInferenceResponse {
   };
 }
 
-const ACTIONS = [
-  { id: 'hold-plan', label: '保持计划', detail: '按当前到港计划与可用能力执行' },
-  { id: 'eco-speed', label: '低碳航速平滑', detail: '平滑到港波峰并降低单位运输碳强度' },
-  { id: 'arrival-window', label: '错峰到港窗口', detail: '把部分到港需求后移至下一服务窗口' },
-  { id: 'port-diversion', label: '邻港协同分流', detail: '把超出承载能力的船流分配至邻近港口' },
-  { id: 'capacity-control', label: '泊位能力重配置', detail: '重排泊位与服务资源，短时提升可用能力' },
-] as const;
+const ACTIONS = RL_OPERATIONAL_CALIBRATION.actions;
 
 const disturbanceLabels: Record<RlDisturbanceType, string> = {
   none: '无附加扰动',
@@ -148,20 +143,26 @@ const actionProjection = (
   state: Required<NonNullable<RlPolicyInferenceRequest['state']>>,
   disturbanceIntensity: number,
 ) => {
-  const profiles: Record<string, { congestion: number; delay: number; carbon: number; resilience: number; speed: number; diversion: number; shift: number }> = {
-    'hold-plan': { congestion: 0, delay: 0, carbon: 0, resilience: 0, speed: 12, diversion: 0, shift: 0 },
-    'eco-speed': { congestion: 3, delay: 6, carbon: 0.12, resilience: 2.2, speed: 10.5, diversion: 0, shift: 10 },
-    'arrival-window': { congestion: 12, delay: 14, carbon: 0.08, resilience: 7, speed: 11.4, diversion: 0, shift: 35 },
-    'port-diversion': { congestion: 16, delay: 18, carbon: -0.04, resilience: 8.5, speed: 11.8, diversion: 20, shift: 12 },
-    'capacity-control': { congestion: 13, delay: 16, carbon: -0.02, resilience: 7.5, speed: 12, diversion: 0, shift: 5 },
-  };
-  const profile = profiles[actionId] ?? profiles['hold-plan'];
+  const action = ACTIONS.find((candidate) => candidate.id === actionId) ?? ACTIONS[0];
+  const reliefFraction = action.deferredDemand
+    + action.divertedDemand
+    + Math.max(0, action.capacityMultiplier - 1);
   const stress = 1 + disturbanceIntensity * 0.2;
-  const congestion = clamp(state.congestionPercent - profile.congestion / stress, 0, 100);
-  const delay = clamp(state.delayMinutes - profile.delay / stress, 0, 999);
-  const carbon = Math.max(0, state.carbonTons * (1 - profile.carbon));
-  const resilience = clamp(state.resilienceIndex + profile.resilience / stress, 0, 100);
-  return { ...profile, congestion, delay, carbon, resilience };
+  const congestionRelief = Math.min(state.congestionPercent * 0.08, reliefFraction * 100) / stress;
+  const delayRelief = Math.min(state.delayMinutes * 0.08, state.delayMinutes * reliefFraction * 2) / stress;
+  const congestion = clamp(state.congestionPercent - congestionRelief, 0, 100);
+  const delay = clamp(state.delayMinutes - delayRelief, 0, 999);
+  const carbon = Math.max(0, state.carbonTons * action.carbonMultiplier);
+  const resilience = clamp(state.resilienceIndex + reliefFraction * 20 / stress, 0, 100);
+  return {
+    congestion,
+    delay,
+    carbon,
+    resilience,
+    speed: action.targetSpeedKnots,
+    diversion: action.divertedDemand * 100,
+    shift: action.arrivalShiftMinutes,
+  };
 };
 
 export const runRlPolicyInference = (
@@ -184,7 +185,13 @@ export const runRlPolicyInference = (
   const disturbanceType = request.disturbance?.type ?? 'none';
   const intensity = clamp(request.disturbance?.intensity ?? 0, 0, 1);
   const probabilities = softmax(trained.decision.values);
-  const selectedIndex = trained.decision.actionIndex;
+  const selectedIndex = (
+    state.congestionPercent < 1
+    && state.delayMinutes < 5
+    && disturbanceType === 'none'
+  )
+    ? 0
+    : trained.decision.actionIndex;
   const selectedAction = ACTIONS[selectedIndex] ?? ACTIONS[0];
   const projection = actionProjection(selectedAction.id, state, intensity);
   const entropy = -probabilities.reduce((sum, probability) =>
@@ -209,9 +216,9 @@ export const runRlPolicyInference = (
   }));
   const scenarioForecasts = [
     { id: 'observed', label: '观测需求延续', probability: 0.55, factor: 1 },
-    { id: 'demand-high', label: '到港需求上浮 15%', probability: 0.2, factor: 1.15 },
-    { id: 'capacity-low', label: '服务能力下降 15%', probability: 0.15, factor: 1.18 },
-    { id: 'weather-stress', label: '气象风险加剧', probability: 0.1, factor: 1.1 },
+    { id: 'demand-high', label: '到港需求上浮 5%', probability: 0.2, factor: 1.05 },
+    { id: 'capacity-low', label: '服务能力下降 2%', probability: 0.15, factor: 1.02 },
+    { id: 'weather-stress', label: '气象风险加剧', probability: 0.1, factor: 1.05 },
   ].map((scenario) => ({
     id: scenario.id,
     label: scenario.label,

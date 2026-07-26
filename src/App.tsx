@@ -6160,7 +6160,7 @@ export function App() {
     (result) => result.id === rlTraining.selectedAlgorithmId,
   );
   const simulatedRlDelayReductionLabel = selectedRlBenchmarkResult
-    ? `${selectedRlBenchmarkResult.evaluation.delayReductionPercent >= 0 ? '-' : '+'}${Math.abs(selectedRlBenchmarkResult.evaluation.delayReductionPercent).toFixed(1)}%`
+    ? `${selectedRlBenchmarkResult.evaluation.baseline.meanDelayHours.toFixed(2)}→${selectedRlBenchmarkResult.evaluation.modeled.meanDelayHours.toFixed(2)}h`
     : '--';
   const simulatedRlCarbonReduction = selectedRlBenchmarkResult
     ? selectedRlBenchmarkResult.evaluation.carbonReductionPercent
@@ -6524,6 +6524,10 @@ export function App() {
   const policyEvaluationMetrics = rlPolicyEvaluation?.metrics;
   const signedReduction = (value: number | undefined) =>
     value === undefined ? '--' : `${value >= 0 ? '-' : '+'}${Math.abs(value).toFixed(1)}`;
+  const beforeAfter = (baseline: number | undefined, modeled: number | undefined, digits = 2) =>
+    baseline === undefined || modeled === undefined
+      ? '--'
+      : `${baseline.toFixed(digits)}→${modeled.toFixed(digits)}`;
   const rlPolicyTestMetrics = [
     {
       label: '平均奖励',
@@ -6533,13 +6537,19 @@ export function App() {
     },
     {
       label: '平均延误',
-      value: signedReduction(policyEvaluationMetrics?.delayReductionPercent),
-      unit: '%',
+      value: beforeAfter(
+        policyEvaluationMetrics?.baseline.meanDelayHours,
+        policyEvaluationMetrics?.modeled.meanDelayHours,
+      ),
+      unit: 'h',
       tone: 'ok' as StatusTone,
     },
     {
       label: '平均拥堵',
-      value: signedReduction(policyEvaluationMetrics?.congestionReductionPercent),
+      value: beforeAfter(
+        policyEvaluationMetrics?.baseline.meanCongestionPercent,
+        policyEvaluationMetrics?.modeled.meanCongestionPercent,
+      ),
       unit: '%',
       tone: 'ok' as StatusTone,
     },
@@ -6550,10 +6560,10 @@ export function App() {
       tone: 'ok' as StatusTone,
     },
     {
-      label: '安全违规',
-      value: policyEvaluationMetrics ? String(policyEvaluationMetrics.safetyViolations) : '--',
-      unit: '项',
-      tone: (policyEvaluationMetrics?.safetyViolations ?? 0) > 0 ? 'danger' as StatusTone : 'ok' as StatusTone,
+      label: '期望安全风险',
+      value: policyEvaluationMetrics?.modeled.safetyViolationRatePercent.toFixed(2) ?? '--',
+      unit: '%',
+      tone: (policyEvaluationMetrics?.modeled.safetyViolationRatePercent ?? 0) > 5 ? 'danger' as StatusTone : 'ok' as StatusTone,
     },
     {
       label: '回放记录',
@@ -9928,7 +9938,7 @@ export function App() {
                         </span>
                       ))}
                       <span>
-                        <small><BilingualText text="延误改善" /></small>
+                        <small><BilingualText text="代理延误" /></small>
                         <strong>{simulatedRlDelayReductionLabel}</strong>
                       </span>
                       <span>
@@ -10001,7 +10011,7 @@ export function App() {
                               <strong>{result.label}</strong>
                               <em>
                                 {rlTraining.status === 'completed' && result.evaluation
-                                  ? `${result.evaluation.meanReward.toFixed(1)} / 延误-${result.evaluation.delayReductionPercent}%`
+                                  ? `${result.evaluation.meanReward.toFixed(1)} / 延误 ${result.evaluation.baseline.meanDelayHours.toFixed(2)}→${result.evaluation.modeled.meanDelayHours.toFixed(2)}h`
                                   : latestPoint
                                     ? `Ep ${latestPoint.episode} / R ${latestPoint.reward.toFixed(1)}`
                                     : '等待采样'}
@@ -10013,11 +10023,21 @@ export function App() {
                       <p>{rlBenchmarkMessage}</p>
                       {rlTraining.status === 'completed' && bestRlBenchmarkResult && (
                         <div className="rl-benchmark-best">
-                          <span><small>拥堵</small><strong>-{bestRlBenchmarkResult.evaluation.congestionReductionPercent}%</strong></span>
+                          <span>
+                            <small>有效拥堵</small>
+                            <strong>
+                              {bestRlBenchmarkResult.evaluation.baseline.meanCongestionPercent.toFixed(2)}
+                              →
+                              {bestRlBenchmarkResult.evaluation.modeled.meanCongestionPercent.toFixed(2)}%
+                            </strong>
+                          </span>
                           <span><small>碳排</small><strong>-{bestRlBenchmarkResult.evaluation.carbonReductionPercent}%</strong></span>
                           <span><small>韧性</small><strong>+{bestRlBenchmarkResult.evaluation.resilienceGain}</strong></span>
                           <span><small>服务率</small><strong>{bestRlBenchmarkResult.evaluation.modeled.meanServiceLevelPercent}%</strong></span>
-                          <span><small>安全违规</small><strong>{bestRlBenchmarkResult.evaluation.safetyViolations}</strong></span>
+                          <span>
+                            <small>期望安全风险</small>
+                            <strong>{bestRlBenchmarkResult.evaluation.modeled.safetyViolationRatePercent.toFixed(2)}%</strong>
+                          </span>
                         </div>
                       )}
                     </div>

@@ -96,7 +96,7 @@ for (const method of expectedMethods) {
     if (summary.samples < 2) errors.push(`insufficient seeds for ${method}`);
   }
 }
-if (report.verdict.primaryResumeEvidence !== 'MPA+ERA5 aggregate-v1 benchmark') {
+if (report.verdict.primaryResumeEvidence !== 'MPA+ERA5 calibrated-v2 benchmark') {
   errors.push('the short AIS window must not replace the official long-horizon primary evidence');
 }
 if (report.verdict.operationalClaimAllowed !== false) {

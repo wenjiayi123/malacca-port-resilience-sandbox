@@ -1,15 +1,16 @@
 {
   "schemaVersion": "public-dataset-credibility-comparison.v1",
-  "generatedAt": "2026-07-25T07:41:27.133Z",
+  "generatedAt": "2026-07-26T03:04:58.072Z",
   "evidenceLabel": "AIS_TRAFFIC_DENSITY_EXTERNAL_VALIDATION_NOT_PORT_KPI",
   "sourceFingerprint": {
     "algorithm": "sha256",
-    "digest": "ed7495679f1d909bf4c27f705b492a28e94cdb705efb899fa0a5f59e9e2b70bc",
+    "digest": "9557572b2837c5675ab45a397590b2c4a2d504e8b66fac4071741ea67285ca35",
     "files": {
-      "server/rlTrainingEngine.ts": "77bd10500402b4738df508c2c09af93617fa90731eb24f8f682b8a3483fc8f3b",
-      "server/portTrainingDataset.ts": "1d4a46fe33304f96c9bb9d56f3e26c37d1848c516294f1c157846a809552b78b",
+      "server/rlTrainingEngine.ts": "88ffb3621fef917f7d75a52884d7f9df3d7ebc36317ccdb9bd0ac07b75f6cac0",
+      "server/portTrainingDataset.ts": "9c2df5fba9be0f76117b01a1c736ad30196a2046653b0369e70826402b662757",
+      "shared/rlOperationalCalibration.ts": "b6963e043d268f1155ebd897fbfae3cf7e1b2a1fd31f5a1c359ec725cffb0798",
       "scripts/data/sync_infore_ais.mjs": "79ebb4a862565170115c7f343d8ebd933cfac060fce7b4235d82ea3c352b483f",
-      "scripts/rl/runPublicDatasetComparison.ts": "d40ee96de9c05ff069ee706f75aa6589cf5c9f3a35a5b17ae0fbf21b265972ba",
+      "scripts/rl/runPublicDatasetComparison.ts": "dc632999c2e33035950963b78fc579e78829df26a1f27a0857c49e24fc1234c0",
       "package.json": "6fc15c8143af1638ba3f6a7a3b124e6fb898946d270f7063e79275ca42cccf31",
       "pnpm-lock.yaml": "14809379f8d98cb6ef084952ddfb761f5f964abfcf1726e11ada2a1e14906e08"
     }
@@ -69,34 +70,74 @@
         "Carbon and field-operation benefit claims are disabled for this package."
       ],
       "strongestUse": "high-frequency ingestion, temporal split and algorithm-scale external validation",
+      "trainingProtocol": {
+        "episodesPerCandidate": 600,
+        "tuningTrials": 3,
+        "seeds": [
+          240520,
+          240521,
+          240522
+        ],
+        "totalRlEpisodes": 21600
+      },
       "selectedMethodId": "mpc",
       "methods": {
         "q-learning": {
           "label": "Q-Learning",
           "family": "reinforcement-learning",
           "validationSelectionScore": {
-            "mean": 3.069,
-            "standardDeviation": 0.284,
+            "mean": 3.689,
+            "standardDeviation": 0.009,
             "samples": 3
           },
           "environmentSteps": [
-            8640,
-            8640,
-            8640
+            43200,
+            43200,
+            43200
           ],
           "heldOutDelayReductionPercent": {
-            "mean": -923.903,
-            "standardDeviation": 657.243,
+            "mean": -4851.387,
+            "standardDeviation": 1691.779,
             "samples": 3
           },
           "heldOutCongestionReductionPercent": {
-            "mean": -950.667,
-            "standardDeviation": 650.06,
+            "mean": -4857.097,
+            "standardDeviation": 1676.057,
+            "samples": 3
+          },
+          "heldOutBaselineMeanDelayHours": {
+            "mean": 0.001,
+            "standardDeviation": 0,
+            "samples": 3
+          },
+          "heldOutModeledMeanDelayHours": {
+            "mean": 0.055,
+            "standardDeviation": 0.019,
+            "samples": 3
+          },
+          "heldOutAbsoluteDelayReductionHours": {
+            "mean": -0.054,
+            "standardDeviation": 0.019,
+            "samples": 3
+          },
+          "heldOutBaselineMeanCongestionPercent": {
+            "mean": 0.005,
+            "standardDeviation": 0,
+            "samples": 3
+          },
+          "heldOutModeledMeanCongestionPercent": {
+            "mean": 0.232,
+            "standardDeviation": 0.078,
+            "samples": 3
+          },
+          "heldOutAbsoluteCongestionReductionPoints": {
+            "mean": -0.227,
+            "standardDeviation": 0.078,
             "samples": 3
           },
           "heldOutThroughputRetentionPercent": {
-            "mean": 94.4,
-            "standardDeviation": 2.919,
+            "mean": 99.465,
+            "standardDeviation": 0.197,
             "samples": 3
           }
         },
@@ -104,28 +145,58 @@
           "label": "SARSA",
           "family": "reinforcement-learning",
           "validationSelectionScore": {
-            "mean": 3.286,
-            "standardDeviation": 0.149,
+            "mean": 3.694,
+            "standardDeviation": 0.004,
             "samples": 3
           },
           "environmentSteps": [
-            8640,
-            8640,
-            8640
+            43200,
+            43200,
+            43200
           ],
           "heldOutDelayReductionPercent": {
-            "mean": -847.98,
-            "standardDeviation": 548.651,
+            "mean": -6011.11,
+            "standardDeviation": 2491.735,
             "samples": 3
           },
           "heldOutCongestionReductionPercent": {
-            "mean": -883.87,
-            "standardDeviation": 567.803,
+            "mean": -6006.6,
+            "standardDeviation": 2478.749,
+            "samples": 3
+          },
+          "heldOutBaselineMeanDelayHours": {
+            "mean": 0.001,
+            "standardDeviation": 0,
+            "samples": 3
+          },
+          "heldOutModeledMeanDelayHours": {
+            "mean": 0.068,
+            "standardDeviation": 0.028,
+            "samples": 3
+          },
+          "heldOutAbsoluteDelayReductionHours": {
+            "mean": -0.067,
+            "standardDeviation": 0.028,
+            "samples": 3
+          },
+          "heldOutBaselineMeanCongestionPercent": {
+            "mean": 0.005,
+            "standardDeviation": 0,
+            "samples": 3
+          },
+          "heldOutModeledMeanCongestionPercent": {
+            "mean": 0.285,
+            "standardDeviation": 0.116,
+            "samples": 3
+          },
+          "heldOutAbsoluteCongestionReductionPoints": {
+            "mean": -0.28,
+            "standardDeviation": 0.116,
             "samples": 3
           },
           "heldOutThroughputRetentionPercent": {
-            "mean": 96.634,
-            "standardDeviation": 1.587,
+            "mean": 99.458,
+            "standardDeviation": 0.164,
             "samples": 3
           }
         },
@@ -133,28 +204,58 @@
           "label": "Expected SARSA",
           "family": "reinforcement-learning",
           "validationSelectionScore": {
-            "mean": 2.905,
-            "standardDeviation": 0.142,
+            "mean": 3.676,
+            "standardDeviation": 0.005,
             "samples": 3
           },
           "environmentSteps": [
-            8640,
-            8640,
-            8640
+            43200,
+            43200,
+            43200
           ],
           "heldOutDelayReductionPercent": {
-            "mean": -1058.93,
-            "standardDeviation": 322.916,
+            "mean": -11293.053,
+            "standardDeviation": 3277.111,
             "samples": 3
           },
           "heldOutCongestionReductionPercent": {
-            "mean": -1090.5,
-            "standardDeviation": 372.435,
+            "mean": -11247.853,
+            "standardDeviation": 3229.512,
+            "samples": 3
+          },
+          "heldOutBaselineMeanDelayHours": {
+            "mean": 0.001,
+            "standardDeviation": 0,
+            "samples": 3
+          },
+          "heldOutModeledMeanDelayHours": {
+            "mean": 0.126,
+            "standardDeviation": 0.037,
+            "samples": 3
+          },
+          "heldOutAbsoluteDelayReductionHours": {
+            "mean": -0.125,
+            "standardDeviation": 0.037,
+            "samples": 3
+          },
+          "heldOutBaselineMeanCongestionPercent": {
+            "mean": 0.005,
+            "standardDeviation": 0,
+            "samples": 3
+          },
+          "heldOutModeledMeanCongestionPercent": {
+            "mean": 0.531,
+            "standardDeviation": 0.151,
+            "samples": 3
+          },
+          "heldOutAbsoluteCongestionReductionPoints": {
+            "mean": -0.526,
+            "standardDeviation": 0.151,
             "samples": 3
           },
           "heldOutThroughputRetentionPercent": {
-            "mean": 91.156,
-            "standardDeviation": 3.464,
+            "mean": 99.282,
+            "standardDeviation": 0.157,
             "samples": 3
           }
         },
@@ -162,28 +263,58 @@
           "label": "Dyna-Q",
           "family": "reinforcement-learning",
           "validationSelectionScore": {
-            "mean": 3.301,
-            "standardDeviation": 0.118,
+            "mean": 3.716,
+            "standardDeviation": 0.011,
             "samples": 3
           },
           "environmentSteps": [
-            8640,
-            8640,
-            8640
+            43200,
+            43200,
+            43200
           ],
           "heldOutDelayReductionPercent": {
-            "mean": -114.113,
-            "standardDeviation": 102.23,
+            "mean": -1836.11,
+            "standardDeviation": 1758.738,
             "samples": 3
           },
           "heldOutCongestionReductionPercent": {
-            "mean": -139.143,
-            "standardDeviation": 117.545,
+            "mean": -1841.913,
+            "standardDeviation": 1769.394,
+            "samples": 3
+          },
+          "heldOutBaselineMeanDelayHours": {
+            "mean": 0.001,
+            "standardDeviation": 0,
+            "samples": 3
+          },
+          "heldOutModeledMeanDelayHours": {
+            "mean": 0.022,
+            "standardDeviation": 0.02,
+            "samples": 3
+          },
+          "heldOutAbsoluteDelayReductionHours": {
+            "mean": -0.021,
+            "standardDeviation": 0.02,
+            "samples": 3
+          },
+          "heldOutBaselineMeanCongestionPercent": {
+            "mean": 0.005,
+            "standardDeviation": 0,
+            "samples": 3
+          },
+          "heldOutModeledMeanCongestionPercent": {
+            "mean": 0.091,
+            "standardDeviation": 0.083,
+            "samples": 3
+          },
+          "heldOutAbsoluteCongestionReductionPoints": {
+            "mean": -0.086,
+            "standardDeviation": 0.083,
             "samples": 3
           },
           "heldOutThroughputRetentionPercent": {
-            "mean": 94.919,
-            "standardDeviation": 2.353,
+            "mean": 99.682,
+            "standardDeviation": 0.093,
             "samples": 3
           }
         },
@@ -191,7 +322,7 @@
           "label": "模型预测控制（MPC）",
           "family": "control-theory",
           "validationSelectionScore": {
-            "mean": 3.684,
+            "mean": 3.738,
             "standardDeviation": 0,
             "samples": 3
           },
@@ -201,17 +332,47 @@
             1007
           ],
           "heldOutDelayReductionPercent": {
-            "mean": 50.78,
+            "mean": 50,
             "standardDeviation": 0,
             "samples": 3
           },
           "heldOutCongestionReductionPercent": {
-            "mean": 49.33,
+            "mean": 50.5,
+            "standardDeviation": 0,
+            "samples": 3
+          },
+          "heldOutBaselineMeanDelayHours": {
+            "mean": 0.001,
+            "standardDeviation": 0,
+            "samples": 3
+          },
+          "heldOutModeledMeanDelayHours": {
+            "mean": 0.001,
+            "standardDeviation": 0,
+            "samples": 3
+          },
+          "heldOutAbsoluteDelayReductionHours": {
+            "mean": 0,
+            "standardDeviation": 0,
+            "samples": 3
+          },
+          "heldOutBaselineMeanCongestionPercent": {
+            "mean": 0.005,
+            "standardDeviation": 0,
+            "samples": 3
+          },
+          "heldOutModeledMeanCongestionPercent": {
+            "mean": 0.002,
+            "standardDeviation": 0,
+            "samples": 3
+          },
+          "heldOutAbsoluteCongestionReductionPoints": {
+            "mean": 0.003,
             "standardDeviation": 0,
             "samples": 3
           },
           "heldOutThroughputRetentionPercent": {
-            "mean": 99.755,
+            "mean": 99.984,
             "standardDeviation": 0,
             "samples": 3
           }
@@ -220,7 +381,7 @@
     }
   },
   "verdict": {
-    "primaryResumeEvidence": "MPA+ERA5 aggregate-v1 benchmark",
+    "primaryResumeEvidence": "MPA+ERA5 calibrated-v2 benchmark",
     "secondaryScaleEvidence": "INFORE Piraeus AIS one-minute traffic-density benchmark",
     "rationale": [
       "MPA covers more than three decades and represents official vessel-arrival statistics, so it is stronger for long-horizon demand evidence.",

@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { RL_OPERATIONAL_CALIBRATION } from '../shared/rlOperationalCalibration.ts';
 
 export interface PortTrainingRecord {
   portId: string;
@@ -38,6 +39,8 @@ export interface PortTrainingDataset {
     safetyCoveragePercent: number;
     capacityMode: 'measured' | 'mixed' | 'empirical-proxy';
     capacityProxyCalibratedOn: 'train-only' | null;
+    capacityProxyMethod: string | null;
+    capacityProxyValue: number | null;
     operationalClaimAllowed: boolean;
     validationArrivalDriftPercent: number;
     testArrivalDriftPercent: number;
@@ -225,8 +228,8 @@ export const loadPortTrainingDataset = async (
   // validation/test arrivals here would leak future demand into the environment.
   const inferredCapacity = percentile(
     normalized.records.slice(0, trainEnd).map((record) => record.arrivals),
-    0.75,
-  ) * 0.96;
+    RL_OPERATIONAL_CALIBRATION.capacityProxy.quantile,
+  ) * RL_OPERATIONAL_CALIBRATION.capacityProxy.multiplier;
   const records = normalized.records.map((record) => ({
     ...record,
     capacity: Number.isFinite(record.capacity) && record.capacity > 0
@@ -257,6 +260,12 @@ export const loadPortTrainingDataset = async (
     quality: {
       ...normalized.quality,
       capacityProxyCalibratedOn: normalized.quality.capacityMode === 'measured' ? null : 'train-only',
+      capacityProxyMethod: normalized.quality.capacityMode === 'measured'
+        ? null
+        : RL_OPERATIONAL_CALIBRATION.capacityProxy.method,
+      capacityProxyValue: normalized.quality.capacityMode === 'measured'
+        ? null
+        : Number(inferredCapacity.toFixed(2)),
       operationalClaimAllowed:
         normalized.quality.capacityMode === 'measured' &&
         normalized.quality.weatherCoveragePercent === 100 &&

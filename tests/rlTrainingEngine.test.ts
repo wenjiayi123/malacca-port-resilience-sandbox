@@ -8,6 +8,7 @@ import {
   evaluateTrainedPolicy,
   inferTrainedPolicy,
   RL_ALGORITHMS,
+  RL_ACTIONS,
   resolveRewardWeights,
   trainRlBenchmark,
   type RlTrainingRequest,
@@ -45,6 +46,8 @@ test('public dataset is chronological and separates training, validation, and fi
   assert.equal(dataset.split.method, 'chronological');
   assert.equal(dataset.quality.capacityMode, 'empirical-proxy');
   assert.equal(dataset.quality.capacityProxyCalibratedOn, 'train-only');
+  assert.equal(dataset.quality.capacityProxyMethod, 'train-p90-service-envelope');
+  assert.ok((dataset.quality.capacityProxyValue ?? 0) > 0);
   assert.equal(dataset.quality.operationalClaimAllowed, false);
   assert.equal(dataset.portId, 'SGSIN-AGGREGATE');
   assert.equal(dataset.evidenceLevel, 'public-aggregate-proxy');
@@ -88,8 +91,18 @@ test('capacity proxy is calibrated on training records without future-demand lea
   await writeFile(datasetPath, JSON.stringify(records), 'utf8');
   const dataset = await loadPortTrainingDataset(datasetPath);
   assert.equal(dataset.trainRecords.length, 14);
-  assert.ok(dataset.records.every((record) => record.capacity === 96));
+  assert.ok(dataset.records.every((record) => record.capacity === 100));
   assert.equal(dataset.quality.capacityProxyCalibratedOn, 'train-only');
+});
+
+test('public aggregate actions stay inside the conservative intervention envelope', () => {
+  for (const action of RL_ACTIONS) {
+    assert.ok(action.deferredDemand <= 0.02);
+    assert.ok(action.divertedDemand <= 0.01);
+    assert.ok(action.capacityMultiplier >= 0.995 && action.capacityMultiplier <= 1.02);
+    assert.ok(action.carbonMultiplier >= 0.98 && action.carbonMultiplier <= 1.01);
+    assert.ok(Math.abs(action.safetyModifier) <= 0.003);
+  }
 });
 
 test('objective presets resolve to distinct normalized reward functions', () => {

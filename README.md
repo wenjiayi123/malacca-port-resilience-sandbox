@@ -26,18 +26,18 @@
 
 <table>
   <tr>
-    <th align="center">公开月度记录<br /><sub>PUBLIC RECORDS</sub></th>
-    <th align="center">统一策略矩阵<br /><sub>CONTROL MATRIX</sub></th>
-    <th align="center">模型延误<br /><sub>MODEL DELAY</sub></th>
-    <th align="center">模型拥堵<br /><sub>MODEL CONGESTION</sub></th>
-    <th align="center">吞吐保持<br /><sub>THROUGHPUT RETENTION</sub></th>
+    <th align="center">长期需求证据<br /><sub>LONG-HORIZON DEMAND</sub></th>
+    <th align="center">高频轨迹证据<br /><sub>HIGH-FREQUENCY AIS</sub></th>
+    <th align="center">真实训练规模<br /><sub>TRAINING WORKLOAD</sub></th>
+    <th align="center">保守压力诊断<br /><sub>CALIBRATED STRESS</sub></th>
+    <th align="center">声明门禁<br /><sub>CLAIM GATE</sub></th>
   </tr>
   <tr>
-    <td align="center"><strong>377</strong><br />MPA + ERA5</td>
-    <td align="center"><strong>4 RL + MPC</strong><br />3 seeds / sealed test</td>
-    <td align="center"><strong>−66.00%</strong><br />MPC vs hold-plan</td>
-    <td align="center"><strong>−66.27%</strong><br />closed-loop replay</td>
-    <td align="center"><strong>99.03%</strong><br />deferred backlog 4.97%</td>
+    <td align="center"><strong>4,064,858</strong><br />累计到港艘次 / 377月</td>
+    <td align="center"><strong>371,585</strong><br />AIS messages / 1,440 min</td>
+    <td align="center"><strong>21,600</strong><br />RL episodes / 3×3 protocol</td>
+    <td align="center"><strong>0.344h → 0.110h</strong><br />吞吐保持 99.715%</td>
+    <td align="center"><strong>相对百分比禁用</strong><br />small-denominator blocked</td>
   </tr>
 </table>
 
@@ -95,11 +95,25 @@ This is not an animation-only dashboard. Training progress comes from completed 
 | RL调参 / RL tuning | 每候选600 episodes、3组超参数、3个随机种子<br><sub>600 episodes per candidate, three parameter sets, three seeds</sub> |
 | 方法 / Methods | Q-Learning、SARSA、Expected SARSA、Dyna-Q、三步MPC |
 | 选型规则 / Selection | 验证前段调参、验证后段选型，最终测试不参与选择<br><sub>Tune on early validation, select on late validation; final test never selects</sub> |
-| 声明门禁 / Claim gate | 吞吐、期望安全风险、延误、拥堵、跨种子稳定性、递延积压6/6通过<br><sub>Throughput, expected safety risk, delay, congestion, cross-seed stability, and deferred backlog: 6/6 passed</sub> |
+| 保守动作上限 / Action envelope | 单步错峰≤2%、分流≤1%、短时能力增益≤2%<br><sub>Defer ≤2%, divert ≤1%, temporary capacity uplift ≤2%</sub> |
+| 稳健性 / Robustness | 3个随机种子用于RL；确定性MPC改用3个连续封存时间块验证<br><sub>Three RL seeds; three chronological blocks for deterministic MPC</sub> |
+| 声明门禁 / Claim gate | 绝对压力诊断8/8通过；相对下降百分比因小分母被禁止<br><sub>Absolute diagnostic 8/8; relative reduction claim blocked</sub> |
 
-验证选出的Expected SARSA在封存闭环回放中暴露出跨种子不稳定，系统因此不把它包装为业务收益；稳定的MPC对照在同一测试段实现模型延误降低66.00%、拥堵降低66.27%、吞吐保持99.03%、期望安全违规率3.67%，最终递延积压为平均月到港量的4.97%。完整五算法结果、负向结果和源码指纹均保存在[`reports/rl-benchmark-balanced-resilience.md`](reports/rl-benchmark-balanced-resilience.md)。
+常态封存回放没有形成可测的基线延误或拥堵，MPC 在 96.49% 时段保持原计划，因此系统不制造
+“常态收益”。在明确标注的温和压力诊断（到港 +5%、临时能力 −2%）中，三步 MPC 将代理延误从
+0.344h 降至 0.110h、有效拥堵压力从 1.435% 降至 0.468%，同时保持 99.715% 吞吐、3.734%
+逐步期望安全风险和 21.053% 非保持动作率。由于基线负担很小，相对变化会被放大到约 68%，
+声明门禁明确禁止引用该百分比。完整五方法结果、绝对前后值、三时间块诊断和源码指纹见
+[保守校准 v2 报告](reports/rl-benchmark-balanced-resilience-calibrated-v2.md)；原
+[66% 报告](reports/rl-benchmark-balanced-resilience.md)仅作为校准前历史对照保留。
 
-The validation-selected Expected SARSA policy becomes unstable across seeds on sealed closed-loop replay and is therefore rejected as a business-benefit claim. On the same test segment, the stable MPC comparator reduces modelled delay by 66.00% and congestion by 66.27%, retains 99.03% throughput, records 3.67% expected safety violation, and ends with deferred backlog equal to 4.97% of mean monthly arrivals. The [versioned benchmark report](reports/rl-benchmark-balanced-resilience.md) preserves full five-method results, negative findings, and source fingerprints rather than a cherry-picked headline.
+The normal sealed replay has no measurable baseline burden, so MPC holds plan for 96.49% of steps and
+no normal-operation benefit is claimed. Under the explicitly bounded +5% arrival / −2% capacity stress
+diagnostic, MPC changes proxy delay from 0.344h to 0.110h and effective congestion pressure from 1.435%
+to 0.468%, with 99.715% throughput retention, 3.734% expected stepwise safety risk, and a 21.053%
+non-hold action rate. The resulting relative percentage is blocked because the baseline denominator is
+too small. See the [calibrated v2 evidence](reports/rl-benchmark-balanced-resilience-calibrated-v2.md);
+the [legacy 66% report](reports/rl-benchmark-balanced-resilience.md) remains available only for audit.
 
 ## 上海港落地合同与大数据外部验证 / Shanghai landing and scale validation
 
@@ -152,7 +166,7 @@ benchmark.
   <sub><strong>真实任务完成态：</strong>本次本机任务由服务器返回 7,200 episodes、173,348 环境步、
   389,032 次参数更新、263/57/57 时间切分和 <code>checkpoint.json</code>；训练时不渲染策略效果，
   最终测试仍需显式启动。三随机种子的公开基准结果见
-  <a href="reports/rl-benchmark-balanced-resilience.md">版本化证据报告</a>。<br />
+  <a href="reports/rl-benchmark-balanced-resilience-calibrated-v2.md">保守校准证据报告</a>。<br />
   <strong>Completed backend job:</strong> this local run reports 7,200 episodes, 173,348 environment
   steps, 389,032 updates, a 263/57/57 temporal split, and a checkpoint artifact. Policy rendering
   remains disabled during training, and final testing is explicit.</sub>

@@ -3,6 +3,7 @@ import {
   getRlObjectivePreset,
   type RlObjectiveWeights,
 } from '../shared/rlObjectivePresets.ts';
+import { RL_OPERATIONAL_CALIBRATION } from '../shared/rlOperationalCalibration.ts';
 
 export type RlAlgorithmId = 'q-learning' | 'sarsa' | 'expected-sarsa' | 'dyna-q' | 'mpc';
 
@@ -243,28 +244,16 @@ export const RL_ALGORITHMS: Array<{
   { id: 'mpc', label: '模型预测控制（MPC）', color: '#ff6d72', family: 'control-theory' },
 ];
 
-export const RL_ACTIONS: ActionDefinition[] = [
-  {
-    id: 'hold-plan', label: '保持计划', detail: '按当前到港计划与可用能力执行',
-    deferredDemand: 0, divertedDemand: 0, capacityMultiplier: 1, carbonMultiplier: 1, safetyModifier: 0,
-  },
-  {
-    id: 'eco-speed', label: '低碳航速平滑', detail: '平滑到港波峰并降低单位运输碳强度',
-    deferredDemand: 0.07, divertedDemand: 0, capacityMultiplier: 0.99, carbonMultiplier: 0.88, safetyModifier: -0.02,
-  },
-  {
-    id: 'arrival-window', label: '错峰到港窗口', detail: '把部分到港需求后移至下一服务窗口',
-    deferredDemand: 0.16, divertedDemand: 0, capacityMultiplier: 1.02, carbonMultiplier: 0.94, safetyModifier: -0.03,
-  },
-  {
-    id: 'port-diversion', label: '邻港协同分流', detail: '把超出承载能力的船流分配至邻近港口',
-    deferredDemand: 0, divertedDemand: 0.2, capacityMultiplier: 0.98, carbonMultiplier: 1.08, safetyModifier: 0.01,
-  },
-  {
-    id: 'capacity-control', label: '泊位能力重配置', detail: '重排泊位与服务资源，短时提升可用能力',
-    deferredDemand: 0.02, divertedDemand: 0, capacityMultiplier: 1.14, carbonMultiplier: 1.04, safetyModifier: 0.025,
-  },
-];
+export const RL_ACTIONS: ActionDefinition[] = RL_OPERATIONAL_CALIBRATION.actions.map((action) => ({
+  id: action.id,
+  label: action.label,
+  detail: action.detail,
+  deferredDemand: action.deferredDemand,
+  divertedDemand: action.divertedDemand,
+  capacityMultiplier: action.capacityMultiplier,
+  carbonMultiplier: action.carbonMultiplier,
+  safetyModifier: action.safetyModifier,
+}));
 
 const RL_IDS: Array<Exclude<RlAlgorithmId, 'mpc'>> = ['q-learning', 'sarsa', 'expected-sarsa', 'dyna-q'];
 /**
@@ -388,7 +377,7 @@ const transition = (
   const processed = Math.min(demandAvailableForService, serviceCapacity);
   const queue = Math.max(0, demandAvailableForService - processed);
   const deferredBacklog = Math.max(0, state.deferredBacklog - releasedDeferred + newlyDeferred);
-  const delayHours = (queue + deferredBacklog * 0.65) / Math.max(1, serviceCapacity) * 24;
+  const delayHours = (queue + deferredBacklog) / Math.max(1, serviceCapacity) * 24;
   const baselineTonnage = Math.max(1, record.grossTonnage);
   const demandToManage = Math.max(1, state.queue + arrivals + releasedDeferred);
   const serviceLevel = clamp((processed + diverted) / demandToManage, 0, 1);
@@ -469,7 +458,11 @@ const scenarioRecords = (
   testCaseId: RlPolicyEvaluationResponse['testCaseId'],
 ) => records.map((record) => {
   if (testCaseId === 'peak-congestion-stress') {
-    return { ...record, arrivals: record.arrivals * 1.24, capacity: record.capacity * 0.94 };
+    return {
+      ...record,
+      arrivals: record.arrivals * RL_OPERATIONAL_CALIBRATION.stressTest.arrivalMultiplier,
+      capacity: record.capacity * RL_OPERATIONAL_CALIBRATION.stressTest.capacityMultiplier,
+    };
   }
   if (testCaseId === 'weather-disturbance-generalization') {
     return {
@@ -492,6 +485,11 @@ const mpcAction = (
   const forecast = Array.from({ length: policy.horizon }, (_, offset) =>
     records[Math.min(records.length - 1, index + offset)] ?? records.at(-1)!,
   );
+  const currentCapacity = Math.max(1, records[index]?.capacity ?? forecast[0].capacity);
+  const currentPressure = (state.queue + state.deferredBacklog) / currentCapacity;
+  const forecastRequiresControl = forecast.some((record) =>
+    record.arrivals * (1 + policy.forecastBias) > record.capacity);
+  if (currentPressure < 0.005 && !forecastRequiresControl) return 0;
   let bestAction = 0;
   let bestCost = Number.POSITIVE_INFINITY;
   for (let first = 0; first < RL_ACTIONS.length; first += 1) {
@@ -563,11 +561,8 @@ const evaluatePolicy = (
       throughputRetentionPercent: round(sample.throughputRetention * 100, 2),
       queueVessels: round(state.queue, 1),
       delayHours: round(state.delayHours, 2),
-      // Include deferred demand in the congestion denominator. Reporting only
-      // the visible queue would let an arrival-window action appear to remove
-      // congestion simply by moving vessels into an unreported backlog.
       congestionPercent: round(
-        (state.queue + state.deferredBacklog * 0.65)
+        (state.queue + state.deferredBacklog)
           / Math.max(1, record.capacity)
           * 100,
         2,

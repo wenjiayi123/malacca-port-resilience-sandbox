@@ -12,6 +12,11 @@ interface BenchmarkReport {
       operationalClaimAllowed: boolean;
     };
   };
+  datasetScale: {
+    monthlyRecords: number;
+    cumulativeVesselArrivals: number;
+    range: [string, string];
+  };
   sourceFingerprint: {
     algorithm: string;
     digest: string;
@@ -25,31 +30,47 @@ interface BenchmarkReport {
     samples: number;
   }>>>;
   modelContract: {
+    calibrationId: string;
     observations: string[];
     actions: Array<{
       id: string;
       evidenceLevel: string;
+      deferredDemandFraction: number;
+      divertedDemandFraction: number;
+      capacityMultiplier: number;
     }>;
     evaluationSafetyMetric: string;
   };
   provisionalResumeMetric: {
     recommendedMethodId: string;
     allowedOnlyWithOfflineReplayQualifier: boolean;
+    relativePercentClaimAllowed: boolean;
   };
   claimEligibility: {
     methodId: string;
+    relativePercentClaimAllowed: boolean;
     checks: Record<string, boolean>;
     passed: boolean;
     scope: string;
   };
+  temporalRobustness: {
+    methodId: string;
+    testCaseId: string;
+    blocks: Array<{
+      range: [string, string];
+      baselineMeanDelayHours: number;
+      modeledMeanDelayHours: number;
+      interventionRatePercent: number;
+    }>;
+  };
 }
 
 const reportPath = path.resolve(
-  process.env.RL_BENCHMARK_REPORT || 'reports/rl-benchmark-balanced-resilience.json',
+  process.env.RL_BENCHMARK_REPORT || 'reports/rl-benchmark-balanced-resilience-calibrated-v2.json',
 );
 const report = JSON.parse(await readFile(reportPath, 'utf8')) as BenchmarkReport;
 const errors: string[] = [];
-if (report.schemaVersion !== 'resume-rl-benchmark.v1') errors.push('unsupported report schema');
+if (report.schemaVersion !== 'resume-rl-benchmark.v2') errors.push('unsupported report schema');
 if (report.evidenceLabel !== 'OFFLINE_MODEL_REPLAY_NOT_FIELD_KPI') errors.push('missing evidence boundary');
 if (report.dataset.quality.operationalClaimAllowed !== false) {
   errors.push('default public aggregate report must not allow operational claims');
@@ -57,24 +78,55 @@ if (report.dataset.quality.operationalClaimAllowed !== false) {
 if (!report.modelContract?.observations.includes('deferred_backlog_to_capacity')) {
   errors.push('observation contract must include deferred backlog');
 }
+if (report.modelContract?.calibrationId !== 'public-aggregate-conservative-v2') {
+  errors.push('missing conservative calibration contract');
+}
 if (report.modelContract?.actions.length !== 5 ||
-    report.modelContract.actions.some((action) => action.evidenceLevel !== 'declared_scenario_assumption')) {
+    report.modelContract.actions.some((action) => action.evidenceLevel !== 'bounded_scenario_assumption')) {
   errors.push('action assumptions are incomplete or overclaimed');
+}
+if (report.modelContract.actions.some((action) =>
+  action.deferredDemandFraction > 0.02 ||
+  action.divertedDemandFraction > 0.01 ||
+  action.capacityMultiplier < 0.995 ||
+  action.capacityMultiplier > 1.02)) {
+  errors.push('action exceeds the public aggregate intervention envelope');
 }
 if (report.modelContract?.evaluationSafetyMetric !== 'mean expected violation probability per time step') {
   errors.push('deterministic safety metric is not the expected modeled risk');
 }
 if (report.provisionalResumeMetric?.recommendedMethodId !== 'mpc' ||
-    report.provisionalResumeMetric?.allowedOnlyWithOfflineReplayQualifier !== true) {
+    report.provisionalResumeMetric?.allowedOnlyWithOfflineReplayQualifier !== true ||
+    report.provisionalResumeMetric?.relativePercentClaimAllowed !== false) {
   errors.push('resume metric must remain an offline-qualified MPC result');
 }
 if (report.claimEligibility?.methodId !== 'mpc' ||
-    report.claimEligibility?.scope !== 'offline_model_replay_only' ||
+    report.claimEligibility?.scope !== 'offline_aggregate_stress_diagnostic_only' ||
+    report.claimEligibility?.relativePercentClaimAllowed !== false ||
     report.claimEligibility?.passed !== Object.values(report.claimEligibility?.checks || {}).every(Boolean)) {
   errors.push('claim eligibility gate is inconsistent');
 }
+if (report.temporalRobustness?.methodId !== 'mpc' ||
+    report.temporalRobustness?.testCaseId !== 'peak-congestion-stress' ||
+    report.temporalRobustness?.blocks.length !== 3 ||
+    report.temporalRobustness.blocks.some((block) =>
+      block.range.length !== 2 ||
+      ![
+        block.baselineMeanDelayHours,
+        block.modeledMeanDelayHours,
+        block.interventionRatePercent,
+      ].every(Number.isFinite))) {
+  errors.push('three-block temporal robustness evidence is incomplete');
+}
 const dataset = await loadPortTrainingDataset();
 if (report.dataset.fingerprint !== dataset.fingerprint) errors.push('dataset fingerprint mismatch');
+const cumulativeVesselArrivals = dataset.records.reduce((sum, record) => sum + record.arrivals, 0);
+if (report.datasetScale?.monthlyRecords !== dataset.records.length ||
+    report.datasetScale?.cumulativeVesselArrivals !== cumulativeVesselArrivals ||
+    report.datasetScale?.range[0] !== dataset.records[0].timestamp ||
+    report.datasetScale?.range[1] !== dataset.records.at(-1)!.timestamp) {
+  errors.push('dataset scale summary mismatch');
+}
 if (report.sourceFingerprint.algorithm !== 'sha256') errors.push('unsupported source fingerprint');
 
 const sourceEntries = Object.entries(report.sourceFingerprint.files).sort(([left], [right]) =>
