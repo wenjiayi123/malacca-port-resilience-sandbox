@@ -73,6 +73,17 @@ This is not an animation-only dashboard. Training progress comes from completed 
 >
 > This repository supports research, teaching, and engineering verification. It is not a VTS/TOS, ECDIS, navigation device, or autonomous production dispatcher. Public statistics, model estimates, authorized interfaces, historical replay, and synthetic scenarios remain explicitly separated.
 
+<p align="center">
+  <img src="docs/assets/sandbox-command-center.jpg" alt="港航态势、事件注入、策略回放与人工控制闭环" width="100%" />
+</p>
+
+<p align="center">
+  <sub><strong>港航态势与核心闭环：</strong>马六甲港航网络、拥堵传播、事件注入、策略回放与人工控制
+  位于同一业务画面；公开统计、情景船舶和授权实时数据使用不同状态标识。<br />
+  <strong>Maritime command loop:</strong> network state, congestion propagation, event injection,
+  policy replay, and human control share one operational surface with explicit evidence modes.</sub>
+</p>
+
 ## 为什么这个项目值得关注 / Why this project matters
 
 - <strong>从态势到证据闭环</strong>：港口、航道、船舶、拥堵、延误、碳排与韧性状态共同进入事件推演，
@@ -116,6 +127,18 @@ This is not an animation-only dashboard. Training progress comes from completed 
 [保守校准 v2 报告](reports/rl-benchmark-balanced-resilience-calibrated-v2.md)；原
 [66% 报告](reports/rl-benchmark-balanced-resilience.md)仅作为校准前历史对照保留。
 
+<p align="center">
+  <img src="docs/assets/rl-training-complete-evidence.jpg" alt="真实训练完成后的服务器遥测、时间切分与检查点画面" width="100%" />
+</p>
+
+<p align="center">
+  <sub><strong>真实任务完成态：</strong>服务器任务返回 7,200 episodes、173,348 环境步、
+  389,032 次参数更新、263/57/57 时间切分和 <code>checkpoint.json</code>；训练阶段不渲染策略效果，
+  最终测试仍需显式启动。<br />
+  <strong>Completed backend job:</strong> the server reports episodes, environment steps, updates,
+  temporal isolation, and a checkpoint artifact; sealed-test replay remains explicit.</sub>
+</p>
+
 The normal sealed replay has no measurable baseline burden, so MPC holds plan for 96.49% of steps and
 no normal-operation benefit is claimed. Under the explicitly bounded +5% arrival / −2% capacity stress
 diagnostic, MPC changes proxy delay from 0.344h to 0.110h and effective congestion pressure from 1.435%
@@ -152,38 +175,7 @@ records** and runs the same five methods with three seeds and chronological hold
 coverage makes it scale evidence, not a Shanghai field KPI or a replacement for the long-horizon MPA
 benchmark.
 
-## 工程画面与证据锚点 / Engineering surfaces and evidence anchors
-
-<p align="center">
-  <img src="docs/assets/xiaoyi-multi-ui-linkage.jpg" alt="马六甲沙盘、训练中心、小懿训练顾问与系统联动助手同屏" width="100%" />
-</p>
-
-<p align="center">
-  <sub><strong>多层 UI 联动：</strong>主沙盘、五方法训练矩阵、小懿 RL 参数顾问与小懿白名单页面执行器
-  同屏工作。画面明确标出内置规则顾问不是大模型；截图证明交互结构，训练结果仍以服务器任务、
-  检查点和版本化报告为准。<br />
-  <strong>Multi-surface linkage:</strong> the sandbox, five-method matrix, Xiaoyi RL advisor, and
-  allowlisted UI executor operate together. The UI identifies the embedded rule advisor as non-LLM;
-  result claims remain anchored to server jobs, checkpoints, and versioned reports.</sub>
-</p>
-
-<p align="center">
-  <img src="docs/assets/rl-training-complete-evidence.jpg" alt="真实训练完成后的服务器遥测、时间切分与检查点画面" width="100%" />
-</p>
-
-<p align="center">
-  <sub><strong>真实任务完成态：</strong>本次本机任务由服务器返回 7,200 episodes、173,348 环境步、
-  389,032 次参数更新、263/57/57 时间切分和 <code>checkpoint.json</code>；训练时不渲染策略效果，
-  最终测试仍需显式启动。三随机种子的公开基准结果见
-  <a href="reports/rl-benchmark-balanced-resilience-calibrated-v2.md">保守校准证据报告</a>。<br />
-  <strong>Completed backend job:</strong> this local run reports 7,200 episodes, 173,348 environment
-  steps, 389,032 updates, a 263/57/57 temporal split, and a checkpoint artifact. Policy rendering
-  remains disabled during training, and final testing is explicit.</sub>
-</p>
-
-| 港航态势与核心闭环 / Maritime situation and core loop | 小懿执行报告与人工门禁 / Xiaoyi report and human gate |
-|---|---|
-| ![港航态势与核心闭环](docs/assets/sandbox-command-center.jpg) | ![小懿执行报告与人工门禁](docs/assets/human-review-gate.jpg) |
+## 工程证据索引 / Engineering evidence index
 
 | 画面 / Surface | 可见工程能力 / Visible engineering capability | 证据锚点 / Evidence anchor |
 |---|---|---|
@@ -222,6 +214,17 @@ flowchart LR
   XADV --> JOB
   XEXEC --> UI --> REVIEW
 ```
+
+<p align="center">
+  <img src="docs/assets/xiaoyi-multi-ui-linkage.jpg" alt="马六甲沙盘、训练中心、小懿训练顾问与系统联动助手同屏" width="100%" />
+</p>
+
+<p align="center">
+  <sub><strong>小懿多层 UI 联动：</strong>主沙盘、五方法训练矩阵、小懿 RL 参数顾问与白名单页面执行器
+  同屏工作；原版小懿形象保持不变，训练结论仍以服务器任务、检查点和版本化报告为准。<br />
+  <strong>Xiaoyi multi-surface linkage:</strong> the sandbox, five-method matrix, RL advisor, and
+  allowlisted executor operate together while evidence remains anchored to backend artifacts.</sub>
+</p>
 
 ## 五种统一基线 / Five comparable methods
 
@@ -360,6 +363,17 @@ attestation、CodeQL 与 OSSF Scorecard。安全边界见 [`SECURITY.md`](SECURI
 [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md)。
 
 Release-tag workflows build the static application, SPDX SBOM, and release bundle. GitHub provenance attestation, CodeQL, and OSSF Scorecard run after public release. See [`SECURITY.md`](SECURITY.md) for security boundaries and [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md) for model limitations.
+
+<p align="center">
+  <img src="docs/assets/human-review-gate.jpg" alt="小懿执行报告、异常归档与最终人工确认门禁" width="100%" />
+</p>
+
+<p align="center">
+  <sub><strong>执行报告与人工门禁：</strong>小懿完成白名单步骤后生成可复核报告，异常可归档，
+  最终策略应用仍由人工确认，不将界面联动等同于无人值守生产控制。<br />
+  <strong>Human-governed execution:</strong> allowlisted steps produce a reviewable report;
+  exceptions are archived and final application remains human-confirmed.</sub>
+</p>
 
 ## 明确不包含 / Explicit exclusions
 
