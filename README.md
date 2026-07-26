@@ -186,29 +186,35 @@ benchmark.
 ## 架构 / Architecture
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph Evidence["证据与数据层 / Evidence and data"]
-    MPA["MPA月度公开统计 / monthly statistics"]
-    WX["Open-Meteo气象海况 / metocean"]
-    AUTH["授权AIS/TOS/VTS适配器 / authorized adapters"]
-    CONTRACT["CSV/JSON与port-call-event.v1"]
+    direction LR
+    MPA["MPA月度公开统计<br/>monthly statistics"]
+    WX["Open-Meteo气象海况<br/>metocean"]
+    AUTH["授权AIS/TOS/VTS<br/>authorized adapters"]
+    CONTRACT["CSV/JSON<br/>port-call-event.v1"]
   end
   subgraph Core["推演与控制核心 / Simulation and control"]
-    STATE["港航网络状态 / network state"]
-    EVENT["事件注入与传播 / event propagation"]
-    JOB["异步headless训练 / asynchronous training"]
+    direction LR
+    STATE["港航网络状态<br/>network state"]
+    EVENT["事件注入与传播<br/>event propagation"]
+    JOB["异步无渲染训练<br/>headless training"]
     BASE["4 RL + 1 MPC"]
-    HOLDOUT["验证选优 / validation selection + sealed test"]
-    CKPT["SHA-256检查点 / checkpoint"]
+    HOLDOUT["验证选优与封存测试<br/>validation + sealed test"]
+    CKPT["SHA-256检查点<br/>checkpoint"]
   end
   subgraph Governance["交互与治理 / Interaction and governance"]
-    UI["React数字孪生沙盘 / digital-twin UI"]
-    XEXEC["小懿白名单执行器 / allowlisted executor"]
-    XADV["小懿RL顾问 / RL advisor"]
-    REVIEW["执行报告与人工确认 / report and human review"]
-    REPLAY["测试trace回放 / sealed-test replay"]
+    direction LR
+    XADV["小懿RL顾问<br/>RL advisor"]
+    XEXEC["小懿白名单执行器<br/>allowlisted executor"]
+    UI["React数字孪生沙盘<br/>digital-twin UI"]
+    REPLAY["封存测试轨迹回放<br/>sealed-test replay"]
+    REVIEW["执行报告与人工确认<br/>report + human review"]
   end
-  Evidence --> STATE --> EVENT --> JOB --> BASE --> HOLDOUT --> CKPT
+  MPA --> STATE
+  WX --> STATE
+  AUTH --> CONTRACT --> STATE
+  STATE --> EVENT --> JOB --> BASE --> HOLDOUT --> CKPT
   STATE --> UI
   CKPT --> REPLAY --> UI
   XADV --> JOB
@@ -216,11 +222,11 @@ flowchart LR
 ```
 
 <p align="center">
-  <img src="docs/assets/xiaoyi-multi-ui-linkage.jpg" alt="马六甲沙盘、训练中心、小懿训练顾问与系统联动助手同屏" width="100%" />
+  <img src="docs/assets/xiaoyi-multi-ui-linkage.jpg" alt="马六甲沙盘完整界面、训练中心、小懿训练顾问与系统联动助手同屏" width="100%" />
 </p>
 
 <p align="center">
-  <sub><strong>小懿多层 UI 联动：</strong>主沙盘、五方法训练矩阵、小懿 RL 参数顾问与白名单页面执行器
+  <sub><strong>小懿多层 UI 联动完整截图：</strong>主沙盘、五方法训练矩阵、小懿 RL 参数顾问与白名单页面执行器
   同屏工作；原版小懿形象保持不变，训练结论仍以服务器任务、检查点和版本化报告为准。<br />
   <strong>Xiaoyi multi-surface linkage:</strong> the sandbox, five-method matrix, RL advisor, and
   allowlisted executor operate together while evidence remains anchored to backend artifacts.</sub>
