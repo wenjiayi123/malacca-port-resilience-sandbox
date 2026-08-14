@@ -1,4 +1,4 @@
-FROM node:24-bookworm-slim AS build
+FROM node:24-bookworm-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03 AS build
 WORKDIR /app
 RUN corepack enable
 COPY package.json pnpm-lock.yaml ./
@@ -6,7 +6,7 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build
 
-FROM node:24-bookworm-slim AS runtime
+FROM node:24-bookworm-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03 AS runtime
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=4173 STATIC_DIR=/app/dist RL_ARTIFACT_DIR=/app/runtime/rl-jobs PORT_OPERATION_AUDIT_FILE=/app/runtime/operations/audit-chain.jsonl
 WORKDIR /app
 COPY --from=build /app/dist ./dist

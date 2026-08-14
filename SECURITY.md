@@ -5,6 +5,8 @@
 请通过 GitHub Security Advisory 私下报告安全问题，不要在公开 Issue 中发布 Token、港口地址、
 生产接口响应或可利用细节。维护者确认后会给出修复与披露时间表。
 
+私密报告入口：<https://github.com/wenjiayi123/malacca-port-resilience-sandbox/security/advisories/new>
+
 ## 支持范围
 
 安全更新针对当前 `main` 分支。演示导出包、软著材料和外部 Godot 工程不在本仓库安全支持范围内。
