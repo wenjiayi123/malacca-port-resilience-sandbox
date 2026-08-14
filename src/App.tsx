@@ -87,6 +87,7 @@ import {
 import type {
   AiDecisionRecommendation,
   ChannelRole,
+  ChannelStatus,
   EmergencyContingencyAssessment,
   EventLogEntry,
   GodotRiskLevel,
@@ -116,6 +117,33 @@ const OperationalEvidenceCenter = lazy(async () => ({
 const LiveSatelliteMap = lazy(async () => ({
   default: (await import('./components/LiveSatelliteMap')).LiveSatelliteMap,
 }));
+
+const isGodotValidationResult = (value: unknown): value is GodotValidationResult => {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<GodotValidationResult>;
+  const numericFields: Array<keyof GodotValidationResult> = [
+    'estimatedTravelMinutes',
+    'recommendedSpeedKnots',
+    'simulatedDurationSeconds',
+    'averageSpeedKnots',
+    'minClearanceMeters',
+    'collisionCount',
+    'groundingCount',
+    'riskEventResolvedCount',
+    'delayDeltaMinutes',
+    'carbonDeltaTons',
+  ];
+  return Boolean(
+    candidate.requestId &&
+    candidate.vesselId &&
+    candidate.summary &&
+    ['pending', 'running', 'passed', 'failed', 'degraded'].includes(candidate.status ?? '') &&
+    ['low', 'medium', 'high', 'critical'].includes(candidate.riskLevel ?? '') &&
+    typeof candidate.safePass === 'boolean' &&
+    typeof candidate.reachedDestination === 'boolean' &&
+    numericFields.every((field) => Number.isFinite(candidate[field] as number)),
+  );
+};
 
 const routeClassByRole: Record<ChannelRole, string> = {
   main: 'main',
@@ -2413,6 +2441,7 @@ function Panel({
       className={`hud-panel${isExpandable ? ' hud-panel--expandable' : ''}${isExpanded ? ' hud-panel--expanded' : ''} ${className}`.trim()}
       onClick={handlePanelClick}
       onKeyDown={handlePanelKeyDown}
+      role={isExpandable && !isExpanded ? 'button' : undefined}
       tabIndex={isExpandable && !isExpanded ? 0 : undefined}
     >
       <header className="hud-panel__header">
@@ -2642,11 +2671,17 @@ export function App() {
   }>({ type: 'none', intensity: 0 });
   const [rlPolicyInference, setRlPolicyInference] = useState<RlPolicyInferenceResponse | null>(null);
   const [rlPolicyApplied, setRlPolicyApplied] = useState(false);
+  const [isRlPolicyApplyConfirmationOpen, setIsRlPolicyApplyConfirmationOpen] = useState(false);
   const [expandedPanelTitle, setExpandedPanelTitle] = useState<string | null>(null);
   const [godotSimulatorStatus, setGodotSimulatorStatus] =
     useState<GodotSimulatorStatus>('checking');
   const [godotSimulatorReloadKey, setGodotSimulatorReloadKey] = useState(0);
+  const [godotImportFeedback, setGodotImportFeedback] = useState<{
+    tone: 'ok' | 'danger';
+    message: string;
+  } | null>(null);
   const [inspectorPanel, setInspectorPanel] = useState<InspectorPanel | null>(null);
+  const [reportExportSequence, setReportExportSequence] = useState(0);
   const [contextInspectorWindow, setContextInspectorWindow] =
     useState<ContextInspectorWindowState>(() => getCenteredContextInspectorWindowState());
   const [openMapOverlays, setOpenMapOverlays] = useState<Record<MapOverlayPanelId, boolean>>({
@@ -3317,15 +3352,21 @@ export function App() {
         }
       } catch (error) {
         if (controller.signal.aborted) return;
+        const message = error instanceof Error ? error.message : '训练任务轮询失败';
+        const isExpiredStoredJob = /job not found|HTTP 404|任务不存在/i.test(message);
         setSandboxRuntime((runtime) => ({
           ...runtime,
           rlTraining: {
             ...runtime.rlTraining,
-            status: 'failed',
+            status: isExpiredStoredJob ? 'idle' : 'failed',
+            jobId: isExpiredStoredJob ? null : runtime.rlTraining.jobId,
+            progressPercent: isExpiredStoredJob ? 0 : runtime.rlTraining.progressPercent,
             backend: {
               ...runtime.rlTraining.backend,
-              status: 'failed',
-              lastMessage: error instanceof Error ? error.message : '训练任务轮询失败',
+              status: isExpiredStoredJob ? 'disconnected' : 'failed',
+              lastMessage: isExpiredStoredJob
+                ? '上次训练任务编号已随服务重启失效；历史评估摘要仍保留，但当前检查点需重新训练后再用于推理。'
+                : message,
             },
           },
         }));
@@ -5531,6 +5572,10 @@ export function App() {
   };
 
   const applyGodotValidationResult = (parsed: GodotValidationResult) => {
+      setGodotImportFeedback({
+        tone: 'ok',
+        message: `验证结果已绑定 ${parsed.requestId} / ${parsed.vesselId} 并完成指标回写。`,
+      });
       setSandboxRuntime((runtime) => ({
         ...runtime,
         importedGodotResult: parsed,
@@ -5601,31 +5646,51 @@ export function App() {
 
     try {
       const text = await file.text();
-      const parsed = JSON.parse(text) as GodotValidationResult;
-      if (!parsed.requestId || !parsed.vesselId || !parsed.status) {
-        throw new Error('Godot 结果缺少 requestId、vesselId 或 status');
+      const parsed = JSON.parse(text) as unknown;
+      if (!isGodotValidationResult(parsed)) {
+        throw new Error('结果字段不完整或包含无效数值');
+      }
+      if (!generatedGodotRequest) {
+        throw new Error('请先生成当前单船验证请求');
+      }
+      if (
+        parsed.requestId !== generatedGodotRequest.requestId ||
+        parsed.vesselId !== generatedGodotRequest.vesselId
+      ) {
+        throw new Error('结果与当前 requestId 或 vesselId 不匹配');
       }
       applyGodotValidationResult(parsed);
-    } catch {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '结果文件无法解析';
+      setGodotImportFeedback({ tone: 'danger', message: `导入已拒绝：${message}。` });
       setSandboxRuntime((runtime) => ({
         ...runtime,
-        importedGodotResult: null,
         phases: patchSandboxPhases(runtime.phases, [
           {
             id: 'micro-validation',
-            status: runtime.generatedGodotRequest ? 'running' : 'pending',
-            summary: runtime.generatedGodotRequest
-              ? '结果文件无法解析，微观验证仍等待有效回传'
-              : sandboxPhaseDefinitions['micro-validation'].initialSummary,
+            status: runtime.importedGodotResult
+              ? 'completed'
+              : runtime.generatedGodotRequest ? 'running' : 'pending',
+            summary: runtime.importedGodotResult
+              ? `新导入结果未通过绑定校验；保留已验证结果 ${runtime.importedGodotResult.requestId}`
+              : runtime.generatedGodotRequest
+                ? '结果文件未通过校验，微观验证仍等待与当前请求匹配的有效回传'
+                : sandboxPhaseDefinitions['micro-validation'].initialSummary,
           },
           {
             id: 'metric-feedback',
-            status: 'pending',
-            startedAt: pendingPhaseStartLabel,
-            startedMinute: 0,
-            completedAt: undefined,
-            completedMinute: undefined,
-            summary: sandboxPhaseDefinitions['metric-feedback'].initialSummary,
+            status: runtime.importedGodotResult ? 'completed' : 'pending',
+            startedAt: runtime.importedGodotResult
+              ? runtime.phases.find((phase) => phase.id === 'metric-feedback')?.startedAt ?? scenarioClockLabel
+              : pendingPhaseStartLabel,
+            startedMinute: runtime.importedGodotResult
+              ? runtime.phases.find((phase) => phase.id === 'metric-feedback')?.startedMinute ?? runtime.elapsedMinutes
+              : 0,
+            completedAt: runtime.importedGodotResult ? scenarioClockLabel : undefined,
+            completedMinute: runtime.importedGodotResult ? runtime.elapsedMinutes : undefined,
+            summary: runtime.importedGodotResult
+              ? '拒绝不匹配结果；已验证指标回写保持不变'
+              : sandboxPhaseDefinitions['metric-feedback'].initialSummary,
           },
         ]),
       }));
@@ -6072,10 +6137,25 @@ export function App() {
     const url = URL.createObjectURL(
       new Blob([JSON.stringify(report, null, 2)], { type: 'application/json;charset=utf-8' }),
     );
+    const filename = `malacca-closure-report-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `malacca-closure-report-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+    anchor.download = filename;
     anchor.click();
+    setReportExportSequence((sequence) => sequence + 1);
+    openInspectorPanel({
+      id: 'closure-report-exported',
+      title: '闭环报告已生成',
+      subtitle: filename,
+      body: '报告已交给浏览器下载，包含数据模式、事件、计算审计、策略、RL、单船验证和闭环状态；可在浏览器下载记录中查看。',
+      tone: 'ok',
+      metrics: [
+        { label: '闭环步骤', value: `${completedClosureStepCount}/${coreClosureJourney.length}` },
+        { label: '事件', value: String(injectedEvents.length), unit: '项' },
+        { label: '数据模式', value: portDataStatus },
+        { label: '协议', value: report.protocolVersion },
+      ],
+    });
     window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
   };
   const sandboxRuntimeStatusLabel = rlPolicyApplied && policyRecovery.advancedMinutes > 0
@@ -6561,7 +6641,10 @@ export function App() {
     }
     setRlDisturbance({ type, intensity });
     setRlPolicyApplied(false);
+    setIsRlPolicyApplyConfirmationOpen(false);
     setIsRlDecisionPanelOpen(true);
+    setIsGodotSimulatorOpen(false);
+    setRlTrainingWindowState((windowState) => ({ ...windowState, isOpen: false }));
     setSandboxRuntime((runtime) => ({
       ...runtime,
       policyRecovery: {
@@ -6590,6 +6673,9 @@ export function App() {
       return;
     }
     setIsRlDecisionPanelOpen(true);
+    setIsRlPolicyApplyConfirmationOpen(false);
+    setIsGodotSimulatorOpen(false);
+    setRlTrainingWindowState((windowState) => ({ ...windowState, isOpen: false }));
     if (rlInferenceRunId === 0 || rlInferenceStatus === 'failed') {
       setSandboxRuntime((runtime) => ({
         ...runtime,
@@ -6620,6 +6706,7 @@ export function App() {
       120,
     );
     setRlPolicyApplied(true);
+    setIsRlPolicyApplyConfirmationOpen(false);
     setIsRlDecisionPanelOpen(false);
     setActiveModule('dispatch');
     setExpandedPanelTitle(null);
@@ -7338,6 +7425,9 @@ export function App() {
   const openRlTrainingWindow = () => {
     setActiveModule('sandbox');
     setIsXiaoyiAssistantOpen(true);
+    setIsRlDecisionPanelOpen(false);
+    setIsRlPolicyApplyConfirmationOpen(false);
+    setIsGodotSimulatorOpen(false);
     setRlTrainingWindowState((windowState) => ({
       ...windowState,
       isOpen: true,
@@ -7511,6 +7601,19 @@ export function App() {
     window.open(GODOT_SIMULATOR_URL, '_blank', 'noopener,noreferrer');
   };
 
+  const toggleGodotSimulator = () => {
+    const nextOpen = !isGodotSimulatorOpen;
+    if (nextOpen) {
+      setInspectorPanel(null);
+      setIsEventInjectionPanelOpen(false);
+      setIsRlDecisionPanelOpen(false);
+      setIsRlPolicyApplyConfirmationOpen(false);
+      setRlTrainingWindowState((windowState) => ({ ...windowState, isOpen: false }));
+    }
+    setHasPreviewedGodotSimulator(true);
+    setIsGodotSimulatorOpen(nextOpen);
+  };
+
   const setMapView = (modeId: MapViewMode) => {
     const viewMode = mapViewModes.find((item) => item.id === modeId);
 
@@ -7649,6 +7752,31 @@ export function App() {
         { label: '拥堵', value: `${channel?.congestionPercent ?? 0}%`, tone: channel?.tone ?? route.tone },
       ],
       action: { label: '生成验证信息流', module: 'sandbox' },
+    });
+  };
+
+  const openChannelInspector = (channel: ChannelStatus) => {
+    const route = scenario.routeOverlays.find((routeItem) => routeItem.channelId === channel.id);
+    setRouteLayerFilter(channel.role);
+    if (route) {
+      openRouteInspector(route);
+      return;
+    }
+    setActiveMapView('congestion');
+    setActiveModule('resilience');
+    openInspectorPanel({
+      id: `channel-${channel.id}`,
+      title: channel.label,
+      subtitle: channelRoleLabelByRole[channel.role],
+      body: '该航道已完成筛选与韧性模块联动；当前数据集中没有绑定可回放的代表航线，因此仅展示航道级状态，不虚构船舶轨迹。',
+      tone: channel.tone,
+      metrics: [
+        { label: '拥堵', value: `${channel.congestionPercent}%`, tone: channel.tone },
+        { label: '延误', value: String(channel.delayMinutes), unit: '分', tone: getDelayTone(channel.delayMinutes) },
+        { label: '航道类型', value: channelRoleLabelByRole[channel.role] },
+        { label: '代表航线', value: '未绑定' },
+      ],
+      action: { label: '查看韧性评估', module: 'resilience' },
     });
   };
 
@@ -8094,21 +8222,9 @@ export function App() {
               <li
                 className={routeLayerFilter === item.role ? 'status-list__item--active' : ''}
                 key={item.label}
-                onClick={() => {
-                  const route = scenario.routeOverlays.find((routeItem) => routeItem.channelId === item.id);
-                  setRouteLayerFilter(item.role);
-                  if (route) {
-                    openRouteInspector(route);
-                  }
-                }}
+                onClick={() => openChannelInspector(item)}
                 onKeyDown={(event) =>
-                  handleValidationKeyDown(event, () => {
-                    const route = scenario.routeOverlays.find((routeItem) => routeItem.channelId === item.id);
-                    setRouteLayerFilter(item.role);
-                    if (route) {
-                      openRouteInspector(route);
-                    }
-                  })
+                  handleValidationKeyDown(event, () => openChannelInspector(item))
                 }
                 role="button"
                 style={
@@ -8970,6 +9086,7 @@ export function App() {
             <tbody>
               {rankedPortCongestion.slice(0, 4).map((item) => (
                 <tr
+                  aria-label={`查看港口 ${item.portName}`}
                   key={item.portId}
                   onClick={() => {
                     const port = portById.get(item.portId);
@@ -8977,7 +9094,13 @@ export function App() {
                       openPortInspector(port);
                     }
                   }}
+                  onKeyDown={(event) => handleValidationKeyDown(event, () => {
+                    const port = portById.get(item.portId);
+                    if (port) openPortInspector(port);
+                  })}
+                  role="button"
                   style={{ '--port-congestion-color': statusColorByTone[item.tone] } as CSSProperties}
+                  tabIndex={0}
                 >
                   <td>{item.portName}</td>
                   <td>{item.expectedWaitingHours.toFixed(1)}h</td>
@@ -9040,6 +9163,7 @@ export function App() {
               <tbody>
                 {rankedVesselDelays.slice(0, 4).map((item) => (
                   <tr
+                    aria-label={`查看船舶 ${item.vesselName}`}
                     key={item.vesselId}
                     onClick={() => {
                       const vessel = scenario.vesselMarkers.find((marker) => marker.id === item.vesselId);
@@ -9047,7 +9171,13 @@ export function App() {
                         openVesselInspector(vessel);
                       }
                     }}
+                    onKeyDown={(event) => handleValidationKeyDown(event, () => {
+                      const vessel = scenario.vesselMarkers.find((marker) => marker.id === item.vesselId);
+                      if (vessel) openVesselInspector(vessel);
+                    })}
+                    role="button"
                     style={{ '--vessel-delay-color': statusColorByTone[item.tone] } as CSSProperties}
+                    tabIndex={0}
                   >
                     <td>{item.vesselName}</td>
                     <td>{item.destinationPortName}</td>
@@ -9111,6 +9241,7 @@ export function App() {
               <tbody>
                 {rankedVesselEmissions.slice(0, 4).map((item) => (
                   <tr
+                    aria-label={`查看船舶碳排 ${item.vesselName}`}
                     key={item.vesselId}
                     onClick={() => {
                       const vessel = scenario.vesselMarkers.find((marker) => marker.id === item.vesselId);
@@ -9118,7 +9249,13 @@ export function App() {
                         openVesselInspector(vessel);
                       }
                     }}
+                    onKeyDown={(event) => handleValidationKeyDown(event, () => {
+                      const vessel = scenario.vesselMarkers.find((marker) => marker.id === item.vesselId);
+                      if (vessel) openVesselInspector(vessel);
+                    })}
+                    role="button"
                     style={{ '--fuel-carbon-color': statusColorByTone[item.tone] } as CSSProperties}
+                    tabIndex={0}
                     title={[
                       item.routeLabel,
                       `航程 ${item.distanceNm}nm / 航速 ${item.speedKnots}kn / 等待 ${item.waitingHours.toFixed(1)}h`,
@@ -9188,9 +9325,13 @@ export function App() {
               <tbody>
                 {rankedGreenStrategies.map((item) => (
                   <tr
+                    aria-label={`查看策略 ${item.label}`}
                     key={item.strategyId}
                     onClick={() => openStrategyInspector(item)}
+                    onKeyDown={(event) => handleValidationKeyDown(event, () => openStrategyInspector(item))}
+                    role="button"
                     style={{ '--green-strategy-color': statusColorByTone[item.tone] } as CSSProperties}
+                    tabIndex={0}
                     title={[
                       item.target,
                       item.actionSummary,
@@ -9319,7 +9460,14 @@ export function App() {
                 <Gauge size={13} />
                 训练中心
               </button>
-              <button aria-label="关闭RL策略推理舱" onClick={() => setIsRlDecisionPanelOpen(false)} type="button">
+              <button
+                aria-label="关闭RL策略推理舱"
+                onClick={() => {
+                  setIsRlPolicyApplyConfirmationOpen(false);
+                  setIsRlDecisionPanelOpen(false);
+                }}
+                type="button"
+              >
                 <X size={13} />
               </button>
             </div>
@@ -9456,7 +9604,7 @@ export function App() {
                 <button
                   className="control-button control-button--primary"
                   disabled={!rlPolicyInference || rlInferenceStatus !== 'completed' || rlPolicyApplied}
-                  onClick={applyRlPolicyDecision}
+                  onClick={() => setIsRlPolicyApplyConfirmationOpen(true)}
                   type="button"
                 >
                   <Play size={14} />
@@ -9466,6 +9614,26 @@ export function App() {
                   <Gauge size={14} />
                   查看训练参数
                 </button>
+                {isRlPolicyApplyConfirmationOpen && rlPolicyInference && (
+                  <div className="rl-policy-approval" role="alert">
+                    <strong>人工确认：将“{rlPolicyInference.selectedAction.label}”写入当前沙盘回放？</strong>
+                    <span>仅作用于当前模拟快照；不会获得真实港口生产执行权限。</span>
+                    <button
+                      className="control-button"
+                      onClick={() => setIsRlPolicyApplyConfirmationOpen(false)}
+                      type="button"
+                    >
+                      取消
+                    </button>
+                    <button
+                      className="control-button control-button--primary"
+                      onClick={applyRlPolicyDecision}
+                      type="button"
+                    >
+                      确认写入沙盘
+                    </button>
+                  </div>
+                )}
               </div>
             </section>
           </div>
@@ -9567,6 +9735,7 @@ export function App() {
                 aria-label="让小懿按优化目标智能配置训练"
                 className="rl-xiaoyi-global-button"
                 data-xiaoyi-action="rl-xiaoyi-configure"
+                data-xiaoyi-state={xiaoyiAdvisorStatus}
                 disabled={xiaoyiAdvisorStatus === 'thinking'}
                 onClick={() => void askXiaoyiForRlTraining('all')}
                 type="button"
@@ -10360,6 +10529,7 @@ export function App() {
                         <button
                           className={`control-button control-button--primary${rlTraining.policyTest.status === 'running' ? ' control-button--active' : ''}`}
                           data-xiaoyi-action="rl-policy-test"
+                          data-xiaoyi-state={rlTraining.policyTest.status}
                           disabled={!isRlPolicyTestUnlocked || rlTraining.policyTest.status === 'running'}
                           onClick={startRlPolicyTest}
                           type="button"
@@ -10866,14 +11036,18 @@ export function App() {
             <tbody>
               {monitoredRuntimePorts.map((row) => (
                 <tr
+                  aria-label={`查看关键节点 ${row.name}`}
                   key={row.id}
                   onClick={() => openPortInspector(row)}
+                  onKeyDown={(event) => handleValidationKeyDown(event, () => openPortInspector(row))}
+                  role="button"
                   style={
                     {
                       '--node-status-color': statusColorByTone[row.tone],
                       '--node-congestion-percent': `${row.congestionPercent}%`,
                     } as CSSProperties
                   }
+                  tabIndex={0}
                   title={[
                     getPortNodeTitle(row),
                     `拥堵度 ${row.congestionPercent}%`,
@@ -10976,7 +11150,13 @@ export function App() {
                     <RotateCcw size={16} />
                     <BilingualText text="重置" />
                   </button>
-                  <button className="control-button" data-xiaoyi-action="simulation-step" onClick={advanceSimulation} type="button">
+                  <button
+                    className="control-button"
+                    data-xiaoyi-action="simulation-step"
+                    data-xiaoyi-state={String(elapsedMinutes)}
+                    onClick={advanceSimulation}
+                    type="button"
+                  >
                     <Clock size={16} />
                     <span className="control-button__combo">
                       <BilingualText text="推进" />
@@ -10998,19 +11178,34 @@ export function App() {
                     <BilingualText text="事件注入" />
                   </button>
                   <button
+                    aria-expanded={isRlDecisionPanelOpen || rlTrainingWindowState.isOpen}
                     className={`control-button${rlInferenceStatus === 'running' || rlPolicyApplied ? ' control-button--active' : ''}`}
                     data-xiaoyi-action="open-rl-decision"
+                    data-xiaoyi-state={isRlDecisionPanelOpen ? 'decision-open' : rlTrainingWindowState.isOpen ? 'training-open' : 'closed'}
                     onClick={openRlDecisionPanel}
                     type="button"
                   >
                     <Activity size={16} />
                     <BilingualText text="RL策略推理" />
                   </button>
-                  <button className="control-button" data-xiaoyi-action="open-rl-training" onClick={openRlTrainingWindow} type="button">
+                  <button
+                    aria-expanded={rlTrainingWindowState.isOpen}
+                    className="control-button"
+                    data-xiaoyi-action="open-rl-training"
+                    data-xiaoyi-state={rlTrainingWindowState.isOpen ? 'open' : 'closed'}
+                    onClick={openRlTrainingWindow}
+                    type="button"
+                  >
                     <Gauge size={16} />
                     <BilingualText text="训练中心" />
                   </button>
-                  <button className="control-button" data-xiaoyi-action="export-report" onClick={downloadClosureReport} type="button">
+                  <button
+                    className="control-button"
+                    data-xiaoyi-action="export-report"
+                    data-xiaoyi-state={String(reportExportSequence)}
+                    onClick={downloadClosureReport}
+                    type="button"
+                  >
                     <Download size={16} />
                     <BilingualText text="导出报告" />
                   </button>
@@ -11160,7 +11355,7 @@ export function App() {
                       </small>
                     )}
                   </div>
-                  <div className="micro-validation-actions">
+                  <div className={`micro-validation-actions${godotImportFeedback ? ' micro-validation-actions--with-feedback' : ''}`}>
                     <div className="micro-validation-action-row">
                       <button
                         className="control-button control-button--primary micro-validation-button"
@@ -11183,10 +11378,7 @@ export function App() {
                       <button
                         className={`control-button micro-validation-button${isGodotSimulatorOpen ? ' control-button--active' : ''}`}
                         disabled={!generatedGodotRequest}
-                        onClick={() => {
-                          setHasPreviewedGodotSimulator(true);
-                          setIsGodotSimulatorOpen((value) => !value);
-                        }}
+                        onClick={toggleGodotSimulator}
                         type="button"
                       >
                         <Expand size={16} />
@@ -11219,6 +11411,14 @@ export function App() {
                         type="file"
                       />
                     </div>
+                    {godotImportFeedback && (
+                      <p
+                        className={`micro-validation-import-feedback micro-validation-import-feedback--${godotImportFeedback.tone}`}
+                        role="status"
+                      >
+                        {godotImportFeedback.message}
+                      </p>
+                    )}
                     <div className="micro-validation-feed" aria-label="滚动验证信息流">
                       <header>
                         <BilingualText text="本地渲染流" />
@@ -11339,6 +11539,7 @@ export function App() {
               <ul className="module-rank-list">
                 {resilienceAssessment.keyNodePressures.slice(0, 3).map((item) => (
                   <li
+                    aria-label={`查看韧性节点 ${item.nodeName}`}
                     key={item.nodeId}
                     onClick={() => {
                       const port = portById.get(item.nodeId);
@@ -11346,7 +11547,13 @@ export function App() {
                         openPortInspector(port);
                       }
                     }}
+                    onKeyDown={(event) => handleValidationKeyDown(event, () => {
+                      const port = portById.get(item.nodeId);
+                      if (port) openPortInspector(port);
+                    })}
+                    role="button"
                     style={{ '--module-rank-color': statusColorByTone[item.tone] } as CSSProperties}
+                    tabIndex={0}
                   >
                     <span>{item.nodeName}</span>
                     <strong>{item.pressureScore.toFixed(0)}</strong>
@@ -11415,6 +11622,7 @@ export function App() {
                 <ul className="ai-advice-list">
                   {aiDecisionRecommendation.recommendations.map((item) => (
                     <li
+                      aria-label={`查看规则建议 ${item.title}`}
                       key={item.topic}
                       onClick={() => {
                         const moduleByTopic: Record<AiDecisionRecommendation['recommendations'][number]['topic'], DashboardModuleId> = {
@@ -11437,7 +11645,30 @@ export function App() {
                           action: { label: '查看关联模块', module: moduleByTopic[item.topic] },
                         });
                       }}
+                      onKeyDown={(event) => handleValidationKeyDown(event, () => {
+                        const moduleByTopic: Record<AiDecisionRecommendation['recommendations'][number]['topic'], DashboardModuleId> = {
+                          'congestion-cause': 'resilience',
+                          'risk-judgement': 'emergency',
+                          'dispatch-suggestion': 'dispatch',
+                          'carbon-optimization': 'dispatch',
+                        };
+                        setActiveModule(moduleByTopic[item.topic]);
+                        openInspectorPanel({
+                          id: `ai-${item.topic}`,
+                          title: item.title,
+                          subtitle: item.summary,
+                          body: item.evidence,
+                          tone: item.tone,
+                          metrics: [
+                            { label: '优先级', value: item.priority.toFixed(0), tone: item.tone },
+                            { label: '置信度', value: String(aiDecisionRecommendation.confidenceScore), unit: '%' },
+                          ],
+                          action: { label: '查看关联模块', module: moduleByTopic[item.topic] },
+                        });
+                      })}
+                      role="button"
                       style={{ '--ai-advice-color': statusColorByTone[item.tone] } as CSSProperties}
+                      tabIndex={0}
                       title={[item.title, item.summary, item.evidence].join('\n')}
                     >
                       <span>{item.title}</span>
@@ -11480,6 +11711,7 @@ export function App() {
               <ul className="emergency-plan-list">
                 {emergencyContingencyAssessment.plans.map((plan) => (
                   <li
+                    aria-label={`查看应急预案 ${plan.label}`}
                     key={plan.scenario}
                     onClick={() => {
                       setActiveMapView('emergency');
@@ -11496,7 +11728,24 @@ export function App() {
                         ],
                       });
                     }}
+                    onKeyDown={(event) => handleValidationKeyDown(event, () => {
+                      setActiveMapView('emergency');
+                      openInspectorPanel({
+                        id: `plan-${plan.scenario}`,
+                        title: plan.label,
+                        subtitle: plan.affectedArea,
+                        body: `${plan.priorityAction}。${plan.supportAction}`,
+                        tone: plan.tone,
+                        metrics: [
+                          { label: '严重度', value: String(plan.severityScore), tone: plan.tone },
+                          { label: '准备度', value: String(plan.readinessPercent), unit: '%' },
+                          { label: '恢复', value: plan.estimatedRecoveryHours.toFixed(1), unit: 'h' },
+                        ],
+                      });
+                    })}
+                    role="button"
                     style={{ '--emergency-plan-color': statusColorByTone[plan.tone] } as CSSProperties}
+                    tabIndex={0}
                     title={[
                       plan.label,
                       plan.affectedArea,

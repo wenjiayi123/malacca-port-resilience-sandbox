@@ -215,6 +215,7 @@ export function OperationalEvidenceCenter({ authToken = '' }: OperationalEvidenc
             aria-pressed={activeTab === tab.id}
             className={activeTab === tab.id ? 'is-active' : ''}
             data-evidence-tab={tab.id}
+            data-xiaoyi-action={`evidence-tab-${tab.id}`}
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             type="button"
@@ -461,7 +462,16 @@ export function OperationalEvidenceCenter({ authToken = '' }: OperationalEvidenc
                 <strong>小懿运行解释与交班</strong>
                 <em>{handoff?.xiaoyi_model.status ?? '尚未生成'}</em>
               </header>
-              <button disabled={busy} onClick={() => void generateHandoff()} type="button">基于当前后端快照生成</button>
+              <button
+                aria-busy={busy}
+                data-xiaoyi-action="xiaoyi-operational-handoff"
+                data-xiaoyi-state={busy ? 'loading' : handoff ? 'ready' : 'idle'}
+                disabled={busy}
+                onClick={() => void generateHandoff()}
+                type="button"
+              >
+                {busy ? '正在生成并校验证据' : handoff ? '重新基于最新快照生成' : '基于当前后端快照生成'}
+              </button>
               {handoff ? (
                 <div>
                   <p>{handoff.state_summary}</p>
