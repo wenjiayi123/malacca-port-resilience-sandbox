@@ -8,8 +8,10 @@ const required = [
   'pnpm-workspace.yaml',
   'CODE_OF_CONDUCT.md', 'GOVERNANCE.md', 'SUPPORT.md', 'CITATION.cff',
   'docs/DATASET_CONTRACT.md', 'docs/RL_ARCHITECTURE.md', 'docs/PORT_CALL_INTEROPERABILITY.md',
+  'docs/OPERATIONAL_SIMULATOR_DATA_CARD.md', 'docs/LOCAL_ACCEPTANCE.md', 'docs/LIVE_SATELLITE_MAP.md',
   'docs/DEMO_GUIDE.md', 'docs/RESUME_CLAIMS.md',
   'docs/ASSET_PROVENANCE.md', 'docs/schemas/port-call-event.schema.json', 'Dockerfile',
+  'docs/schemas/port-operations-telemetry.schema.json',
   'docs/MODEL_CARD.md', 'CHANGELOG.md', 'docs/assets/hero.svg',
   'docs/assets/sandbox-command-center.jpg', 'docs/assets/human-review-gate.jpg',
   'docs/assets/xiaoyi-multi-ui-linkage.jpg', 'docs/assets/rl-training-complete-evidence.jpg',
@@ -23,6 +25,14 @@ const required = [
   'reports/rl-benchmark-balanced-resilience.json',
   'reports/rl-benchmark-balanced-resilience.md',
   'shared/portOperationalContract.ts', 'server/portOperationalManifest.ts',
+  'shared/portTelemetryContract.ts', 'server/operationalSimulator.ts',
+  'server/realtimeAisGateway.ts', 'src/components/LiveSatelliteMap.tsx',
+  'src/integrations/geospatialLiveAdapter.ts',
+  'src/components/OperationalEvidenceCenter.tsx', 'src/integrations/operationsControlAdapter.ts',
+  'scripts/operations/runOperationalAcceptance.ts',
+  'scripts/operations/verifyOperationalAcceptance.ts',
+  'reports/operational-closure-acceptance-v1.json',
+  'reports/operational-closure-acceptance-v1.md',
   'config/port-profiles/shanghai-international-port.example.json',
   'docs/SHANGHAI_PORT_LANDING.md',
   'docs/schemas/terminal-operations-manifest.schema.json',
@@ -45,14 +55,14 @@ for (const file of required) {
 const packageJson = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
 if (packageJson.private !== false) errors.push('package.json 必须明确 private=false');
 if (packageJson.license !== 'Apache-2.0') errors.push('package.json license 必须是 Apache-2.0');
-if (packageJson.version !== '1.0.0') errors.push('package.json version 必须与 v1.0.0 发布保持一致');
+if (packageJson.version !== '1.1.0') errors.push('package.json version 必须与 v1.1.0 本地候选保持一致');
 if (packageJson.packageManager !== 'pnpm@11.9.0') errors.push('packageManager 必须固定为 pnpm@11.9.0');
 if (!packageJson.scripts?.['benchmark:rl'] || !packageJson.scripts?.['benchmark:rl:verify']) {
   errors.push('package.json 必须提供 RL 基准生成与证据验证命令');
 }
 const pnpmWorkspace = await readFile(path.join(root, 'pnpm-workspace.yaml'), 'utf8');
-if (!pnpmWorkspace.includes('brace-expansion: 5.0.8')) {
-  errors.push('pnpm 工作区必须固定 brace-expansion 安全版本 5.0.8');
+for (const safeOverride of ['brace-expansion: 5.0.9', 'nanoid: 3.3.18', 'postcss: 8.5.26']) {
+  if (!pnpmWorkspace.includes(safeOverride)) errors.push(`pnpm 工作区缺少安全覆盖：${safeOverride}`);
 }
 
 const dockerfile = await readFile(path.join(root, 'Dockerfile'), 'utf8');
@@ -69,6 +79,11 @@ try {
   JSON.parse(await readFile(path.join(root, 'docs/schemas/terminal-operations-manifest.schema.json'), 'utf8'));
 } catch (error) {
   errors.push(`码头运行清单 JSON Schema 无法解析：${error instanceof Error ? error.message : 'unknown error'}`);
+}
+try {
+  JSON.parse(await readFile(path.join(root, 'docs/schemas/port-operations-telemetry.schema.json'), 'utf8'));
+} catch (error) {
+  errors.push(`实时运行遥测 JSON Schema 无法解析：${error instanceof Error ? error.message : 'unknown error'}`);
 }
 
 const candidateFiles = [];
@@ -109,12 +124,16 @@ const applicationReferences = [
   await readFile(path.join(root, 'src/styles/tokens.css'), 'utf8'),
   await readFile(path.join(root, 'src/styles/global.css'), 'utf8'),
   await readFile(path.join(root, 'src/App.tsx'), 'utf8'),
+  await readFile(path.join(root, 'src/components/OperationalEvidenceCenter.tsx'), 'utf8'),
+  await readFile(path.join(root, 'src/data/malaccaScenario.ts'), 'utf8'),
 ].join('\n');
 if (
   !applicationReferences.includes('等待接入港口 · 仿真回退')
-  || !applicationReferences.includes('公开数据驱动仿真 · 等待接入港口')
+  || !applicationReferences.includes('公开数据校准实时模拟')
+  || !applicationReferences.includes('模型真实推理输出')
+  || !applicationReferences.includes('待切换现场数据源')
 ) {
-  errors.push('开源沙盘缺少港口未接入时的显式真实性状态');
+  errors.push('开源沙盘缺少实时模拟、真实推理或待切换现场源的显式真实性状态');
 }
 for (const legacyAsset of [
   'malacca_background_clean.png',

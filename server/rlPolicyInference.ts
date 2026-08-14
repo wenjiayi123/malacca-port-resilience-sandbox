@@ -214,20 +214,29 @@ export const runRlPolicyInference = (
     probability: round(probabilities[index] ?? 0, 4),
     uncertainty: round(1 - (probabilities[index] ?? 0), 4),
   }));
-  const scenarioForecasts = [
-    { id: 'observed', label: '观测需求延续', probability: 0.55, factor: 1 },
-    { id: 'demand-high', label: '到港需求上浮 5%', probability: 0.2, factor: 1.05 },
-    { id: 'capacity-low', label: '服务能力下降 2%', probability: 0.15, factor: 1.02 },
-    { id: 'weather-stress', label: '气象风险加剧', probability: 0.1, factor: 1.05 },
-  ].map((scenario) => ({
+  const weatherStress = clamp(
+    state.windSpeedMs / 25 * 0.42 + state.waveHeightM / 5 * 0.38 + (1 - state.visibilityKm / 20) * 0.2,
+    0,
+    1,
+  );
+  const demandStress = clamp(state.queueVessels / 80 * 0.55 + state.congestionPercent / 100 * 0.45, 0, 1);
+  const capacityStress = clamp(state.delayMinutes / 180 * 0.62 + state.eventCount / 8 * 0.38, 0, 1);
+  const scenarioWeights = [
+    { id: 'observed', label: '观测需求延续', weight: Math.max(0.2, 1.2 - (demandStress + capacityStress + weatherStress) / 3), factor: 1 },
+    { id: 'demand-high', label: '到港需求上浮 5%', weight: 0.1 + demandStress, factor: 1.05 },
+    { id: 'capacity-low', label: '服务能力下降 2%', weight: 0.1 + capacityStress, factor: 1.02 },
+    { id: 'weather-stress', label: '气象风险加剧', weight: 0.1 + weatherStress, factor: 1.05 },
+  ];
+  const totalScenarioWeight = scenarioWeights.reduce((sum, scenario) => sum + scenario.weight, 0);
+  const scenarioForecasts = scenarioWeights.map((scenario) => ({
     id: scenario.id,
     label: scenario.label,
-    probability: scenario.probability,
+    probability: round(scenario.weight / totalScenarioWeight, 4),
     congestionPercent: round(clamp(projection.congestion * scenario.factor, 0, 100), 1),
     delayMinutes: round(projection.delay * scenario.factor, 1),
     carbonDeltaTons: round(projection.carbon * scenario.factor - state.carbonTons, 2),
     recoveryMinutes: Math.round(clamp(45 + projection.congestion * 0.8 * scenario.factor, 30, 180)),
-  }));
+  })).sort((left, right) => right.probability - left.probability);
   return {
     protocolVersion: 'rl-policy-inference.v2',
     requestId: request.requestId ?? `policy-${Date.now()}`,
@@ -264,7 +273,7 @@ export const runRlPolicyInference = (
       affectedScope: request.eventContext?.scopeLabel ?? '当前港航网络快照',
       rationale: `${selectedAction.detail}；动作来自 ${trained.algorithmId} 检查点的当前状态决策。`,
       commandSummary: `${selectedAction.label} / 目标航速 ${projection.speed.toFixed(1)}kn / 分流 ${projection.diversion}% / 到港偏移 ${projection.shift}min`,
-      executionSteps: ['校验当前数据时间戳与容量边界', `生成候选动作 ${selectedAction.label}`, '通过安全约束后等待人工确认下发'],
+      executionSteps: ['校验当前数据时间戳与容量边界', `生成候选动作 ${selectedAction.label}`, '通过安全约束后等待人工确认进入沙盘回放'],
     },
     comparison: {
       baseline: {

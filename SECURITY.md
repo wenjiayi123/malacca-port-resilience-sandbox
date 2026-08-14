@@ -12,6 +12,8 @@
 ## 部署注意
 
 - 所有 AIS/TOS/VTS、AI 和训练服务凭据只能放在环境变量或密钥管理系统中。
+- `AISSTREAM_API_KEY` 仅由后端 WebSocket 网关持有，不得使用 `VITE_` 前缀或返回给浏览器；
+  `MAPTILER_API_KEY` 会参与浏览器瓦片请求，必须在 MapTiler Cloud 限制部署来源、额度并定期轮换。
 - 独立服务监听 `127.0.0.1` 时可不设令牌；监听其他地址时会拒绝启动，除非配置 `PORT_API_TOKEN`。
 - 生产反向代理仍应启用 TLS、身份提供方/RBAC、审计留存和网络访问控制；内置 Bearer Token 是最小门槛，不是完整 IAM。
 - 浏览器端 Token 输入只适合本地调试；生产环境应由服务器端网关持有凭据。

@@ -7,7 +7,7 @@ COPY . .
 RUN pnpm build
 
 FROM node:24-bookworm-slim AS runtime
-ENV NODE_ENV=production HOST=0.0.0.0 PORT=4173 STATIC_DIR=/app/dist RL_ARTIFACT_DIR=/app/runtime/rl-jobs
+ENV NODE_ENV=production HOST=0.0.0.0 PORT=4173 STATIC_DIR=/app/dist RL_ARTIFACT_DIR=/app/runtime/rl-jobs PORT_OPERATION_AUDIT_FILE=/app/runtime/operations/audit-chain.jsonl
 WORKDIR /app
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/server ./server

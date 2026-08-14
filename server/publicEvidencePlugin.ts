@@ -39,6 +39,17 @@ import {
 } from './xiaoyiRlAdvisor.ts';
 import { validatePortCallEvent } from './portCallContract.ts';
 import { readBoundedIntegerEnvironment, validateRuntimeSecurityConfiguration } from './runtimeSecurity.ts';
+import {
+  OperationalControlService,
+  type OperationalActionId,
+  type OperationalControllerId,
+  type OperationalScenarioId,
+} from './operationalSimulator.ts';
+import { PORT_TELEMETRY_CONTRACT } from '../shared/portTelemetryContract.ts';
+import {
+  RealtimeAisGateway,
+  getSatelliteMapConfiguration,
+} from './realtimeAisGateway.ts';
 
 const MPA_TOTAL_DATASET = 'd_d48c5a038904f6da3c603cd854b6c191';
 const MPA_BREAKDOWN_DATASET = 'd_8f264219109e61fffa87ac64dd5a9a65';
@@ -73,6 +84,12 @@ const serviceMetrics = {
   portCallEventsValidated: 0,
 };
 const rateBuckets = new Map<string, { resetAt: number; count: number }>();
+const configuredCorsOrigins = new Set(
+  (process.env.API_CORS_ORIGINS ?? 'http://127.0.0.1:5174,http://localhost:5174')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+);
 
 interface CacheEntry {
   expiresAt: number;
@@ -117,6 +134,24 @@ const jsonResponse = (response: ServerResponse, value: unknown, status = 200) =>
   response.setHeader('Content-Type', 'application/json; charset=utf-8');
   response.setHeader('Cache-Control', status === 200 ? 'no-store' : 'no-cache');
   response.end(JSON.stringify(value));
+};
+
+const applyCors = (request: IncomingMessage, response: ServerResponse) => {
+  const origin = request.headers.origin;
+  if (!origin) return;
+  const requestHost = request.headers.host;
+  let sameOrigin: boolean;
+  try {
+    sameOrigin = new URL(origin).host === requestHost;
+  } catch {
+    throw new HttpError(403, 'Origin 格式无效');
+  }
+  if (!sameOrigin && !configuredCorsOrigins.has(origin)) throw new HttpError(403, 'Origin 不在 API_CORS_ORIGINS 白名单');
+  response.setHeader('Access-Control-Allow-Origin', origin);
+  response.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, Idempotency-Key, X-Operator-Role, X-Request-Id');
+  response.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  response.setHeader('Access-Control-Max-Age', '600');
+  response.setHeader('Vary', 'Origin');
 };
 
 const safeEqual = (left: string, right: string) => {
@@ -232,6 +267,9 @@ interface AuthorizedAisRecord {
   heading?: number;
   shipType?: string;
   category?: string;
+  observedAt?: string;
+  timestamp?: string;
+  time?: string;
 }
 
 const normalizeAisCategory = (value = '') => {
@@ -262,11 +300,25 @@ const loadAuthorizedAis = async () => {
     const id = String(record.id ?? record.mmsi ?? `authorized-ais-${index + 1}`);
     const speedKnots = Number(record.sog ?? record.speedKnots ?? 10);
     const headingDeg = Number(record.cog ?? record.heading ?? 120);
+    const category = normalizeAisCategory(record.shipType ?? record.category);
+    const positionObservedAt = record.observedAt ?? record.timestamp ?? record.time;
+    const referenceFuelTonsPerHour: Record<string, number> = {
+      container: 1.8,
+      tanker: 1.1,
+      bulk: 0.9,
+      cargo: 0.8,
+      other: 0.45,
+    };
+    const boundedSpeed = Number.isFinite(speedKnots) ? Math.min(22, Math.max(0, speedKnots)) : 10;
+    const carbonEmissionTonsPerHour = Number((
+      referenceFuelTonsPerHour[category] * Math.max(0.15, (boundedSpeed / 12) ** 3) * 3.114
+    ).toFixed(3));
     return [{
       id: `ais-${id}`,
+      mmsi: String(record.mmsi ?? id),
       name: record.name ?? record.shipName ?? `AIS ${record.mmsi ?? index + 1}`,
       imo: record.imo ? `IMO ${record.imo}` : `MMSI ${record.mmsi ?? id}`,
-      category: normalizeAisCategory(record.shipType ?? record.category),
+      category,
       position: {
         x: `${Math.min(94, Math.max(6, 8 + ((lon - 99.5) / 5.2) * 84)).toFixed(2)}%`,
         y: `${Math.min(94, Math.max(6, 92 - ((lat - 0.5) / 5.8) * 84)).toFixed(2)}%`,
@@ -277,8 +329,14 @@ const loadAuthorizedAis = async () => {
       speedKnots: Number.isFinite(speedKnots) ? speedKnots : 10,
       headingDeg: Number.isFinite(headingDeg) ? headingDeg : 120,
       assignedChannelId: lon >= 102.5 ? 'singapore-east-west' : 'malacca-main',
-      carbonEmissionTonsPerHour: 8.5,
+      carbonEmissionTonsPerHour,
       animationDelaySeconds: -(index % 12),
+      geo: { lat, lon },
+      positionSource: 'live-ais',
+      positionObservedAt,
+      positionQuality: positionObservedAt && Number.isFinite(Date.parse(positionObservedAt))
+        ? 'normal'
+        : 'timestamp-missing',
     }];
   });
 };
@@ -320,6 +378,16 @@ const buildPublicSnapshot = async () => {
     { category: 'other', label: '其他', count: type(['Passenger', 'Tug', 'Miscellaneous']), percent: 0 },
   ].map((item) => ({ ...item, percent: Number((item.count / monthlyVessels * 100).toFixed(1)) }));
   const observedAt = `${marine.current.time}:00+08:00`;
+  const grossTonnageThousandGt = Number(latest.gross_tonnage);
+  const assumedFuelKgPerGtMonth = 0.8;
+  const engineeringCarbonTons = grossTonnageThousandGt * 1_000 * assumedFuelKgPerGtMonth * 3.114 / 1_000;
+  const weatherStress = Math.min(45,
+    weather.current.wind_speed_10m / 25 * 18
+    + marine.current.wave_height / 5 * 19
+    + Math.max(0, 10_000 - weather.current.visibility) / 10_000 * 8,
+  );
+  const demandConcentration = Math.min(15, stats.reduce((maximum, item) => Math.max(maximum, item.percent), 0) * 0.2);
+  const resilienceProxy = Number(Math.max(0, 100 - weatherStress - demandConcentration).toFixed(1));
   const snapshot = {
     protocolVersion: 'port-digital-twin.snapshot.v1',
     observedAt,
@@ -344,12 +412,12 @@ const buildPublicSnapshot = async () => {
           detail: 'MPA 月度原始字段', trendLabel: '最新月份为初步统计', tone: 'warning',
         },
         {
-          id: 'carbon-emission', label: '碳排放', value: '18.7', unit: '万吨 CO₂',
-          detail: 'IMO燃料因子模型估算', trendLabel: '模型值·非实测', tone: 'warning',
+          id: 'carbon-emission', label: '工程边界碳排估算', value: (engineeringCarbonTons / 10_000).toFixed(2), unit: '万吨 CO₂/月',
+          detail: 'MPA GT × 假设燃油强度 × IMO HFO因子', trendLabel: '假设模型·非现场实测', tone: 'warning',
         },
         {
-          id: 'resilience-index', label: '网络韧性指数', value: '87.6', unit: 'A',
-          detail: '公开数据驱动模型评分', trendLabel: '事件注入后动态更新', tone: 'ok',
+          id: 'resilience-index', label: '运行韧性代理', value: resilienceProxy.toFixed(1), unit: '/100',
+          detail: '风、浪、能见度与船型集中度确定性计算', trendLabel: '代理指标·非认证等级', tone: resilienceProxy >= 75 ? 'ok' : 'warning',
         },
       ],
     },
@@ -393,7 +461,8 @@ const buildPublicSnapshot = async () => {
           : '公开模式不伪造实时船位；地图代表船为场景映射，实时船位需配置授权 AIS_REST_ENDPOINT。',
       },
       carbon: {
-        source: 'Fourth IMO GHG Study 2020', method: 'fuel consumption × fuel-specific CO2 emission factor',
+        source: 'Fourth IMO GHG Study 2020', method: 'MPA gross tonnage × assumed 0.8 kg fuel/GT-month × HFO factor; engineering boundary only',
+        assumedFuelKgPerGtMonth,
         factorsKgCo2PerKgFuel: { HFO: 3.114, MDO: 3.206, LNG: 2.75 },
         url: 'https://www.imo.org/en/ourwork/environment/pages/fourth-imo-greenhouse-gas-study-2020.aspx',
       },
@@ -427,6 +496,19 @@ const readJsonBody = async <T>(request: IncomingMessage): Promise<T> => {
   }
 };
 
+const operationalCall = <T>(callback: () => T): T => {
+  try {
+    return callback();
+  } catch (error) {
+    const code = error instanceof Error ? error.message : 'OPERATIONAL_CONTROL_ERROR';
+    const status = code.includes('NOT_FOUND') ? 404
+      : code.includes('UNKNOWN') || code.includes('INVALID') ? 422
+        : code.includes('REQUIRED') || code.includes('BLOCKED') || code.includes('STOPPED') || code.includes('PENDING') || code.includes('APPROVED') || code.includes('ELIGIBLE') || code.includes('CHECKPOINT') ? 409
+          : 500;
+    throw new HttpError(status, code);
+  }
+};
+
 const consultXiaoyiAi = async (payload: XiaoyiRlAdvisorRequest) => {
   const endpoint = process.env.XIAOYI_AI_ENDPOINT ?? 'http://127.0.0.1:8010';
   try {
@@ -453,11 +535,65 @@ const consultXiaoyiAi = async (payload: XiaoyiRlAdvisorRequest) => {
   }
 };
 
-export const createPublicEvidenceMiddleware = () => async (
-  request: IncomingMessage,
-  response: ServerResponse,
-  next: () => void,
-) => {
+const generateXiaoyiOperationalHandoff = async (operations: OperationalControlService) => {
+  const grounded = operations.handoffReport();
+  const endpoint = process.env.XIAOYI_AI_ENDPOINT?.trim();
+  if (!endpoint) {
+    return {
+      ...grounded,
+      xiaoyi_model: {
+        status: 'not-configured',
+        model_used: false,
+        answer: null,
+        disclosure: '未配置 XIAOYI_AI_ENDPOINT，界面只展示可审计的后端状态底稿，不伪装成模型输出。',
+      },
+    };
+  }
+  try {
+    const response = await fetch(`${endpoint.replace(/\/$/, '')}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        question: `请基于以下港口运行状态底稿生成一份中文交接班报告。只允许使用底稿事实；必须包含状态摘要、预警、策略建议、执行权限边界和 trace_id；不得声称现场实测或生产下发。底稿：${JSON.stringify(grounded)}`,
+        mode: 'expert',
+        top_k: 5,
+        strict_evidence: true,
+      }),
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!response.ok) throw new Error(`Xiaoyi HTTP ${response.status}`);
+    const result = await response.json() as { answer?: string };
+    if (!result.answer?.trim()) throw new Error('Xiaoyi empty answer');
+    return {
+      ...grounded,
+      xiaoyi_model: {
+        status: 'connected',
+        model_used: true,
+        answer: result.answer.trim(),
+        disclosure: '模型回答基于同一后端快照底稿；执行权限仍由控制服务与人工审批门禁决定。',
+      },
+    };
+  } catch (error) {
+    return {
+      ...grounded,
+      xiaoyi_model: {
+        status: 'unavailable',
+        model_used: false,
+        answer: null,
+        disclosure: `小懿模型调用失败，已失败关闭到可审计状态底稿：${error instanceof Error ? error.message : 'unknown error'}`,
+      },
+    };
+  }
+};
+
+export const createPublicEvidenceMiddleware = () => {
+  const operations = new OperationalControlService();
+  const realtimeAis = new RealtimeAisGateway();
+  return async (
+    request: IncomingMessage,
+    response: ServerResponse,
+    next: () => void,
+  ) => {
   const url = new URL(request.url ?? '/', 'http://127.0.0.1');
   const requestIdHeader = request.headers['x-request-id'];
   const requestId = typeof requestIdHeader === 'string' && /^[a-zA-Z0-9._-]{1,80}$/.test(requestIdHeader)
@@ -469,6 +605,12 @@ export const createPublicEvidenceMiddleware = () => async (
   response.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   serviceMetrics.requests += 1;
   try {
+    applyCors(request, response);
+    if (request.method === 'OPTIONS') {
+      response.statusCode = 204;
+      response.end();
+      return;
+    }
     enforceAuthorization(request, url.pathname);
     enforceRateLimit(request, response);
     if (url.pathname.startsWith('/api/rl')) await ensureRlTrainingJobsRestored();
@@ -485,7 +627,7 @@ export const createPublicEvidenceMiddleware = () => async (
     if (request.method === 'GET' && url.pathname === '/api/openapi.json') {
       jsonResponse(response, {
         openapi: '3.1.0',
-        info: { title: 'Malacca Port Resilience Sandbox API', version: '1.0.0' },
+        info: { title: 'Malacca Port Resilience Sandbox API', version: '1.1.0' },
         servers: [{ url: '/' }],
         paths: {
           '/healthz': { get: { summary: '存活探针', responses: { '200': { description: '服务进程存活' } } } },
@@ -519,6 +661,28 @@ export const createPublicEvidenceMiddleware = () => async (
             },
           },
           '/api/port-calls/validate': { post: { summary: '校验并规范化 port-call-event.v1 事件', security: [{ bearerAuth: [] }], responses: { '200': { description: '规范化事件' }, '422': { description: '事件合同校验失败' } } } },
+          '/api/operations/snapshot': { get: { summary: '读取公开数据校准的连续实时模拟、预测和逐字段血缘', responses: { '200': { description: 'port-operations.telemetry.v1' } } } },
+          '/api/operations/contracts/telemetry': { get: { summary: '读取稳定逐字段遥测合同和现场适配器槽', responses: { '200': { description: '合同描述' } } } },
+          '/api/operations/recommendations': { get: { summary: '读取 FCFS、SOP、运筹优化、MPC 与可选 RL 检查点候选', responses: { '200': { description: '同一输入快照上的控制候选' }, '409': { description: '数据质量或模拟器门禁阻断' } } } },
+          '/api/operations/handoff': { get: { summary: '生成基于同一后端快照的小懿状态底稿，并在配置时真实调用小懿模型', responses: { '200': { description: '状态摘要、预警、策略、交班与模型连接状态' } } } },
+          '/api/operations/models': { get: { summary: '读取 champion/candidate/rollback/archive/rejected 模型注册表', responses: { '200': { description: '模型生命周期和证据位置' } } } },
+          '/api/operations/decisions': {
+            get: { summary: '列出模拟决策生命周期记录', security: [{ bearerAuth: [] }], responses: { '200': { description: '决策列表' } } },
+            post: { summary: '创建待双人审批的控制决策', security: [{ bearerAuth: [] }], responses: { '201': { description: '待审批决策' }, '409': { description: '控制器或数据门禁阻断' } } },
+          },
+          '/api/operations/decisions/{decisionId}/approve': { post: { summary: '记录操作员和安全员双人审批', security: [{ bearerAuth: [] }], responses: { '200': { description: '已审批决策' }, '409': { description: '双人审批不满足' } } } },
+          '/api/operations/decisions/{decisionId}/execute': { post: { summary: '通过独立模拟执行器执行并返回回执，要求 Idempotency-Key', security: [{ bearerAuth: [] }], responses: { '200': { description: '执行回执与 KPI 差值' }, '409': { description: '审批或质量门禁阻断' } } } },
+          '/api/operations/decisions/{decisionId}/rollback': { post: { summary: '回滚已执行模拟决策', security: [{ bearerAuth: [] }], responses: { '200': { description: '回滚回执' } } } },
+          '/api/operations/scenarios': { post: { summary: '注入正常、高峰、封航、故障、天气、拥堵、饱和或失联场景', security: [{ bearerAuth: [] }], responses: { '200': { description: '注入后的状态' } } } },
+          '/api/operations/simulator/control': { post: { summary: '启动或停止实时模拟器以验证失败关闭', security: [{ bearerAuth: [] }], responses: { '200': { description: '模拟器状态' } } } },
+          '/api/operations/audit': { get: { summary: '读取并验证 SHA-256 追加式审计链', security: [{ bearerAuth: [] }], responses: { '200': { description: '已校验审计链' } } } },
+          '/api/geospatial/live': {
+            get: {
+              summary: '读取卫星瓦片配置、授权 AISStream 新鲜船位与严格真实性门禁',
+              security: [{ bearerAuth: [] }],
+              responses: { '200': { description: 'geospatial-live-map.v1' } },
+            },
+          },
         },
         components: {
           securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer' } },
@@ -532,6 +696,151 @@ export const createPublicEvidenceMiddleware = () => async (
     }
     if (request.method === 'GET' && url.pathname === '/api/public-data/snapshot') {
       jsonResponse(response, await buildPublicSnapshot());
+      return;
+    }
+    if (request.method === 'GET' && url.pathname === '/api/operations/contracts/telemetry') {
+      jsonResponse(response, PORT_TELEMETRY_CONTRACT);
+      return;
+    }
+    if (request.method === 'GET' && url.pathname === '/api/operations/snapshot') {
+      jsonResponse(response, operations.snapshot());
+      return;
+    }
+    if (request.method === 'GET' && url.pathname === '/api/geospatial/live') {
+      const satellite = getSatelliteMapConfiguration();
+      const ais = realtimeAis.snapshot();
+      jsonResponse(response, {
+        protocolVersion: 'geospatial-live-map.v1',
+        observedAt: new Date().toISOString(),
+        region: {
+          id: 'malacca-strait',
+          center: { latitude: 2.7, longitude: 102.25 },
+          bounds: { south: 0.35, west: 99, north: 6.25, east: 105 },
+        },
+        satellite,
+        ais,
+        authority: {
+          satellite_imagery_configured: satellite.configured,
+          live_data_verified: ais.liveDataVerified,
+          satellite_realtime_ready: satellite.configured && ais.liveDataVerified,
+          navigation_authority: false,
+          dispatch_allowed: false,
+          production_authority: false,
+        },
+        claimBoundary: [
+          '卫星影像是地理底图，拍摄时间与 AIS 报文时间相互独立。',
+          '只有授权 AIS 流已连接且存在五分钟内新鲜船位时，界面才标记实时定位。',
+          '本接口不替代 ECDIS、VTS、航海通告或港口生产控制。',
+        ],
+      });
+      return;
+    }
+    if (request.method === 'GET' && url.pathname === '/api/operations/recommendations') {
+      const trainedAction = url.searchParams.get('trainedActionId') as OperationalActionId | null;
+      jsonResponse(response, operationalCall(() => operations.recommendations(trainedAction ?? undefined)));
+      return;
+    }
+    if (request.method === 'GET' && url.pathname === '/api/operations/handoff') {
+      jsonResponse(response, await generateXiaoyiOperationalHandoff(operations));
+      return;
+    }
+    if (request.method === 'GET' && url.pathname === '/api/operations/models') {
+      jsonResponse(response, {
+        protocol_version: 'port-model-registry.v1',
+        generated_at: new Date().toISOString(),
+        models: [
+          {
+            id: operations.simulator.forecastModel.id,
+            version: '1.1.0-local-candidate',
+            run_id: operations.simulator.runId,
+            status: 'champion',
+            family: 'train-only exponential smoothing demand forecast',
+            model_hash: operations.simulator.forecastModel.hash,
+            dataset_hash: operations.simulator.datasetHash,
+            config_hash: operations.simulator.configHash,
+            evidence_scope: 'public monthly aggregate calibration projected into engineering simulation',
+          },
+          {
+            id: 'rl-benchmark-balanced-resilience-calibrated-v2',
+            version: 'calibrated-v2',
+            run_id: '2026-07-26-fixed-benchmark',
+            status: 'archive',
+            family: 'four tabular RL methods plus MPC',
+            evidence_artifact: 'reports/rl-benchmark-balanced-resilience-calibrated-v2.json',
+            evidence_scope: 'public-data offline replay, not field KPI',
+          },
+          {
+            id: 'legacy-rl-benchmark-balanced-resilience',
+            version: 'legacy-v1',
+            run_id: 'historical-preserved',
+            status: 'rejected',
+            family: 'historical benchmark',
+            evidence_artifact: 'reports/rl-benchmark-balanced-resilience.json',
+            rejection_reason: 'relative percentage claims blocked after small-denominator calibration audit',
+          },
+        ],
+      });
+      return;
+    }
+    if (request.method === 'GET' && url.pathname === '/api/operations/decisions') {
+      jsonResponse(response, { protocol_version: 'port-decision-list.v1', decisions: operations.listDecisions() });
+      return;
+    }
+    if (request.method === 'POST' && url.pathname === '/api/operations/decisions') {
+      const body = await readJsonBody<{ controller_id?: OperationalControllerId; trained_action_id?: OperationalActionId }>(request);
+      if (!body.controller_id) throw new HttpError(422, 'controller_id 必填');
+      jsonResponse(response, operationalCall(() => operations.createDecision(body.controller_id!, body.trained_action_id)), 201);
+      return;
+    }
+    const operationalDecisionMatch = url.pathname.match(/^\/api\/operations\/decisions\/([^/]+)$/);
+    if (request.method === 'GET' && operationalDecisionMatch) {
+      const decision = operations.getDecision(decodeURIComponent(operationalDecisionMatch[1]));
+      jsonResponse(response, decision ?? { status: 'error', message: 'DECISION_NOT_FOUND' }, decision ? 200 : 404);
+      return;
+    }
+    const approvalMatch = url.pathname.match(/^\/api\/operations\/decisions\/([^/]+)\/approve$/);
+    if (request.method === 'POST' && approvalMatch) {
+      const body = await readJsonBody<{ approvers?: Array<{ approver_id: string; role: 'operator' | 'safety_officer' }> }>(request);
+      jsonResponse(response, operationalCall(() => operations.approveDecision(
+        decodeURIComponent(approvalMatch[1]),
+        body.approvers ?? [],
+      )));
+      return;
+    }
+    const executeMatch = url.pathname.match(/^\/api\/operations\/decisions\/([^/]+)\/execute$/);
+    if (request.method === 'POST' && executeMatch) {
+      const idempotencyHeader = request.headers['idempotency-key'];
+      const idempotencyKey = typeof idempotencyHeader === 'string' ? idempotencyHeader : '';
+      jsonResponse(response, operationalCall(() => operations.executeDecision(
+        decodeURIComponent(executeMatch[1]),
+        idempotencyKey,
+      )));
+      return;
+    }
+    const rollbackMatch = url.pathname.match(/^\/api\/operations\/decisions\/([^/]+)\/rollback$/);
+    if (request.method === 'POST' && rollbackMatch) {
+      const body = await readJsonBody<{ reason?: string }>(request);
+      jsonResponse(response, operationalCall(() => operations.rollbackDecision(
+        decodeURIComponent(rollbackMatch[1]),
+        body.reason ?? 'operator_requested_rollback',
+      )));
+      return;
+    }
+    if (request.method === 'POST' && url.pathname === '/api/operations/scenarios') {
+      const body = await readJsonBody<{ scenario?: OperationalScenarioId }>(request);
+      const allowed: OperationalScenarioId[] = ['normal', 'peak-arrivals', 'channel-closure', 'equipment-failure', 'extreme-weather', 'channel-congestion', 'yard-saturation', 'data-loss'];
+      if (!body.scenario || !allowed.includes(body.scenario)) throw new HttpError(422, '不支持的 scenario');
+      jsonResponse(response, operations.injectScenario(body.scenario));
+      return;
+    }
+    if (request.method === 'POST' && url.pathname === '/api/operations/simulator/control') {
+      const body = await readJsonBody<{ action?: 'start' | 'stop' }>(request);
+      if (body.action !== 'start' && body.action !== 'stop') throw new HttpError(422, 'action 必须是 start 或 stop');
+      jsonResponse(response, operations.controlSimulator(body.action));
+      return;
+    }
+    if (request.method === 'GET' && url.pathname === '/api/operations/audit') {
+      jsonResponse(response, operations.auditTrail());
       return;
     }
     if (request.method === 'GET' && url.pathname === '/api/rl/health') {
@@ -748,7 +1057,8 @@ export const createPublicEvidenceMiddleware = () => async (
       message: error instanceof Error ? error.message : 'unknown error',
       requestId,
     }, status);
-  }
+    }
+  };
 };
 
 export const publicEvidencePlugin = (): Plugin => ({

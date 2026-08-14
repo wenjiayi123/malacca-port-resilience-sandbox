@@ -245,8 +245,14 @@ const createVisibleSteps = (action: XiaoyiAction): VisibleStep[] => action.steps
   detail: `动作标识 ${step.target} · 等待编排`,
 }));
 
-const createApprovalId = () => `XY-${new Date().toISOString().slice(11, 19).replace(/:/g, '')}-${Math.floor(100 + Math.random() * 900)}`;
-const createReportId = () => `XYR-${new Date().toISOString().slice(11, 19).replace(/:/g, '')}-${Math.floor(100 + Math.random() * 900)}`;
+let localRecordSequence = 0;
+const createLocalRecordId = (prefix: 'XY' | 'XYR') => {
+  localRecordSequence += 1;
+  const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 17);
+  return `${prefix}-LOCAL-${timestamp}-${String(localRecordSequence).padStart(4, '0')}`;
+};
+const createApprovalId = () => createLocalRecordId('XY');
+const createReportId = () => createLocalRecordId('XYR');
 const formatRuntimeTime = (date: Date) => date.toLocaleTimeString('zh-CN', { hour12: false });
 
 const normalize = (value: string) => value.toLowerCase().replace(/[\s，。！？、,.!?：:；;“”"']/g, '');
