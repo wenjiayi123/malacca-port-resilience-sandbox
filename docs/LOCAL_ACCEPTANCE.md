@@ -51,6 +51,17 @@ curl -fsS http://127.0.0.1:5174/api/geospatial/live
 pnpm release:check
 ```
 
+监管延误策略可单独复现与验真：
+
+```bash
+pnpm benchmark:regulatory
+pnpm benchmark:regulatory:verify
+```
+
+页面验收路径为“证据与闭环 → 监管韧性”。依次切换常态监管链、海事集中检查、海关单证/查验滞留、
+双重检查与放行恢复，确认检查队列、恢复队列、监管延误和增量能耗随后端响应变化；同时确认页面保持
+`official_release_exogenous=true`、`dispatch_allowed=false`、`production_authority=false`。
+
 该命令执行 lint、25+ 项测试、TypeScript/Vite 构建、固定 RL 报告校验、公开数据报告校验、
 依赖漏洞审计、秘密/资产/工作流发布检查。本地通过不等于真实港口或生产控制验收通过。
 

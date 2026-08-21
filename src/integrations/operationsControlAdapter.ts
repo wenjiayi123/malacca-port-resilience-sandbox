@@ -15,6 +15,56 @@ export type OperationalScenarioId =
   | 'data-loss';
 
 export type OperationalControllerId = 'fcfs' | 'port-sop' | 'operations-research' | 'mpc' | 'rl-checkpoint';
+export type RegulatoryScenarioId =
+  | 'baseline'
+  | 'maritime-inspection'
+  | 'customs-document-hold'
+  | 'dual-inspection-recovery';
+
+export interface RegulatoryResilienceEvidence {
+  protocolVersion: 'port-regulatory-resilience.v1';
+  sequence: number;
+  eventTime: string;
+  scenario: RegulatoryScenarioId;
+  inputSnapshotHash: string;
+  responseHash: string;
+  authority: Record<string, boolean>;
+  observationContract: string[];
+  state: Record<string, number>;
+  exogenousSignals: Record<string, number>;
+  impact: Record<string, number>;
+  strategy: {
+    id: string;
+    status: string;
+    inspectionReadinessRatio: number;
+    postReleaseRecoveryPriorityRatio: number;
+    preservedOperationalActions: string[];
+    selectedSeed: number;
+    training: { seeds: number[]; episodesPerSeed: number; rendering: false };
+  };
+  businessEvidence: {
+    costReductionPercent: number;
+    carbonReductionPercent: number;
+    energyReductionPercent: number;
+    regulatoryDelayReductionPercent: number;
+    recoveryServiceChangePercent: number;
+    endingRecoveryBacklogChange: number;
+    expectedSafetyViolationChange: number;
+    authorityViolationChange: number;
+    costReductionCi95: { lower95Percent: number; upper95Percent: number; pairedRows: number };
+    evidenceSha256: string;
+    blockedCandidateArtifact: string;
+    qualifiedCandidateArtifact: string;
+    scope: string;
+  };
+  sources: Array<{ authority: string; subject: string; url: string }>;
+  lineage: {
+    scenarioFields: string;
+    inspectionTelemetryMeasured: boolean;
+    reportArtifact: string;
+  };
+  generatedAt: string;
+}
 
 export interface PortOperationsSnapshot {
   protocolVersion: 'port-operations.telemetry.v1';
@@ -222,6 +272,17 @@ const parseResponse = async <T>(response: Response): Promise<T> => {
 export const fetchOperationsSnapshot = (authToken = '', signal?: AbortSignal) =>
   fetch('/api/operations/snapshot', { cache: 'no-store', headers: headers(authToken), signal })
     .then((response) => parseResponse<PortOperationsSnapshot>(response));
+
+export const fetchRegulatoryResilience = (authToken = '', signal?: AbortSignal) =>
+  fetch('/api/operations/regulatory-resilience', { cache: 'no-store', headers: headers(authToken), signal })
+    .then((response) => parseResponse<RegulatoryResilienceEvidence>(response));
+
+export const injectRegulatoryScenario = (scenario: RegulatoryScenarioId, authToken = '') =>
+  fetch('/api/operations/regulatory-resilience/scenario', {
+    method: 'POST',
+    headers: headers(authToken, { 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ scenario }),
+  }).then((response) => parseResponse<RegulatoryResilienceEvidence>(response));
 
 export const fetchOperationalRecommendations = (authToken = '', signal?: AbortSignal) =>
   fetch('/api/operations/recommendations', { cache: 'no-store', headers: headers(authToken), signal })

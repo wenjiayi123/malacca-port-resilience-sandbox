@@ -119,6 +119,18 @@ hash chain. It is not a live-port or production-control claim.
 simulation_mode=true · live_data_verified=false · dispatch_allowed=false · production_authority=false
 ```
 
+### 海事/海关检查延误韧性 / Regulatory-delay resilience
+
+系统现将海事检查、海关单证/查验等待、官方放行和放行后积压恢复建成连续状态链。主管机关的选查、
+结论与放行始终是外生信号；策略只能优化检查准备度和放行后的恢复资源，不获得监管或生产控制权。
+原五类运行动作及历史训练证据保持不变，另增 12 维观测、9 种补充动作和独立 Q-learning 训练层。
+
+预声明压力场景的 v1 候选因能耗、碳排和安全退化被阻断并保留；v2 经优势投影后，在 57 条冻结测试
+记录上实现 7.4679% 场景成本降低、15.8095% 能耗降低和 15.8119% 碳排降低，同时监管延误、恢复
+服务和安全不退化。结果属于离线场景证据，不是现场 KPI。详见
+[`REGULATORY_RESILIENCE.md`](docs/REGULATORY_RESILIENCE.md)及
+[`regulatory-resilience-v2.md`](reports/regulatory-resilience-v2.md)。
+
 ## 为什么这个项目值得关注 / Why this project matters
 
 - <strong>从态势到证据闭环</strong>：港口、航道、船舶、拥堵、延误、碳排与韧性状态共同进入事件推演，

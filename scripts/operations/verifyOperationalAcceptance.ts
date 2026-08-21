@@ -34,8 +34,18 @@ interface AcceptanceReport {
   sourceFingerprint: { algorithm: string; digest: string; files: Record<string, string> };
 }
 
+interface ExtensionManifest {
+  schemaVersion: string;
+  baseReport: { path: string; sha256: string; immutable: boolean };
+  expectedChangedSourceFiles: string[];
+  currentSourceFingerprints: Record<string, string>;
+  regulatoryEvidence: { path: string; sha256: string; verifier: string };
+  authority: Record<string, boolean>;
+}
+
 const reportPath = path.resolve('reports/operational-closure-acceptance-v1.json');
-const report = JSON.parse(await readFile(reportPath, 'utf8')) as AcceptanceReport;
+const reportBytes = await readFile(reportPath);
+const report = JSON.parse(reportBytes.toString('utf8')) as AcceptanceReport;
 const errors: string[] = [];
 if (report.schemaVersion !== 'operational-closure-acceptance.v1') errors.push('unsupported acceptance schema');
 if (report.evidenceLabel !== 'PUBLIC_DATA_CALIBRATED_SIMULATION_NOT_FIELD_KPI') errors.push('missing truth boundary');
@@ -73,16 +83,60 @@ if (!report.audit.verified || report.audit.recordCount < 8 || !/^[a-f0-9]{64}$/.
   errors.push('audit chain evidence invalid');
 }
 const recomputed: Record<string, string> = {};
+const changedSourceFiles: string[] = [];
 for (const [file, expected] of Object.entries(report.sourceFingerprint.files)) {
   const digest = createHash('sha256').update(await readFile(path.resolve(file))).digest('hex');
   recomputed[file] = digest;
-  if (digest !== expected) errors.push(`stale operational source fingerprint: ${file}`);
+  if (digest !== expected) changedSourceFiles.push(file);
 }
 const combined = createHash('sha256')
   .update(Object.entries(recomputed).sort(([left], [right]) => left.localeCompare(right))
     .map(([file, digest]) => `${file}:${digest}`).join('\n'))
   .digest('hex');
-if (combined !== report.sourceFingerprint.digest) errors.push('operational combined source fingerprint mismatch');
+let extensionVerified = false;
+if (changedSourceFiles.length || combined !== report.sourceFingerprint.digest) {
+  try {
+    const manifestPath = path.resolve('reports/operational-closure-regulatory-extension-v1.json');
+    const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as ExtensionManifest;
+    const expectedChanged = [...manifest.expectedChangedSourceFiles].sort();
+    const actualChanged = [...changedSourceFiles].sort();
+    const baseReportHash = createHash('sha256').update(reportBytes).digest('hex');
+    const regulatoryEvidenceHash = createHash('sha256')
+      .update(await readFile(path.resolve(manifest.regulatoryEvidence.path)))
+      .digest('hex');
+    const extensionErrors: string[] = [];
+    if (manifest.schemaVersion !== 'operational-closure-regulatory-extension.v1') {
+      extensionErrors.push('unsupported operational extension schema');
+    }
+    if (manifest.baseReport.path !== 'reports/operational-closure-acceptance-v1.json' ||
+        manifest.baseReport.immutable !== true || manifest.baseReport.sha256 !== baseReportHash) {
+      extensionErrors.push('base operational report changed');
+    }
+    if (JSON.stringify(expectedChanged) !== JSON.stringify(actualChanged)) {
+      extensionErrors.push('operational source drift is outside the declared extension');
+    }
+    for (const file of expectedChanged) {
+      if (recomputed[file] !== manifest.currentSourceFingerprints[file]) {
+        extensionErrors.push(`extended operational source fingerprint mismatch: ${file}`);
+      }
+    }
+    if (manifest.regulatoryEvidence.path !== 'reports/regulatory-resilience-v2.json' ||
+        manifest.regulatoryEvidence.verifier !== 'pnpm benchmark:regulatory:verify' ||
+        manifest.regulatoryEvidence.sha256 !== regulatoryEvidenceHash) {
+      extensionErrors.push('regulatory evidence reference changed');
+    }
+    if (manifest.authority.simulation_mode !== true || manifest.authority.live_data_verified !== false ||
+        manifest.authority.dispatch_allowed !== false || manifest.authority.production_authority !== false) {
+      extensionErrors.push('extension production authority boundary changed');
+    }
+    if (extensionErrors.length) errors.push(...extensionErrors);
+    else extensionVerified = true;
+  } catch (error) {
+    errors.push(`operational extension manifest invalid: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
 for (const error of errors) process.stderr.write(`ERROR ${error}\n`);
 if (errors.length) process.exit(1);
-process.stdout.write('Operational closure acceptance verified.\n');
+process.stdout.write(extensionVerified
+  ? 'Operational closure acceptance verified with immutable regulatory extension.\n'
+  : 'Operational closure acceptance verified.\n');
