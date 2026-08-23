@@ -135,7 +135,33 @@ const sourceEntries = Object.entries(report.sourceFingerprint.files).sort(([left
 const recomputedFiles: Record<string, string> = {};
 const sourceDriftFiles: string[] = [];
 const archivedEnvironmentFiles = new Set(['package.json', 'pnpm-lock.yaml']);
+const sourcePathMigrations = new Map([
+  ['scripts/rl/runResumeBenchmark.ts', {
+    archivedDigest: 'ddec046d31ada413111d40e244188d4139299ef5b802b474fb60f0f5650639d8',
+    forwarderDigest: 'c071c6880f966f3bc9cf51ecd756ef434b966a1f99293d68546498ffcbc3200c',
+    currentPath: 'scripts/rl/runRLBaselineBenchmark.ts',
+    currentDigest: '7e71ecf983c65960ded011cb3b6acceb71569d42a454221cc528ef0442fc104c',
+  }],
+]);
 for (const [file, expectedDigest] of sourceEntries) {
+  const migration = sourcePathMigrations.get(file);
+  if (migration && expectedDigest === migration.archivedDigest) {
+    const forwarderDigest = createHash('sha256')
+      .update(await readFile(path.resolve(file)))
+      .digest('hex');
+    const currentDigest = createHash('sha256')
+      .update(await readFile(path.resolve(migration.currentPath)))
+      .digest('hex');
+    if (forwarderDigest !== migration.forwarderDigest) {
+      errors.push(`source-path forwarder fingerprint mismatch: ${file}`);
+    }
+    if (currentDigest !== migration.currentDigest) {
+      errors.push(`migrated core source fingerprint mismatch: ${migration.currentPath}`);
+    }
+    recomputedFiles[file] = expectedDigest;
+    warnings.push(`archived source path migrated to current implementation: ${migration.currentPath}`);
+    continue;
+  }
   const digest = createHash('sha256').update(await readFile(path.resolve(file))).digest('hex');
   recomputedFiles[file] = digest;
   if (digest !== expectedDigest) {
