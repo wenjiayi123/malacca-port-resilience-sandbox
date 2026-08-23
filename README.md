@@ -108,7 +108,7 @@ MPA/ERA5/公开AIS参考
 无法连接真实小懿模型时只显示可审计状态底稿并明确降级，不把规则文本冒充模型回答。默认每 5 秒推进一个 15 分钟业务步；同一 seed 和 tick
 可复现。数据失联或模拟器停止时，推荐与执行均失败关闭。完整数据卡、工程假设和现场替换边界见
 [`OPERATIONAL_SIMULATOR_DATA_CARD.md`](docs/OPERATIONAL_SIMULATOR_DATA_CARD.md)，逐按钮验收见
-[`LOCAL_ACCEPTANCE.md`](docs/LOCAL_ACCEPTANCE.md)。
+[`TESTING.md`](docs/TESTING.md)。
 
 The `v1.1.0-local-candidate` adds a backend-owned, continuously changing operational loop while preserving
 all historical RL artifacts. It is a public-data-calibrated real-time simulation with real model inference,
@@ -427,28 +427,27 @@ IALA 或 IMO 合规认证。
 
 OpenAPI is the interface-discovery entry. Stricter data and interoperability boundaries are documented in [`DATASET_CONTRACT.md`](docs/DATASET_CONTRACT.md) and [`PORT_CALL_INTEROPERABILITY.md`](docs/PORT_CALL_INTEROPERABILITY.md). Field alignment is not DCSA, IALA, or IMO compliance certification.
 
-## 复现、发布与安全 / Reproduction, release, and security
+## 复现与安全 / Reproduction and security
 
 ```bash
 pnpm lint          # ESLint + TypeScript规则 / rules
 pnpm test          # 数据隔离、更新、恢复与安全 / isolation, updates, recovery, safety
-pnpm benchmark:rl  # 3种子离线回放 / three-seed offline replay and evidence
+pnpm benchmark:rl  # 3种子离线回放 / three-seed offline replay
 pnpm benchmark:rl:verify # 数据/代码哈希与全算法指标 / hashes and full-method metrics
 pnpm data:sync:infore-ais # 下载并校验公开AIS包 / fetch and verify public AIS package
 pnpm benchmark:public-data # 公开大数据五方法比较 / large-public-data five-method comparison
-pnpm benchmark:public-data:verify # 数据来源、许可与结果门禁 / provenance and result gate
-pnpm acceptance:operations # 生成闭环验收证据 / generate operational closure evidence
-pnpm acceptance:operations:verify # 校验证据与源码哈希 / verify evidence and source hashes
+pnpm benchmark:public-data:verify # 校验数据来源、许可与结果 / verify provenance and results
+pnpm acceptance:operations # 生成闭环测试报告 / generate the workflow test report
+pnpm acceptance:operations:verify # 校验报告与源码哈希 / verify the report and source hashes
 pnpm build         # 严格类型检查与生产构建 / strict types and production build
 pnpm security:audit # 中高危依赖漏洞门禁 / dependency vulnerability gate
-pnpm release:check # 门禁、密钥、资产与工作流 / gates, secrets, assets, workflows
 ```
 
-发布标签工作流会构建静态应用、生成 SPDX SBOM 和发布包；仓库公开后再执行 GitHub provenance
-attestation、CodeQL 与 OSSF Scorecard。安全边界见 [`SECURITY.md`](SECURITY.md)，模型限制见
+版本标签工作流会构建静态应用、生成 SPDX SBOM 和安装包；GitHub Actions 同时运行 provenance
+attestation、CodeQL 与 OSSF Scorecard。安全说明见 [`SECURITY.md`](SECURITY.md)，模型限制见
 [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md)。
 
-Release-tag workflows build the static application, SPDX SBOM, and release bundle. GitHub provenance attestation, CodeQL, and OSSF Scorecard run after public release. See [`SECURITY.md`](SECURITY.md) for security boundaries and [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md) for model limitations.
+Version-tag workflows build the static application, SPDX SBOM, and distribution bundle. GitHub Actions also run provenance attestation, CodeQL, and OSSF Scorecard. See [`SECURITY.md`](SECURITY.md) for security information and [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md) for model limitations.
 
 <p align="center">
   <img src="docs/assets/human-review-gate.jpg" alt="小懿执行报告、异常归档与最终人工确认门禁" width="100%" />

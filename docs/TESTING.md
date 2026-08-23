@@ -1,4 +1,4 @@
-# 本地端到端验收
+# 本地端到端功能验证
 
 ## 启动
 
@@ -10,7 +10,7 @@ pnpm demo:web
 等待终端显示 `[URL] http://127.0.0.1:5174/`，浏览器访问
 <http://127.0.0.1:5174/>。保持终端开启，验收结束按 `Control+C` 停止。
 
-## UI 验收路径
+## UI 测试路径
 
 1. 底部点击“证据与闭环”。顶部应同时显示“公开数据校准实时模拟”“模型真实推理输出”
    “待切换现场数据源”。
@@ -45,7 +45,7 @@ curl -fsS http://127.0.0.1:5174/api/geospatial/live
 写接口需要 `Content-Type: application/json`；执行接口还必须提供至少 8 个字符的
 `Idempotency-Key`。远程监听时所有非公开 API 还需要强 Bearer Token。
 
-## 自动门禁
+## 自动测试
 
 ```bash
 pnpm release:check
@@ -63,7 +63,7 @@ pnpm benchmark:regulatory:verify
 `official_release_exogenous=true`、`dispatch_allowed=false`、`production_authority=false`。
 
 该命令执行 lint、25+ 项测试、TypeScript/Vite 构建、固定 RL 报告校验、公开数据报告校验、
-依赖漏洞审计、秘密/资产/工作流发布检查。本地通过不等于真实港口或生产控制验收通过。
+依赖漏洞审计、敏感信息扫描、资产来源检查和工作流检查。本地通过不等于真实港口或生产控制验证通过。
 
 可单独运行 `pnpm acceptance:operations && pnpm acceptance:operations:verify`，生成并校验
 `reports/operational-closure-acceptance-v1.json`；报告包含源码 SHA-256、预测训练/验证边界、
