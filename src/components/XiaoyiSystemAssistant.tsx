@@ -424,6 +424,24 @@ const xiaoyiActions: Record<string, XiaoyiAction> = {
     summary: '进入后端权威证据、治理、模型与审计闭环中心。',
     steps: [moduleStep('evidence', '证据与闭环')],
   },
+  regulatory: {
+    id: 'regulatory',
+    label: '打开监管韧性',
+    summary: '进入海事与海关监管延误、官方放行及放行后恢复的证据页面。',
+    steps: [
+      moduleStep('evidence', '证据与闭环'),
+      {
+        target: 'evidence-tab-regulatory',
+        label: '进入“监管韧性”',
+        verification: {
+          mode: 'attribute',
+          attribute: 'aria-pressed',
+          expected: ['true'],
+          description: '监管权责边界、状态链和冻结测试证据已打开',
+        },
+      },
+    ],
+  },
   'operations-handoff': {
     id: 'operations-handoff',
     label: '生成小懿运行交班',
@@ -455,7 +473,7 @@ const xiaoyiActions: Record<string, XiaoyiAction> = {
   },
 };
 
-const quickCommands = ['进入沙盘推演', '运行港口拥堵演示', '运行RL策略测试', '打开训练中心', '生成小懿运行交班'];
+const quickCommands = ['进入沙盘推演', '运行港口拥堵演示', '打开监管韧性', '运行RL策略测试', '打开训练中心', '生成小懿运行交班'];
 
 const delay = (milliseconds: number) => new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
 const getRuntimeTimestamp = () => window.performance.now();
@@ -509,6 +527,7 @@ const normalize = (value: string) => value.toLowerCase().replace(/[\s，。！�
 const resolveXiaoyiAction = (command: string): XiaoyiAction | null => {
   const text = normalize(command).replace(/^小懿(请|帮我|现在)?/, '');
   if (/运行交班|交班报告|小懿交班|生成.*交班/.test(text)) return xiaoyiActions['operations-handoff'];
+  if (/监管韧性|监管延误|海事.*检查|海关.*查验|放行.*恢复/.test(text)) return xiaoyiActions.regulatory;
   if (/证据与闭环|证据中心|审计闭环/.test(text)) return xiaoyiActions.evidence;
   if (/重置.*(沙盘|推演)|重新开始推演/.test(text)) return xiaoyiActions['reset-simulation'];
   if (/(开始|启动).*(强化学习|rl).*训练|(强化学习|rl).*训练.*(开始|启动)/.test(text)) return xiaoyiActions['rl-start'];

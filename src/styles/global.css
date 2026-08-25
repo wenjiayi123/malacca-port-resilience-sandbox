@@ -11011,8 +11011,8 @@ button.alert-pill {
   }
 
   .top-bar__left span:nth-child(n + 3),
-  .top-bar__right button:nth-child(2),
-  .top-bar__right button:nth-child(3) {
+  .top-bar__right button:nth-child(2) .bilingual-label,
+  .top-bar__right button:nth-child(3) .bilingual-label {
     display: none;
   }
 

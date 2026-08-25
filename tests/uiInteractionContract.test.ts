@@ -67,7 +67,7 @@ test('Xiaoyi action registry covers every declared step with an observable verif
   findRegistry(actionSource);
   assert.ok(registry);
   const entries = registry.properties.filter(ts.isPropertyAssignment);
-  assert.equal(entries.length, 23);
+  assert.equal(entries.length, 24);
   const actionIds = entries.map((entry) => {
     assert.ok(ts.isObjectLiteralExpression(entry.initializer));
     const action = entry.initializer;
@@ -101,16 +101,59 @@ test('Xiaoyi action registry covers every declared step with an observable verif
   }
 });
 
-test('Xiaoyi resolver keeps handoff, evidence, RL configuration, policy test and report export routes distinct', async () => {
+test('Xiaoyi resolver keeps handoff, regulatory evidence, RL configuration, policy test and report export routes distinct', async () => {
   const source = await readFile('src/components/XiaoyiSystemAssistant.tsx', 'utf8');
   const resolverStart = source.indexOf('const resolveXiaoyiAction');
   const resolverEnd = source.indexOf('const calculateIntentConfidence');
   const resolver = source.slice(resolverStart, resolverEnd);
   assert.match(resolver, /operations-handoff/);
+  assert.match(resolver, /xiaoyiActions\.regulatory/);
   assert.match(resolver, /xiaoyiActions\.evidence/);
   assert.match(resolver, /xiaoyiActions\['rl-configure'\]/);
   assert.match(resolver, /xiaoyiActions\['rl-policy-test'\]/);
   assert.match(resolver, /xiaoyiActions\['export-report'\]/);
   assert.ok(resolver.indexOf('operations-handoff') < resolver.indexOf('export-report'));
+  assert.ok(resolver.indexOf('xiaoyiActions.regulatory') < resolver.indexOf('xiaoyiActions.evidence'));
   assert.match(resolver, /配置\.\*\(强化学习\|rl\)\.\*训练/);
+});
+
+test('changing the selected training algorithm detaches stale jobs before the next run', async () => {
+  const source = await readFile('src/App.tsx', 'utf8');
+  const handlerStart = source.indexOf('const selectRlAlgorithm');
+  const handlerEnd = source.indexOf('const selectRlTrainingBaseline');
+  const handler = source.slice(handlerStart, handlerEnd);
+  assert.match(handler, /setRlTrainingJob\(null\)/);
+  assert.match(handler, /setRlPolicyEvaluation\(null\)/);
+  assert.match(handler, /jobId:\s*null/);
+  assert.match(source, /runtime\.rlTraining\.jobId\s*!==\s*job\.jobId/);
+  assert.match(source, /isXiaoyiAssistantMinimized, setIsXiaoyiAssistantMinimized\]\s*=\s*useState\(true\)/);
+});
+
+test('Xiaoyi training advice matches the six-factor reward contract', async () => {
+  const advisorSource = await readFile('server/xiaoyiRlAdvisor.ts', 'utf8');
+  assert.match(advisorSource, /六项奖励权重/);
+  assert.doesNotMatch(advisorSource, /五项奖励权重/);
+});
+
+test('policy inference labels remain algorithm-neutral and render signed business deltas', async () => {
+  const source = await readFile('src/App.tsx', 'utf8');
+  assert.match(source, /已部署策略模型与观测状态/);
+  assert.doesNotMatch(source, /已部署神经网络与状态张量/);
+  assert.match(source, /rlTrainingJob\?\.completedEpisodes\s*\?\?\s*rlBenchmark\?\.episodes/);
+  assert.match(source, /rlPolicyEvaluation\?\.trace\.length/);
+  assert.doesNotMatch(source, /Episode 3,000|500 Episodes/);
+  assert.match(source, /formatPolicyReduction\(rlPolicyInference\.comparison\.improvement\.carbonTons/);
+  assert.match(source, /<small>碳排变化<\/small>/);
+});
+
+test('compact interview viewport keeps map-view and fullscreen controls operable', async () => {
+  const [source, styles] = await Promise.all([
+    readFile('src/App.tsx', 'utf8'),
+    readFile('src/styles/global.css', 'utf8'),
+  ]);
+  assert.match(source, /aria-label={`切换地图视角，当前\$\{activeMapViewDefinition\.label\}`}/);
+  assert.match(source, /aria-label=\{isFullscreen \? '退出全屏' : '全屏显示'\}/);
+  assert.doesNotMatch(styles, /\.top-bar__right button:nth-child\(2\),\s*\n\s*\.top-bar__right button:nth-child\(3\)\s*\{\s*display:\s*none/);
+  assert.match(styles, /button:nth-child\(2\) \.bilingual-label/);
+  assert.match(styles, /button:nth-child\(3\) \.bilingual-label/);
 });

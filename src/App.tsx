@@ -1844,6 +1844,10 @@ const routeLayerFilters: Array<{
 ];
 
 const formatInteger = (value: number) => value.toLocaleString('en-US');
+const formatPolicyReduction = (value: number, digits: number, unit: string) =>
+  `${value >= 0 ? '-' : '+'}${Math.abs(value).toFixed(digits)}${unit}`;
+const formatPolicyIncrease = (value: number, digits: number, unit: string) =>
+  `${value >= 0 ? '+' : '-'}${Math.abs(value).toFixed(digits)}${unit}`;
 
 const formatPercent = (value: number) => `${value.toFixed(1)}%`;
 
@@ -2705,7 +2709,7 @@ export function App() {
     appliedAt: string | null;
   }>({ status: 'idle', scope: null, message: '', appliedAt: null });
   const [isXiaoyiAssistantOpen, setIsXiaoyiAssistantOpen] = useState(true);
-  const [isXiaoyiAssistantMinimized, setIsXiaoyiAssistantMinimized] = useState(false);
+  const [isXiaoyiAssistantMinimized, setIsXiaoyiAssistantMinimized] = useState(true);
   const [xiaoyiAssistantPosition, setXiaoyiAssistantPosition] = useState(() => ({
     x: typeof window === 'undefined' ? 1080 : Math.max(24, window.innerWidth - 330),
     y: 150,
@@ -3319,34 +3323,37 @@ export function App() {
                 : job.phase === 'evaluating' ? 'evaluation'
                   : job.phase === 'checkpointing' || job.phase === 'completed' ? 'interface-package'
                     : getRlTrainingStageByProgress(job.progressPercent).id;
-        setSandboxRuntime((runtime) => ({
-          ...runtime,
-          rlTraining: {
-            ...runtime.rlTraining,
-            status: job.status,
-            selectedAlgorithmId: job.status === 'completed' && job.result
-              ? job.result.bestAlgorithmId
-              : runtime.rlTraining.selectedAlgorithmId,
-            progressPercent: job.progressPercent,
-            currentStageId: stageId,
-            startedAt: job.startedAt,
-            startedAtEpochMs: job.startedAt ? Date.parse(job.startedAt) : runtime.rlTraining.startedAtEpochMs,
-            episodeCursor: job.completedEpisodes,
-            completedAt: job.completedAt,
-            backend: {
-              ...runtime.rlTraining.backend,
-              status: job.status === 'failed' ? 'failed' : 'connected',
-              lastMessage: job.message,
+        setSandboxRuntime((runtime) => {
+          if (runtime.rlTraining.jobId !== job.jobId) return runtime;
+          return {
+            ...runtime,
+            rlTraining: {
+              ...runtime.rlTraining,
+              status: job.status,
+              selectedAlgorithmId: job.status === 'completed' && job.result
+                ? job.result.bestAlgorithmId
+                : runtime.rlTraining.selectedAlgorithmId,
+              progressPercent: job.progressPercent,
+              currentStageId: stageId,
+              startedAt: job.startedAt,
+              startedAtEpochMs: job.startedAt ? Date.parse(job.startedAt) : runtime.rlTraining.startedAtEpochMs,
+              episodeCursor: job.completedEpisodes,
+              completedAt: job.completedAt,
+              backend: {
+                ...runtime.rlTraining.backend,
+                status: job.status === 'failed' ? 'failed' : 'connected',
+                lastMessage: job.message,
+              },
+              policyTest: {
+                ...runtime.rlTraining.policyTest,
+                status:
+                  job.status === 'completed' && runtime.rlTraining.policyTest.status === 'locked'
+                    ? 'idle'
+                    : runtime.rlTraining.policyTest.status,
+              },
             },
-            policyTest: {
-              ...runtime.rlTraining.policyTest,
-              status:
-                job.status === 'completed' && runtime.rlTraining.policyTest.status === 'locked'
-                  ? 'idle'
-                  : runtime.rlTraining.policyTest.status,
-            },
-          },
-        }));
+          };
+        });
         if (job.status === 'queued' || job.status === 'running') {
           timer = window.setTimeout(() => void poll(), 650);
         }
@@ -6438,6 +6445,8 @@ export function App() {
   const rlTrainRecordCount = rlTrainingJob?.dataset?.trainRecordCount ?? rlBenchmark?.dataset.trainRecordCount ?? 0;
   const rlValidationRecordCount = rlTrainingJob?.dataset?.validationRecordCount ?? rlBenchmark?.dataset.validationRecordCount ?? 0;
   const rlTestRecordCount = rlTrainingJob?.dataset?.testRecordCount ?? rlBenchmark?.dataset.testRecordCount ?? 0;
+  const rlCheckpointEpisodeCount = rlTrainingJob?.completedEpisodes ?? rlBenchmark?.episodes ?? 0;
+  const rlEvaluationStepCount = rlPolicyEvaluation?.trace.length ?? 0;
   const rlDatasetQuality = rlTrainingJob?.dataset?.quality ?? rlBenchmark?.dataset.quality;
   const rlVisibleCurve = (curve: Array<{ episode: number; reward: number }>) => {
     if (rlTraining.status === 'idle') return [];
@@ -7115,11 +7124,14 @@ export function App() {
     const selectedAlgorithm =
       rlAlgorithmOptions.find((algorithm) => algorithm.id === algorithmId) ?? rlAlgorithmOptions[0];
 
+    setRlTrainingJob(null);
+    setRlPolicyEvaluation(null);
     setSandboxRuntime((runtime) => ({
       ...runtime,
       rlTraining: {
         ...runtime.rlTraining,
         selectedAlgorithmId: selectedAlgorithm.id,
+        jobId: null,
         status: 'idle',
         progressPercent: 0,
         currentStageId: 'snapshot-build',
@@ -8019,6 +8031,7 @@ export function App() {
             <BilingualText className="bilingual-label--button" text="系统设置" />
           </button>
           <button
+            aria-label={`切换地图视角，当前${activeMapViewDefinition.label}`}
             data-xiaoyi-action="cycle-map-view"
             onClick={cycleMapView}
             title={`当前视角：${activeMapViewDefinition.label}\n${activeMapViewDefinition.detail}`}
@@ -8027,7 +8040,12 @@ export function App() {
             <Compass size={15} />
             <BilingualText className="bilingual-label--button" text={activeMapViewDefinition.label} />
           </button>
-          <button data-xiaoyi-action="toggle-fullscreen" onClick={() => void toggleFullscreen()} type="button">
+          <button
+            aria-label={isFullscreen ? '退出全屏' : '全屏显示'}
+            data-xiaoyi-action="toggle-fullscreen"
+            onClick={() => void toggleFullscreen()}
+            type="button"
+          >
             {isFullscreen ? <Minimize size={15} /> : <Expand size={15} />}
             <BilingualText
               className="bilingual-label--button"
@@ -9490,14 +9508,14 @@ export function App() {
 
           <div className="rl-decision-cockpit__body">
             <section className="rl-decision-card rl-decision-card--model">
-              <header><span>01</span><strong>已部署神经网络与状态张量</strong></header>
+              <header><span>01</span><strong>已部署策略模型与观测状态</strong></header>
               <div className="rl-model-metadata">
                 <span><small>算法</small><strong>{rlPolicyInference?.model.algorithm ?? activeRlAlgorithmOption.shortLabel}</strong></span>
                 <span><small>结构</small><strong>{rlPolicyInference?.model.architecture ?? '等待检查点'}</strong></span>
-                <span><small>Checkpoint</small><strong>Episode 3,000</strong></span>
-                <span><small>评估</small><strong>500 Episodes</strong></span>
+                <span><small>检查点轮数</small><strong>{rlCheckpointEpisodeCount ? formatInteger(rlCheckpointEpisodeCount) : '等待训练'}</strong></span>
+                <span><small>冻结测试步数</small><strong>{rlEvaluationStepCount ? formatInteger(rlEvaluationStepCount) : '尚未执行'}</strong></span>
               </div>
-              <div className="rl-state-tensor" aria-label="RL输入状态张量">
+              <div className="rl-state-tensor" aria-label="强化学习输入观测状态">
                 {(rlPolicyInference?.inputTensor ?? [
                   { id: 'c', label: '拥堵度', raw: peakPortCongestion.congestionScore, normalized: peakPortCongestion.congestionScore / 100, unit: '%' },
                   { id: 'd', label: '延误', raw: peakVesselDelay?.delayMinutes ?? 0, normalized: (peakVesselDelay?.delayMinutes ?? 0) / 180, unit: '分' },
@@ -9594,10 +9612,10 @@ export function App() {
               </div>
               {rlPolicyInference && (
                 <div className="rl-policy-comparison">
-                  <span><small>拥堵下降</small><strong>-{rlPolicyInference.comparison.improvement.congestionPoints.toFixed(1)}pt</strong></span>
-                  <span><small>延误下降</small><strong>-{rlPolicyInference.comparison.improvement.delayMinutes}分</strong></span>
-                  <span><small>碳排下降</small><strong>-{rlPolicyInference.comparison.improvement.carbonTons.toFixed(1)}t</strong></span>
-                  <span><small>韧性提升</small><strong>+{rlPolicyInference.comparison.improvement.resiliencePoints.toFixed(1)}</strong></span>
+                  <span><small>拥堵变化</small><strong>{formatPolicyReduction(rlPolicyInference.comparison.improvement.congestionPoints, 1, 'pt')}</strong></span>
+                  <span><small>延误变化</small><strong>{formatPolicyReduction(rlPolicyInference.comparison.improvement.delayMinutes, 1, '分')}</strong></span>
+                  <span><small>碳排变化</small><strong>{formatPolicyReduction(rlPolicyInference.comparison.improvement.carbonTons, 1, 't')}</strong></span>
+                  <span><small>韧性变化</small><strong>{formatPolicyIncrease(rlPolicyInference.comparison.improvement.resiliencePoints, 1, '')}</strong></span>
                 </div>
               )}
               <div className="rl-decision-actions">
@@ -11584,10 +11602,10 @@ export function App() {
                     <em>{rlPolicyInference.selectedAction.affectedScope} · {rlPolicyInference.inference.safetyShield}</em>
                   </div>
                   <div className="rl-applied-dispatch__metrics">
-                    <span><small>拥堵下降</small><strong>-{rlPolicyInference.comparison.improvement.congestionPoints.toFixed(1)}pt</strong></span>
-                    <span><small>延误下降</small><strong>-{rlPolicyInference.comparison.improvement.delayMinutes}分</strong></span>
-                    <span><small>碳排下降</small><strong>-{rlPolicyInference.comparison.improvement.carbonTons.toFixed(1)}t</strong></span>
-                    <span><small>韧性提升</small><strong>+{rlPolicyInference.comparison.improvement.resiliencePoints.toFixed(1)}</strong></span>
+                    <span><small>拥堵变化</small><strong>{formatPolicyReduction(rlPolicyInference.comparison.improvement.congestionPoints, 1, 'pt')}</strong></span>
+                    <span><small>延误变化</small><strong>{formatPolicyReduction(rlPolicyInference.comparison.improvement.delayMinutes, 1, '分')}</strong></span>
+                    <span><small>碳排变化</small><strong>{formatPolicyReduction(rlPolicyInference.comparison.improvement.carbonTons, 1, 't')}</strong></span>
+                    <span><small>韧性变化</small><strong>{formatPolicyIncrease(rlPolicyInference.comparison.improvement.resiliencePoints, 1, '')}</strong></span>
                     <span><small>最高概率情景</small><strong>{rlPolicyInference.scenarioForecasts[0]?.label ?? '--'} {rlPolicyInference.scenarioForecasts[0] ? (rlPolicyInference.scenarioForecasts[0].probability * 100).toFixed(1) : '--'}%</strong></span>
                   </div>
                   <div className="rl-applied-dispatch__actions">
