@@ -1,8 +1,15 @@
 import { readFile, readdir, stat } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 
 const root = process.cwd();
 const errors = [];
+
+try {
+  execFileSync('python3', ['scripts/public_privacy_scan.py'], { cwd: root, stdio: 'inherit' });
+} catch {
+  errors.push('公开发布隐私扫描失败');
+}
 const required = [
   'LICENSE', 'NOTICE', 'README.md', 'SECURITY.md', 'CONTRIBUTING.md', '.env.example',
   'pnpm-workspace.yaml',
@@ -110,7 +117,10 @@ for (const file of candidateFiles) {
   if (fileStat.size > 90 * 1024 * 1024) errors.push(`候选发布文件超过 90 MiB：${file.relative}`);
   if (fileStat.size > 2 * 1024 * 1024) continue;
   const content = await readFile(file.absolute, 'utf8').catch(() => '');
-  if (secretPatterns.some((pattern) => pattern.test(content))) errors.push(`疑似密钥：${file.relative}`);
+  if (file.relative !== 'scripts/public_privacy_scan.py'
+      && secretPatterns.some((pattern) => pattern.test(content))) {
+    errors.push(`疑似密钥：${file.relative}`);
+  }
 }
 
 for (const workflow of (await readdir(path.join(root, '.github/workflows'))).filter((file) => file.endsWith('.yml'))) {
