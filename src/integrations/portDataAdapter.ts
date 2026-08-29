@@ -1,4 +1,4 @@
-import type { MalaccaScenario, PortNode, VesselMarker } from '../types/sandbox';
+import type { ChannelStatus, MalaccaScenario, PortNode, RouteOverlay, VesselMarker } from '../types/sandbox';
 
 export type PortDataMode = 'demo' | 'public' | 'live';
 export type PortDataConnectionStatus = 'demo' | 'connecting' | 'public' | 'live' | 'fallback';
@@ -50,7 +50,7 @@ export interface PortDataConfig {
 }
 
 export interface PortTelemetrySnapshot {
-  protocolVersion: 'port-digital-twin.snapshot.v1';
+  protocolVersion: 'port-digital-twin.snapshot.v1' | 'port-operations.telemetry.v1';
   observedAt: string;
   source: string;
   topologyMode?: 'patch' | 'replace';
@@ -63,6 +63,8 @@ export interface PortTelemetrySnapshot {
     metrics?: MalaccaScenario['metrics'];
     riskAlerts?: MalaccaScenario['riskAlerts'];
     eventLog?: MalaccaScenario['eventLog'];
+    channels?: Array<Partial<ChannelStatus> & Pick<ChannelStatus, 'id'>>;
+    routeOverlays?: Array<Partial<RouteOverlay> & Pick<RouteOverlay, 'id'>>;
   };
   evidence?: PublicEvidenceSummary;
 }
@@ -76,7 +78,7 @@ export interface PortDataLoadResult {
 
 export const defaultPortDataConfig: PortDataConfig = {
   mode: 'public',
-  endpoint: '/api/public-data/snapshot',
+  endpoint: '/api/operations/snapshot',
   apiKey: '',
   pollingSeconds: 30,
 };
@@ -123,10 +125,12 @@ export const mergePortTelemetry = (
     vesselMarkers: replaceTopology
       ? replacementVessels as VesselMarker[]
       : mergeById(demoScenario.vesselMarkers, telemetry.vessels ?? scenarioVessels),
-    channels: replaceTopology ? scenarioPatch.channels ?? [] : scenarioPatch.channels ?? demoScenario.channels,
+    channels: replaceTopology
+      ? scenarioPatch.channels ?? []
+      : mergeById(demoScenario.channels, telemetry.channels ?? scenarioPatch.channels),
     routeOverlays: replaceTopology
       ? scenarioPatch.routeOverlays ?? []
-      : scenarioPatch.routeOverlays ?? demoScenario.routeOverlays,
+      : mergeById(demoScenario.routeOverlays, telemetry.routeOverlays ?? scenarioPatch.routeOverlays),
     metrics: telemetry.metrics ?? scenarioPatch.metrics ?? demoScenario.metrics,
     riskAlerts: telemetry.riskAlerts ?? scenarioPatch.riskAlerts ?? demoScenario.riskAlerts,
     eventLog: telemetry.eventLog ?? scenarioPatch.eventLog ?? demoScenario.eventLog,
@@ -140,8 +144,8 @@ export const mergePortTelemetry = (
 const assertSnapshot = (value: unknown): PortTelemetrySnapshot => {
   if (!value || typeof value !== 'object') throw new Error('接口返回不是 JSON 对象');
   const snapshot = value as Partial<PortTelemetrySnapshot>;
-  if (snapshot.protocolVersion !== 'port-digital-twin.snapshot.v1') {
-    throw new Error('protocolVersion 必须为 port-digital-twin.snapshot.v1');
+  if (!['port-digital-twin.snapshot.v1', 'port-operations.telemetry.v1'].includes(snapshot.protocolVersion ?? '')) {
+    throw new Error('protocolVersion 必须为 port-digital-twin.snapshot.v1 或 port-operations.telemetry.v1');
   }
   if (!snapshot.observedAt || Number.isNaN(Date.parse(snapshot.observedAt))) {
     throw new Error('observedAt 缺失或格式无效');

@@ -239,6 +239,11 @@ export interface VesselMarker {
   assignedChannelId: string;
   carbonEmissionTonsPerHour: number;
   animationDelaySeconds: number;
+  geo?: GeoCoordinate;
+  mmsi?: string;
+  positionSource?: 'simulation' | 'historical-ais' | 'live-ais';
+  positionObservedAt?: string;
+  positionQuality?: 'normal' | 'degraded' | 'timestamp-missing' | 'stale';
 }
 
 export interface VesselDelaySimulation {

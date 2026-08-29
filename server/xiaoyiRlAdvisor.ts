@@ -279,7 +279,7 @@ export const buildXiaoyiRlAdvisorResponse = (
       algorithm: `推荐 ${recommendation.algorithmLabel}：${recommendation.reasons[0]}`,
       baselines: `推荐 ${recommendation.baselineLabel}：用于形成可解释的A/B基线。`,
       settings: `训练信息聚焦 ${recommendation.settingId}，自动带入当前沙盘快照。`,
-      parameters: `已生成价值更新步长、折扣因子、episode 数和五项奖励权重。`,
+      parameters: `已生成价值更新步长、折扣因子、episode 数和六项奖励权重。`,
       backend: `内置服务使用 ${recommendation.backendEndpoint}；外部服务应实现相同 Job API 协议。`,
       progress: '进度只读取服务器实际完成的 episode、评估记录和检查点状态。',
       'policy-test': `训练完成后执行 ${recommendation.policyTestCaseId}。`,

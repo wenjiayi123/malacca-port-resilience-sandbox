@@ -2,7 +2,7 @@
 
 ## 已检查的 Godot 工程结构
 
-- 工程路径：`/Users/apple/Desktop/航行模拟器`
+- 工程路径：`/path/to/sailing-simulator`
 - 主场景：`main.tscn`
 - 主船控制脚本：`player.gd`
 - 舰队管理脚本：`scripts/rl/ship_fleet_manager.gd`
