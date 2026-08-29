@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "operational-closure-regulatory-extension.v1",
+  "generatedAt": "2026-08-21T00:00:00.000Z",
+  "purpose": "Declare the additive maritime/customs regulatory-resilience integration without rewriting the historical operational closure report.",
+  "baseReport": {
+    "path": "reports/operational-closure-acceptance-v1.json",
+    "sha256": "fb932b448ef2084fe72a3be701af933c38425b8f814ce76326bbfb765978c621",
+    "immutable": true
+  },
+  "expectedChangedSourceFiles": [
+    "package.json",
+    "server/publicEvidencePlugin.ts",
+    "src/components/OperationalEvidenceCenter.tsx",
+    "src/integrations/operationsControlAdapter.ts"
+  ],
+  "currentSourceFingerprints": {
+    "package.json": "a64d5f031102023369ff8acc9d305cfdc37af76a30559750b57983bfb7a55115",
+    "server/publicEvidencePlugin.ts": "561f8ea8b6cffbe52489272b522a2f3ffbedbd5766f3b7af50801608aaad2698",
+    "src/components/OperationalEvidenceCenter.tsx": "1900464415b48e7657c21f6113be2c0cf059e33de8b587d89c655d103bcb8615",
+    "src/integrations/operationsControlAdapter.ts": "055b66ceaabf732f510b54092f38225d798d32c222bebcc0b0b3ed841440cddf"
+  },
+  "regulatoryEvidence": {
+    "path": "reports/regulatory-resilience-v2.json",
+    "sha256": "f8bbfcf02f3e6a4e976546a71f17d0ae9d8eeb4ca02f58bc6fb6da2c9973f220",
+    "verifier": "pnpm benchmark:regulatory:verify"
+  },
+  "preservedOperationalContract": {
+    "candidateCount": 5,
+    "actionIds": [
+      "hold-plan",
+      "eco-speed",
+      "arrival-window",
+      "port-diversion",
+      "capacity-control"
+    ]
+  },
+  "additiveRegulatoryContract": {
+    "observationCount": 12,
+    "supplementalActionCount": 9,
+    "officialReleaseIsExogenous": true
+  },
+  "authority": {
+    "simulation_mode": true,
+    "live_data_verified": false,
+    "dispatch_allowed": false,
+    "production_authority": false
+  }
+}

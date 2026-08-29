@@ -20,4 +20,4 @@
 预置联动案例和本地参考回写是合成验证，不代表可靠自动桥接已经完成。生产桥接需补充签名、
 超时、重试、幂等、版本协商和审计存储。
 
-模块真实性与缺口见 [OPEN_SOURCE_READINESS_AUDIT.md](./OPEN_SOURCE_READINESS_AUDIT.md)。
+模块实现状态与现场接入条件见[工程实现说明](./IMPLEMENTATION.md)。

@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <strong>研发作者：</strong>温家懿 · <strong>Research Author:</strong> Wen Jiayi
+  <strong>独立研发者：</strong>温家懿 · <strong>Independent Developer:</strong> Wen Jiayi
 </p>
 
 <table>
@@ -83,6 +83,53 @@ This is not an animation-only dashboard. Training progress comes from completed 
   <strong>Maritime command loop:</strong> network state, congestion propagation, event injection,
   policy replay, and human control share one operational surface with explicit evidence modes.</sub>
 </p>
+
+## 可运行实时闭环 / Executable operational loop
+
+当前 `v1.1.0-local-candidate` 在既有四种 RL + MPC 训练证据之外，新增后端权威的连续运行链：
+
+```text
+MPA/ERA5/公开AIS参考
+→ 固定种子实时模拟器
+→ 逐字段质量与血缘
+→ 数字孪生状态
+→ 训练段校准预测
+→ FCFS/SOP/运筹/MPC/可选RL检查点
+→ 软件安全投影
+→ 双人审批
+→ 幂等模拟执行器
+→ 设备回执与新状态KPI
+→ 异常门禁
+→ SHA-256审计回放
+```
+
+底部“证据与闭环”页面可逐按钮查看实时遥测、物理守恒、预测模型、五类运行控制候选、数据血缘、
+安全治理、小懿运行交班、模型历史、审计链和现场适配器。小懿交班严格读取同一后端快照；未配置或
+无法连接真实小懿模型时只显示可审计状态底稿并明确降级，不把规则文本冒充模型回答。默认每 5 秒推进一个 15 分钟业务步；同一 seed 和 tick
+可复现。数据失联或模拟器停止时，推荐与执行均失败关闭。完整数据卡、工程假设和现场替换边界见
+[`OPERATIONAL_SIMULATOR_DATA_CARD.md`](docs/OPERATIONAL_SIMULATOR_DATA_CARD.md)，逐按钮验收见
+[`TESTING.md`](docs/TESTING.md)。
+
+The `v1.1.0-local-candidate` adds a backend-owned, continuously changing operational loop while preserving
+all historical RL artifacts. It is a public-data-calibrated real-time simulation with real model inference,
+constraint projection, dual approval, idempotent simulated execution, receipts, rollback, and a verified
+hash chain. It is not a live-port or production-control claim.
+
+```text
+simulation_mode=true · live_data_verified=false · dispatch_allowed=false · production_authority=false
+```
+
+### 海事/海关检查延误韧性 / Regulatory-delay resilience
+
+系统现将海事检查、海关单证/查验等待、官方放行和放行后积压恢复建成连续状态链。主管机关的选查、
+结论与放行始终是外生信号；策略只能优化检查准备度和放行后的恢复资源，不获得监管或生产控制权。
+原五类运行动作及历史训练证据保持不变，另增 12 维观测、9 种补充动作和独立 Q-learning 训练层。
+
+预声明压力场景的 v1 候选因能耗、碳排和安全退化被阻断并保留；v2 经优势投影后，在 57 条冻结测试
+记录上实现 7.4679% 场景成本降低、15.8095% 能耗降低和 15.8119% 碳排降低，同时监管延误、恢复
+服务和安全不退化。结果属于离线场景证据，不是现场 KPI。详见
+[`REGULATORY_RESILIENCE.md`](docs/REGULATORY_RESILIENCE.md)及
+[`regulatory-resilience-v2.md`](reports/regulatory-resilience-v2.md)。
 
 ## 为什么这个项目值得关注 / Why this project matters
 
@@ -275,6 +322,23 @@ PORT_TRAINING_DATASET_PATH=/absolute/path/to/port_training.csv
 PORT_TRAINING_PORT_ID=SGSIN
 ```
 
+中央地图同时提供“可复现实况模拟”和“卫星实时定位”。后者使用 MapTiler Satellite 瓦片与
+服务端 AISStream 区域订阅；只有瓦片成功加载、WebSocket 已连接且存在五分钟内新鲜船位时才标记
+为实时。缺少 MapTiler 凭据时会显示带署名的 EOX Sentinel-2 cloudless 2025 合成影像，并用
+Mapterhorn DEM 生成三维地貌、用 OpenFreeMap 保留地名道路；界面明确标注影像是 2025 合成层而
+非实时拍摄。默认使用清晰真彩色、无雾化显示，并以 1.5 倍高程增强地貌辨识度。EOX 公共影像只
+用于非商业演示，商业部署需使用有相应许可的影像源。缺少 AIS 凭据时严格显示零个真实船位，不拿
+模拟船位冒充实时目标。
+配置、密钥隔离、署名与验收步骤见
+[`docs/LIVE_SATELLITE_MAP.md`](docs/LIVE_SATELLITE_MAP.md)。
+
+The central display has reproducible-simulation and satellite-live modes. Satellite-live combines MapTiler
+Satellite tiles with a server-side AISStream regional subscription and is labelled live only when the tiles load,
+the stream is connected, and fresh positions exist within five minutes. Without MapTiler credentials, an
+an attributed EOX Sentinel-2 2025 composite remains visible on Mapterhorn 3D terrain, while the UI explicitly
+separates imagery time from live AIS status. The public EOX fallback is for non-commercial demos. See
+[`docs/LIVE_SATELLITE_MAP.md`](docs/LIVE_SATELLITE_MAP.md) for setup and truth gates.
+
 字段、单位、时区、缺失值和多港口选择规则见 [`docs/DATASET_CONTRACT.md`](docs/DATASET_CONTRACT.md)。<br>
 See [`docs/DATASET_CONTRACT.md`](docs/DATASET_CONTRACT.md) for fields, units, time zones, missing values, and multi-port selection.
 
@@ -297,10 +361,11 @@ corepack pnpm install --frozen-lockfile
 corepack pnpm release:check
 ```
 
-一键脚本默认打开 <http://127.0.0.1:5180>。进入“沙盘推演”，打开“训练中心”，先完成训练，再运行训练后策略
-测试或检查点推理。<br>
-The launcher opens <http://127.0.0.1:5180>. Enter the sandbox, open the training centre, complete
-training, and only then run post-training policy evaluation or checkpoint inference.
+一键脚本默认打开 <http://127.0.0.1:5174>。先进入“证据与闭环”验收实时模拟、预测、审批、执行、回执与审计；
+如需 RL 检查点推理，再进入“沙盘推演”→“训练中心”，完成训练后显式运行封存测试。<br>
+The launcher opens <http://127.0.0.1:5174>. Start with **Evidence & Loop** to verify telemetry, forecasting,
+approval, execution, receipts, and audit. For RL checkpoint inference, complete training first and then
+explicitly run sealed-test evaluation.
 
 生产式本机运行使用独立 Node 服务：<br>
 For a production-shaped local runtime, use the standalone Node service:
@@ -329,6 +394,19 @@ GET    /healthz
 GET    /readyz
 GET    /api/openapi.json
 GET    /api/public-data/snapshot
+GET    /api/operations/contracts/telemetry
+GET    /api/operations/snapshot
+GET    /api/operations/recommendations
+GET    /api/operations/handoff
+GET    /api/operations/models
+GET    /api/operations/decisions
+POST   /api/operations/decisions
+POST   /api/operations/decisions/:decisionId/approve
+POST   /api/operations/decisions/:decisionId/execute
+POST   /api/operations/decisions/:decisionId/rollback
+POST   /api/operations/scenarios
+POST   /api/operations/simulator/control
+GET    /api/operations/audit
 GET    /api/rl/datasets
 GET    /api/rl/contracts/terminal-operations
 GET    /api/rl/jobs
@@ -349,26 +427,27 @@ IALA 或 IMO 合规认证。
 
 OpenAPI is the interface-discovery entry. Stricter data and interoperability boundaries are documented in [`DATASET_CONTRACT.md`](docs/DATASET_CONTRACT.md) and [`PORT_CALL_INTEROPERABILITY.md`](docs/PORT_CALL_INTEROPERABILITY.md). Field alignment is not DCSA, IALA, or IMO compliance certification.
 
-## 复现、发布与安全 / Reproduction, release, and security
+## 复现与安全 / Reproduction and security
 
 ```bash
 pnpm lint          # ESLint + TypeScript规则 / rules
 pnpm test          # 数据隔离、更新、恢复与安全 / isolation, updates, recovery, safety
-pnpm benchmark:rl  # 3种子离线回放 / three-seed offline replay and evidence
+pnpm benchmark:rl  # 3种子离线回放 / three-seed offline replay
 pnpm benchmark:rl:verify # 数据/代码哈希与全算法指标 / hashes and full-method metrics
 pnpm data:sync:infore-ais # 下载并校验公开AIS包 / fetch and verify public AIS package
 pnpm benchmark:public-data # 公开大数据五方法比较 / large-public-data five-method comparison
-pnpm benchmark:public-data:verify # 数据来源、许可与结果门禁 / provenance and result gate
+pnpm benchmark:public-data:verify # 校验数据来源、许可与结果 / verify provenance and results
+pnpm acceptance:operations # 生成闭环测试报告 / generate the workflow test report
+pnpm acceptance:operations:verify # 校验报告与源码哈希 / verify the report and source hashes
 pnpm build         # 严格类型检查与生产构建 / strict types and production build
-pnpm release:check # 门禁、密钥、资产与工作流 / gates, secrets, assets, workflows
-pnpm audit --audit-level=moderate
+pnpm security:audit # 中高危依赖漏洞门禁 / dependency vulnerability gate
 ```
 
-发布标签工作流会构建静态应用、生成 SPDX SBOM 和发布包；仓库公开后再执行 GitHub provenance
-attestation、CodeQL 与 OSSF Scorecard。安全边界见 [`SECURITY.md`](SECURITY.md)，模型限制见
+版本标签工作流会构建静态应用、生成 SPDX SBOM 和安装包；GitHub Actions 同时运行 provenance
+attestation、CodeQL 与 OSSF Scorecard。安全说明见 [`SECURITY.md`](SECURITY.md)，模型限制见
 [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md)。
 
-Release-tag workflows build the static application, SPDX SBOM, and release bundle. GitHub provenance attestation, CodeQL, and OSSF Scorecard run after public release. See [`SECURITY.md`](SECURITY.md) for security boundaries and [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md) for model limitations.
+Version-tag workflows build the static application, SPDX SBOM, and distribution bundle. GitHub Actions also run provenance attestation, CodeQL, and OSSF Scorecard. See [`SECURITY.md`](SECURITY.md) for security information and [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md) for model limitations.
 
 <p align="center">
   <img src="docs/assets/human-review-gate.jpg" alt="小懿执行报告、异常归档与最终人工确认门禁" width="100%" />
@@ -385,6 +464,10 @@ Release-tag workflows build the static application, SPDX SBOM, and release bundl
 
 - 未提供港口生产账号、实时 AIS/TOS/VTS 数据或控制权限；<br>
   *No production port accounts, live AIS/TOS/VTS data, or control authority.*
+- 仓库提供授权实时 AIS 接入代码，但不包含第三方账户或密钥；卫星实时模式需要使用者自行配置
+  MapTiler 与 AISStream 凭据；<br>
+  *The repository includes the authorized live-AIS adapter but no third-party account or secret; satellite-live
+  mode requires operator-supplied MapTiler and AISStream credentials.*
 - 未提供安全认证、调度 SLA、海上避碰认证或无人值守决策；<br>
   *No safety certification, dispatch SLA, collision-avoidance certification, or unattended decision authority.*
 - 碳排、拥堵、延误和韧性指标包含模型估算，不等同于现场实测标签；<br>
@@ -401,6 +484,7 @@ Release-tag workflows build the static application, SPDX SBOM, and release bundl
 ```text
 src/                         React沙盘、状态机、小懿与回放 / sandbox, state, Xiaoyi, replay
 server/                      数据网关、训练、检查点与服务 / gateway, jobs, checkpoints, server
+shared/                      遥测、运行、目标函数稳定合同 / stable telemetry and control contracts
 data/rl/                     MPA月度公开快照 / reproducible monthly public snapshot
 tests/                       算法、隔离、恢复、合同与安全 / algorithms, isolation, recovery, contracts
 reports/                     带证据等级的RL报告 / evidence-labelled offline RL reports

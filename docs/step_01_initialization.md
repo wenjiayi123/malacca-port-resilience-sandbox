@@ -2,7 +2,7 @@
 
 ## 已完成
 
-- 创建桌面项目目录：`/Users/apple/Desktop/马六甲沙盘港口推演`
+- 创建桌面项目目录：`/path/to/malacca-port-resilience-sandbox`
 - 创建工程基础目录：`assets`、`scenes`、`scripts`、`data`、`docs`、`exports`、`tests`
 - 保存当前选定参考图：
   - `assets/reference/ui_reference_selected_clean.png`
@@ -10,7 +10,7 @@
 - 添加 `.gitignore`
 - 添加项目说明 `README.md`
 - 添加结构说明 `docs/project_structure.md`
-- 确认外部微观验证工程：`/Users/apple/Desktop/航行模拟器`
+- 确认外部微观验证工程：`/path/to/sailing-simulator`
 
 ## 后续衔接
 
@@ -24,4 +24,4 @@
 
 ## 已确认的外部依赖
 
-- `/Users/apple/Desktop/航行模拟器`：后续用于接入自主研发 Godot 无人船航行模拟器，承担微观单船航行验证层。
+- `/path/to/sailing-simulator`：后续用于接入自主研发 Godot 无人船航行模拟器，承担微观单船航行验证层。

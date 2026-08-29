@@ -19,7 +19,29 @@ interface XiaoyiActionStep {
   target: string;
   label: string;
   skipWhenState?: string;
+  verification: XiaoyiStepVerification;
 }
+
+type XiaoyiStepVerification =
+  | {
+      mode: 'attribute';
+      attribute: 'aria-expanded' | 'aria-pressed' | 'data-xiaoyi-state';
+      expected: string[];
+      target?: string;
+      description: string;
+      timeoutMs?: number;
+    }
+  | {
+      mode: 'changed';
+      attribute: 'data-xiaoyi-state';
+      target?: string;
+      description: string;
+      timeoutMs?: number;
+    }
+  | {
+      mode: 'trigger';
+      description: string;
+    };
 
 interface XiaoyiAction {
   id: string;
@@ -68,9 +90,42 @@ interface DragRuntime extends DragPosition {
 const moduleStep = (moduleId: string, label: string): XiaoyiActionStep => ({
   target: `module-${moduleId}`,
   label: `进入${label}`,
+  verification: {
+    mode: 'attribute',
+    attribute: 'aria-pressed',
+    expected: ['true'],
+    description: `${label}已成为当前活动模块`,
+  },
 });
 
-const actions: Record<string, XiaoyiAction> = {
+function startSimulationStep(): XiaoyiActionStep {
+  return {
+    target: 'simulation-toggle',
+    label: '点击“开始”',
+    skipWhenState: 'running',
+    verification: {
+      mode: 'attribute',
+      attribute: 'data-xiaoyi-state',
+      expected: ['running'],
+      description: '推演运行态已回写',
+    },
+  };
+}
+
+function linkedDemoStep(demoId: string, label: string): XiaoyiActionStep {
+  return {
+    target: `demo-${demoId}`,
+    label: `点击“${label}”`,
+    verification: {
+      mode: 'attribute',
+      attribute: 'aria-pressed',
+      expected: ['true'],
+      description: `${label}场景及其联动状态已载入`,
+    },
+  };
+}
+
+const xiaoyiActions: Record<string, XiaoyiAction> = {
   overview: {
     id: 'overview',
     label: '打开态势总览',
@@ -107,39 +162,109 @@ const actions: Record<string, XiaoyiAction> = {
     summary: '进入沙盘模块并启动时间推进。',
     steps: [
       moduleStep('sandbox', '沙盘推演'),
-      { target: 'simulation-toggle', label: '点击“开始”', skipWhenState: 'running' },
+      {
+        target: 'simulation-toggle',
+        label: '点击“开始”',
+        skipWhenState: 'running',
+        verification: {
+          mode: 'attribute',
+          attribute: 'data-xiaoyi-state',
+          expected: ['running'],
+          description: '推演运行态已回写',
+        },
+      },
     ],
   },
   'advance-simulation': {
     id: 'advance-simulation',
     label: '推进沙盘一步',
     summary: '进入沙盘模块并推进一个推演步长。',
-    steps: [moduleStep('sandbox', '沙盘推演'), { target: 'simulation-step', label: '点击“推进”' }],
+    steps: [
+      moduleStep('sandbox', '沙盘推演'),
+      {
+        target: 'simulation-step',
+        label: '点击“推进”',
+        verification: {
+          mode: 'changed',
+          attribute: 'data-xiaoyi-state',
+          description: '推演时钟已推进',
+        },
+      },
+    ],
   },
   'inject-event': {
     id: 'inject-event',
     label: '注入扰动事件',
     summary: '进入沙盘模块并注入下一条场景扰动事件。',
-    steps: [moduleStep('sandbox', '沙盘推演'), { target: 'inject-event', label: '点击“事件注入”' }],
+    steps: [
+      moduleStep('sandbox', '沙盘推演'),
+      {
+        target: 'inject-event',
+        label: '点击“事件注入”',
+        verification: {
+          mode: 'attribute',
+          attribute: 'aria-pressed',
+          expected: ['true'],
+          description: '事件注入面板已打开',
+        },
+      },
+    ],
   },
   'reset-simulation': {
     id: 'reset-simulation',
     label: '重置沙盘推演',
     summary: '这会清空当前推演进度、注入事件和已打开的策略面板。',
     requiresConfirmation: true,
-    steps: [moduleStep('sandbox', '沙盘推演'), { target: 'simulation-reset', label: '点击“重置”' }],
+    steps: [
+      moduleStep('sandbox', '沙盘推演'),
+      {
+        target: 'simulation-reset',
+        label: '点击“重置”',
+        verification: {
+          mode: 'attribute',
+          attribute: 'data-xiaoyi-state',
+          expected: ['idle'],
+          target: 'simulation-toggle',
+          description: '推演已回到待命态',
+        },
+      },
+    ],
   },
   'rl-decision': {
     id: 'rl-decision',
     label: '打开 RL 策略推理',
     summary: '进入沙盘模块并打开在线策略推理舱。',
-    steps: [moduleStep('sandbox', '沙盘推演'), { target: 'open-rl-decision', label: '点击“RL策略推理”' }],
+    steps: [
+      moduleStep('sandbox', '沙盘推演'),
+      {
+        target: 'open-rl-decision',
+        label: '点击“RL策略推理”',
+        verification: {
+          mode: 'attribute',
+          attribute: 'data-xiaoyi-state',
+          expected: ['decision-open', 'training-open'],
+          description: '策略推理舱或训练前置页面已打开',
+        },
+      },
+    ],
   },
   'rl-training': {
     id: 'rl-training',
     label: '打开强化学习训练中心',
     summary: '进入沙盘模块并打开系统级强化学习训练中心。',
-    steps: [moduleStep('sandbox', '沙盘推演'), { target: 'open-rl-training', label: '点击“训练中心”' }],
+    steps: [
+      moduleStep('sandbox', '沙盘推演'),
+      {
+        target: 'open-rl-training',
+        label: '点击“训练中心”',
+        verification: {
+          mode: 'attribute',
+          attribute: 'data-xiaoyi-state',
+          expected: ['open'],
+          description: '训练中心已打开',
+        },
+      },
+    ],
   },
   'rl-configure': {
     id: 'rl-configure',
@@ -147,8 +272,27 @@ const actions: Record<string, XiaoyiAction> = {
     summary: '打开训练中心，并调用现有小懿 RL 顾问生成推荐配置。',
     steps: [
       moduleStep('sandbox', '沙盘推演'),
-      { target: 'open-rl-training', label: '点击“训练中心”' },
-      { target: 'rl-xiaoyi-configure', label: '点击“小懿智能配置”' },
+      {
+        target: 'open-rl-training',
+        label: '点击“训练中心”',
+        verification: {
+          mode: 'attribute',
+          attribute: 'data-xiaoyi-state',
+          expected: ['open'],
+          description: '训练中心已打开',
+        },
+      },
+      {
+        target: 'rl-xiaoyi-configure',
+        label: '点击“小懿智能配置”',
+        verification: {
+          mode: 'attribute',
+          attribute: 'data-xiaoyi-state',
+          expected: ['ready'],
+          description: '小懿推荐已返回并绑定当前目标',
+          timeoutMs: 15_000,
+        },
+      },
     ],
   },
   'rl-start': {
@@ -158,55 +302,178 @@ const actions: Record<string, XiaoyiAction> = {
     requiresConfirmation: true,
     steps: [
       moduleStep('sandbox', '沙盘推演'),
-      { target: 'open-rl-training', label: '点击“训练中心”' },
-      { target: 'rl-start-training', label: '点击“启动训练”', skipWhenState: 'running' },
+      {
+        target: 'open-rl-training',
+        label: '点击“训练中心”',
+        verification: {
+          mode: 'attribute',
+          attribute: 'data-xiaoyi-state',
+          expected: ['open'],
+          description: '训练中心已打开',
+        },
+      },
+      {
+        target: 'rl-start-training',
+        label: '点击“启动训练”',
+        skipWhenState: 'running',
+        verification: {
+          mode: 'attribute',
+          attribute: 'data-xiaoyi-state',
+          expected: ['queued', 'running', 'completed'],
+          description: '后端训练任务已受理',
+          timeoutMs: 15_000,
+        },
+      },
+    ],
+  },
+  'rl-policy-test': {
+    id: 'rl-policy-test',
+    label: '运行强化学习策略测试',
+    summary: '打开训练中心，并使用训练完成后的检查点运行最终测试集回放。',
+    steps: [
+      moduleStep('sandbox', '沙盘推演'),
+      {
+        target: 'open-rl-training',
+        label: '点击“训练中心”',
+        verification: {
+          mode: 'attribute',
+          attribute: 'data-xiaoyi-state',
+          expected: ['open'],
+          description: '训练中心已打开',
+        },
+      },
+      {
+        target: 'rl-policy-test',
+        label: '点击“启动测试”',
+        skipWhenState: 'running',
+        verification: {
+          mode: 'attribute',
+          attribute: 'data-xiaoyi-state',
+          expected: ['running', 'completed'],
+          description: '最终测试集回放已启动',
+          timeoutMs: 15_000,
+        },
+      },
     ],
   },
   'normal-demo': {
     id: 'normal-demo',
     label: '运行正常通航演示',
     summary: '载入正常通航场景并启动推演。',
-    steps: [moduleStep('sandbox', '沙盘推演'), { target: 'demo-normal-transit', label: '点击“正常通航”' }, { target: 'simulation-toggle', label: '点击“开始”', skipWhenState: 'running' }],
+    steps: [moduleStep('sandbox', '沙盘推演'), linkedDemoStep('normal-transit', '正常通航'), startSimulationStep()],
   },
   'congestion-demo': {
     id: 'congestion-demo',
     label: '运行港口拥堵演示',
     summary: '载入港口拥堵场景并启动推演。',
-    steps: [moduleStep('sandbox', '沙盘推演'), { target: 'demo-port-congestion', label: '点击“港口拥堵”' }, { target: 'simulation-toggle', label: '点击“开始”', skipWhenState: 'running' }],
+    steps: [moduleStep('sandbox', '沙盘推演'), linkedDemoStep('port-congestion', '港口拥堵'), startSimulationStep()],
   },
   'accident-demo': {
     id: 'accident-demo',
     label: '运行事故封航演示',
     summary: '载入事故封航场景并启动推演。',
-    steps: [moduleStep('sandbox', '沙盘推演'), { target: 'demo-accident-closure', label: '点击“事故封航”' }, { target: 'simulation-toggle', label: '点击“开始”', skipWhenState: 'running' }],
+    steps: [moduleStep('sandbox', '沙盘推演'), linkedDemoStep('accident-closure', '事故封航'), startSimulationStep()],
   },
   'weather-demo': {
     id: 'weather-demo',
     label: '运行极端天气演示',
     summary: '载入极端天气场景并启动推演。',
-    steps: [moduleStep('sandbox', '沙盘推演'), { target: 'demo-extreme-weather', label: '点击“极端天气”' }, { target: 'simulation-toggle', label: '点击“开始”', skipWhenState: 'running' }],
+    steps: [moduleStep('sandbox', '沙盘推演'), linkedDemoStep('extreme-weather', '极端天气'), startSimulationStep()],
   },
   'carbon-demo': {
     id: 'carbon-demo',
     label: '运行低碳调度演示',
     summary: '载入低碳调度场景并启动推演。',
-    steps: [moduleStep('sandbox', '沙盘推演'), { target: 'demo-low-carbon-dispatch', label: '点击“低碳调度”' }, { target: 'simulation-toggle', label: '点击“开始”', skipWhenState: 'running' }],
+    steps: [moduleStep('sandbox', '沙盘推演'), linkedDemoStep('low-carbon-dispatch', '低碳调度'), startSimulationStep()],
   },
   settings: {
     id: 'settings',
     label: '打开系统设置',
     summary: '打开港口数据接入与显示设置。',
-    steps: [{ target: 'open-settings', label: '点击“系统设置”' }],
+    steps: [{
+      target: 'open-settings',
+      label: '点击“系统设置”',
+      verification: {
+        mode: 'attribute',
+        attribute: 'aria-expanded',
+        expected: ['true'],
+        description: '系统设置已打开',
+      },
+    }],
   },
   'export-report': {
     id: 'export-report',
     label: '导出闭环报告',
     summary: '进入沙盘模块并导出当前推演闭环报告。',
-    steps: [moduleStep('sandbox', '沙盘推演'), { target: 'export-report', label: '点击“导出报告”' }],
+    steps: [
+      moduleStep('sandbox', '沙盘推演'),
+      {
+        target: 'export-report',
+        label: '点击“导出报告”',
+        verification: {
+          mode: 'changed',
+          attribute: 'data-xiaoyi-state',
+          description: '报告已生成并交给浏览器下载',
+        },
+      },
+    ],
+  },
+  evidence: {
+    id: 'evidence',
+    label: '打开证据与闭环',
+    summary: '进入后端权威证据、治理、模型与审计闭环中心。',
+    steps: [moduleStep('evidence', '证据与闭环')],
+  },
+  regulatory: {
+    id: 'regulatory',
+    label: '打开监管韧性',
+    summary: '进入海事与海关监管延误、官方放行及放行后恢复的证据页面。',
+    steps: [
+      moduleStep('evidence', '证据与闭环'),
+      {
+        target: 'evidence-tab-regulatory',
+        label: '进入“监管韧性”',
+        verification: {
+          mode: 'attribute',
+          attribute: 'aria-pressed',
+          expected: ['true'],
+          description: '监管权责边界、状态链和冻结测试证据已打开',
+        },
+      },
+    ],
+  },
+  'operations-handoff': {
+    id: 'operations-handoff',
+    label: '生成小懿运行交班',
+    summary: '读取同一后端权威快照，生成带模型连接状态、证据哈希和生产权限边界的运行交班。',
+    steps: [
+      moduleStep('evidence', '证据与闭环'),
+      {
+        target: 'evidence-tab-governance',
+        label: '进入“安全治理”',
+        verification: {
+          mode: 'attribute',
+          attribute: 'aria-pressed',
+          expected: ['true'],
+          description: '安全治理页面已打开',
+        },
+      },
+      {
+        target: 'xiaoyi-operational-handoff',
+        label: '基于当前后端快照生成交班',
+        verification: {
+          mode: 'attribute',
+          attribute: 'data-xiaoyi-state',
+          expected: ['ready'],
+          description: '交班已绑定权威快照和证据哈希',
+          timeoutMs: 20_000,
+        },
+      },
+    ],
   },
 };
 
-const quickCommands = ['进入沙盘推演', '运行港口拥堵演示', '注入扰动事件', '打开训练中心'];
+const quickCommands = ['进入沙盘推演', '运行港口拥堵演示', '打开监管韧性', '运行RL策略测试', '打开训练中心', '生成小懿运行交班'];
 
 const delay = (milliseconds: number) => new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
 const getRuntimeTimestamp = () => window.performance.now();
@@ -245,34 +512,44 @@ const createVisibleSteps = (action: XiaoyiAction): VisibleStep[] => action.steps
   detail: `动作标识 ${step.target} · 等待编排`,
 }));
 
-const createApprovalId = () => `XY-${new Date().toISOString().slice(11, 19).replace(/:/g, '')}-${Math.floor(100 + Math.random() * 900)}`;
-const createReportId = () => `XYR-${new Date().toISOString().slice(11, 19).replace(/:/g, '')}-${Math.floor(100 + Math.random() * 900)}`;
+let localRecordSequence = 0;
+const createLocalRecordId = (prefix: 'XY' | 'XYR') => {
+  localRecordSequence += 1;
+  const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 17);
+  return `${prefix}-LOCAL-${timestamp}-${String(localRecordSequence).padStart(4, '0')}`;
+};
+const createApprovalId = () => createLocalRecordId('XY');
+const createReportId = () => createLocalRecordId('XYR');
 const formatRuntimeTime = (date: Date) => date.toLocaleTimeString('zh-CN', { hour12: false });
 
 const normalize = (value: string) => value.toLowerCase().replace(/[\s，。！？、,.!?：:；;“”"']/g, '');
 
-const resolveAction = (command: string): XiaoyiAction | null => {
+const resolveXiaoyiAction = (command: string): XiaoyiAction | null => {
   const text = normalize(command).replace(/^小懿(请|帮我|现在)?/, '');
-  if (/重置.*(沙盘|推演)|重新开始推演/.test(text)) return actions['reset-simulation'];
-  if (/(开始|启动).*(强化学习|rl).*训练|(强化学习|rl).*训练.*(开始|启动)/.test(text)) return actions['rl-start'];
-  if (/小懿.*配置|智能配置|推荐.*训练|训练.*推荐/.test(text)) return actions['rl-configure'];
-  if (/训练中心|强化学习面板|rl训练面板/.test(text)) return actions['rl-training'];
-  if (/rl.*(策略|推理)|策略推理/.test(text)) return actions['rl-decision'];
-  if (/港口拥堵|拥堵演示/.test(text)) return actions['congestion-demo'];
-  if (/事故封航|封航演示/.test(text)) return actions['accident-demo'];
-  if (/极端天气|天气演示|风浪演示/.test(text)) return actions['weather-demo'];
-  if (/低碳调度|低碳演示/.test(text)) return actions['carbon-demo'];
-  if (/正常通航|正常演示/.test(text)) return actions['normal-demo'];
-  if (/事件注入|注入.*(事件|扰动)|扰动事件/.test(text)) return actions['inject-event'];
-  if (/推进|下一步|前进一步/.test(text)) return actions['advance-simulation'];
-  if (/(开始|启动).*(沙盘|推演)|(沙盘|推演).*(开始|启动)/.test(text)) return actions['start-simulation'];
-  if (/态势总览|首页|总览模块/.test(text)) return actions.overview;
-  if (/沙盘推演|沙盘模块/.test(text)) return actions.sandbox;
-  if (/韧性评估|韧性模块/.test(text)) return actions.resilience;
-  if (/调度优化|调度模块|策略对比/.test(text)) return actions.dispatch;
-  if (/应急预案|应急模块/.test(text)) return actions.emergency;
-  if (/系统设置|数据接入设置/.test(text)) return actions.settings;
-  if (/导出.*报告|下载.*报告|闭环报告/.test(text)) return actions['export-report'];
+  if (/运行交班|交班报告|小懿交班|生成.*交班/.test(text)) return xiaoyiActions['operations-handoff'];
+  if (/监管韧性|监管延误|海事.*检查|海关.*查验|放行.*恢复/.test(text)) return xiaoyiActions.regulatory;
+  if (/证据与闭环|证据中心|审计闭环/.test(text)) return xiaoyiActions.evidence;
+  if (/重置.*(沙盘|推演)|重新开始推演/.test(text)) return xiaoyiActions['reset-simulation'];
+  if (/(开始|启动).*(强化学习|rl).*训练|(强化学习|rl).*训练.*(开始|启动)/.test(text)) return xiaoyiActions['rl-start'];
+  if (/智能配置|推荐.*训练|训练.*推荐|配置.*(强化学习|rl).*训练|(强化学习|rl).*训练.*配置/.test(text)) return xiaoyiActions['rl-configure'];
+  if (/训练中心|强化学习面板|rl训练面板/.test(text)) return xiaoyiActions['rl-training'];
+  if (/(强化学习|rl).*(策略)?测试|策略测试|最终测试集回放/.test(text)) return xiaoyiActions['rl-policy-test'];
+  if (/rl.*(策略|推理)|策略推理/.test(text)) return xiaoyiActions['rl-decision'];
+  if (/港口拥堵|拥堵演示/.test(text)) return xiaoyiActions['congestion-demo'];
+  if (/事故封航|封航演示/.test(text)) return xiaoyiActions['accident-demo'];
+  if (/极端天气|天气演示|风浪演示/.test(text)) return xiaoyiActions['weather-demo'];
+  if (/低碳调度|低碳演示/.test(text)) return xiaoyiActions['carbon-demo'];
+  if (/正常通航|正常演示/.test(text)) return xiaoyiActions['normal-demo'];
+  if (/事件注入|注入.*(事件|扰动)|扰动事件/.test(text)) return xiaoyiActions['inject-event'];
+  if (/推进|下一步|前进一步/.test(text)) return xiaoyiActions['advance-simulation'];
+  if (/(开始|启动).*(沙盘|推演)|(沙盘|推演).*(开始|启动)/.test(text)) return xiaoyiActions['start-simulation'];
+  if (/态势总览|首页|总览模块/.test(text)) return xiaoyiActions.overview;
+  if (/沙盘推演|沙盘模块/.test(text)) return xiaoyiActions.sandbox;
+  if (/韧性评估|韧性模块/.test(text)) return xiaoyiActions.resilience;
+  if (/调度优化|调度模块|策略对比/.test(text)) return xiaoyiActions.dispatch;
+  if (/应急预案|应急模块/.test(text)) return xiaoyiActions.emergency;
+  if (/系统设置|数据接入设置/.test(text)) return xiaoyiActions.settings;
+  if (/导出.*报告|下载.*报告|闭环报告/.test(text)) return xiaoyiActions['export-report'];
   return null;
 };
 
@@ -293,6 +570,41 @@ const waitForTarget = async (target: string, runId: number, currentRun: { curren
     await delay(100);
   }
   throw new Error(`未找到动作按钮：${target}`);
+};
+
+const readVerificationAttribute = (
+  element: HTMLElement,
+  attribute: 'aria-expanded' | 'aria-pressed' | 'data-xiaoyi-state',
+) => attribute === 'data-xiaoyi-state'
+  ? element.dataset.xiaoyiState ?? null
+  : element.getAttribute(attribute);
+
+const verifyStepResult = async (
+  step: XiaoyiActionStep,
+  initialValue: string | null,
+  runId: number,
+  currentRun: { current: number },
+) => {
+  if (step.verification.mode === 'trigger') return step.verification.description;
+  const verificationTarget = step.verification.target ?? step.target;
+  const timeoutMs = step.verification.timeoutMs ?? 8_000;
+  const attempts = Math.max(1, Math.ceil(timeoutMs / 100));
+  let lastValue: string | null = null;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    if (currentRun.current !== runId) throw new Error('执行已取消');
+    const element = document.querySelector<HTMLElement>(`[data-xiaoyi-action="${verificationTarget}"]`);
+    if (element) {
+      lastValue = readVerificationAttribute(element, step.verification.attribute);
+      if (
+        (step.verification.mode === 'attribute' && step.verification.expected.includes(lastValue ?? '')) ||
+        (step.verification.mode === 'changed' && lastValue !== null && lastValue !== initialValue)
+      ) {
+        return `${step.verification.description} · ${step.verification.attribute}=${lastValue}`;
+      }
+    }
+    await delay(100);
+  }
+  throw new Error(`页面回写未通过：${step.verification.description}（当前 ${lastValue ?? 'missing'}）`);
 };
 
 export function XiaoyiSystemAssistant() {
@@ -320,7 +632,7 @@ export function XiaoyiSystemAssistant() {
   const activeConfidence = useRef(0);
   const dragRuntime = useRef<DragRuntime | null>(null);
   const suppressAvatarClick = useRef(false);
-  const actionCount = useMemo(() => Object.keys(actions).length, []);
+  const actionCount = useMemo(() => Object.keys(xiaoyiActions).length, []);
   const isLeftSide = dragPosition !== null && dragPosition.x < window.innerWidth / 2;
 
   useEffect(() => {
@@ -377,6 +689,17 @@ export function XiaoyiSystemAssistant() {
         updateExecutionStep(index, 'validating', '目标已定位 · 正在校验可见性、禁用状态与运行上下文');
         setMessage(`安全校验 ${index + 1}/${action.steps.length}：目标已登记，正在检查按钮状态和重复执行条件。`);
         await delay(750);
+        const targetStyle = window.getComputedStyle(target);
+        const targetRect = target.getBoundingClientRect();
+        if (
+          !target.isConnected ||
+          targetStyle.display === 'none' ||
+          targetStyle.visibility === 'hidden' ||
+          targetRect.width <= 0 ||
+          targetRect.height <= 0
+        ) {
+          throw new Error(`按钮当前不可见：${step.label}`);
+        }
         const state = target.dataset.xiaoyiState;
         if (step.skipWhenState && state === step.skipWhenState) {
           target.classList.remove('xiaoyi-system-target');
@@ -389,16 +712,30 @@ export function XiaoyiSystemAssistant() {
         }
         if (target instanceof HTMLButtonElement && target.disabled) throw new Error(`按钮当前不可用：${step.label}`);
 
+        const verificationTarget = step.verification.mode === 'trigger'
+          ? target
+          : document.querySelector<HTMLElement>(
+              `[data-xiaoyi-action="${step.verification.target ?? step.target}"]`,
+            );
+        const initialVerificationValue = step.verification.mode === 'trigger' || !verificationTarget
+          ? null
+          : readVerificationAttribute(verificationTarget, step.verification.attribute);
+
         updateExecutionStep(index, 'clicking', '校验通过 · 正在触发受控 UI 点击');
         setMessage(`确认可执行，正在触发 ${index + 1}/${action.steps.length}：${step.label}`);
         await delay(800);
         target.click();
-        updateExecutionStep(index, 'clicking', '动作已触发 · 等待页面状态回写与渲染稳定');
-        await delay(1050);
+        updateExecutionStep(index, 'clicking', '动作已触发 · 正在核对声明的页面回写条件');
+        const verificationDetail = await verifyStepResult(
+          step,
+          initialVerificationValue,
+          runId,
+          currentRun,
+        );
         target.classList.remove('xiaoyi-system-target');
         activeTarget = null;
         const elapsedSeconds = ((getRuntimeTimestamp() - stepStartedAt) / 1000).toFixed(1);
-        updateExecutionStep(index, 'done', `执行成功 · 页面已回写 · ${elapsedSeconds}s`);
+        updateExecutionStep(index, 'done', `执行成功 · ${verificationDetail} · ${elapsedSeconds}s`);
         setProgress(Math.round(40 + ((index + 1) / action.steps.length) * 60));
         if (index < action.steps.length - 1) {
           setMessage(`第 ${index + 1} 步已完成，正在将页面状态交给下一步。`);
@@ -521,7 +858,7 @@ export function XiaoyiSystemAssistant() {
     event?.preventDefault();
     const trimmed = command.trim();
     if (!trimmed || isRunning) return;
-    const action = resolveAction(trimmed);
+    const action = resolveXiaoyiAction(trimmed);
     if (!action) {
       setPendingAction(null);
       setActiveAction(null);
@@ -540,7 +877,7 @@ export function XiaoyiSystemAssistant() {
 
   const handleQuickCommand = (value: string) => {
     setCommand(value);
-    const action = resolveAction(value);
+    const action = resolveXiaoyiAction(value);
     if (action) void prepareAction(action, value);
   };
 
