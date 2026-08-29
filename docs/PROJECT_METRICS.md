@@ -1,8 +1,8 @@
-# 简历主张与代码证据
+# 项目指标与适用范围
 
 更新日期：2026-07-26
 
-## 可直接使用的版本
+## 项目摘要
 
 ### 5.【工程4】马六甲海峡港航网络韧性数字孪生沙盘推演系统（独立全栈自研）
 
@@ -59,7 +59,7 @@ SHA-256 检查点与 JSON 数据合同。
 - GitHub 公开远端为 `wenjiayi123/malacca-port-resilience-sandbox`；每次发布仍必须由干净检出
   执行 `pnpm install --frozen-lockfile && pnpm release:check`，通过后才可引用对应提交指标。
 
-## 证据文件
+## 复现资料
 
 - `server/rlTrainingEngine.ts`：环境、奖励、四种 RL、MPC、调参、验证选优与最终测试。
 - `server/portTrainingDataset.ts`：CSV/JSON 数据合同、训练段容量代理和时间隔离。

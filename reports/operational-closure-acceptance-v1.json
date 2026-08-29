@@ -1,0 +1,158 @@
+{
+  "schemaVersion": "operational-closure-acceptance.v1",
+  "generatedAt": "2026-08-14T08:30:56.370Z",
+  "evidenceLabel": "PUBLIC_DATA_CALIBRATED_SIMULATION_NOT_FIELD_KPI",
+  "authority": {
+    "simulation_mode": true,
+    "live_data_verified": false,
+    "dispatch_allowed": false,
+    "production_authority": false
+  },
+  "simulator": {
+    "seed": 240520,
+    "runId": "ops-1135cd3c-96224459",
+    "protocolVersion": "port-operations.telemetry.v1",
+    "firstSequence": 0,
+    "secondSequence": 2,
+    "firstSnapshotHash": "2fad3f86b858ef26ffb8ace5f64a8c87034d9470781a1ca2f5a7170a6a344bd2",
+    "secondSnapshotHash": "1c058783964357e7cb2458abff0eb7f5de1475148695fedcdf70c46014de274f",
+    "changedContinuously": true,
+    "quality": {
+      "total_fields": 61,
+      "normal_fields": 61,
+      "degraded_fields": 0,
+      "measured_fields": 0,
+      "simulated_fields": 43,
+      "derived_fields": 18,
+      "completeness_percent": 100,
+      "consistency_checks": [
+        {
+          "id": "flow-conservation",
+          "passed": true,
+          "detail": "queue(t)=queue(t-1)+arrivals-diverted-serviced-control_relief"
+        },
+        {
+          "id": "yard-capacity",
+          "passed": true,
+          "detail": "0% ≤ yard occupancy ≤ 100%"
+        },
+        {
+          "id": "battery-envelope",
+          "passed": true,
+          "detail": "15% ≤ SOC ≤ 95%"
+        },
+        {
+          "id": "transformer-envelope",
+          "passed": true,
+          "detail": "grid load ≤ 18 MW transformer capacity"
+        },
+        {
+          "id": "causal-energy-link",
+          "passed": true,
+          "detail": "positive throughput requires positive equipment and grid energy"
+        }
+      ]
+    }
+  },
+  "forecast": {
+    "modelId": "mpa-train-only-exponential-smoothing-v1",
+    "modelHash": "02191efc030fa7050530066b83816c4046ca4d1df6010d62d29bed71c9fbb3fe",
+    "trainRows": 263,
+    "validationRows": 114,
+    "trainRmseVesselsPerMonth": 464,
+    "validationRmseVesselsPerMonth": 760.04,
+    "inputSnapshotHash": "2fad3f86b858ef26ffb8ace5f64a8c87034d9470781a1ca2f5a7170a6a344bd2"
+  },
+  "groundedHandoff": {
+    "protocolVersion": "xiaoyi-operational-handoff.v1",
+    "generator": {
+      "id": "operations-grounded-explainer.v1",
+      "kind": "deterministic_state_grounding",
+      "model_used": false,
+      "disclosure": "这是后端状态规则生成的可审计底稿；只有 xiaoyi_model.status=connected 时才展示生成模型回答。"
+    },
+    "inputSnapshotHash": "1c058783964357e7cb2458abff0eb7f5de1475148695fedcdf70c46014de274f",
+    "traceCount": 4,
+    "productionAuthority": false
+  },
+  "control": {
+    "candidateCount": 5,
+    "controllers": [
+      {
+        "id": "fcfs",
+        "action": "hold-plan",
+        "eligible": true,
+        "rejectionReason": null
+      },
+      {
+        "id": "port-sop",
+        "action": "eco-speed",
+        "eligible": true,
+        "rejectionReason": null
+      },
+      {
+        "id": "operations-research",
+        "action": "capacity-control",
+        "eligible": true,
+        "rejectionReason": null
+      },
+      {
+        "id": "mpc",
+        "action": "capacity-control",
+        "eligible": true,
+        "rejectionReason": null
+      },
+      {
+        "id": "rl-checkpoint",
+        "action": "hold-plan",
+        "eligible": false,
+        "rejectionReason": "missing_completed_checkpoint_inference"
+      }
+    ],
+    "decisionStatusAfterExecution": "receipt-recorded",
+    "approvalCount": 2,
+    "receiptId": "receipt-50135c1835dedb4e",
+    "kpiDelta": {
+      "queue_vessels": -1.2,
+      "delay_minutes": -4,
+      "throughput_teu": 25,
+      "energy_kwh": 5.85,
+      "peak_grid_kw": 23.4,
+      "cost_myr": 1.99,
+      "carbon_tons": 0.019,
+      "service_level_percent": 0.5,
+      "safety_risk_percent": -0.1,
+      "resilience_index": 1.3
+    },
+    "idempotentReplay": true,
+    "rollbackStatus": "rolled_back"
+  },
+  "failureClosure": {
+    "dataLossFailure": "DATA_QUALITY_GATE_BLOCKED",
+    "simulatorStoppedFailure": "SIMULATOR_STOPPED"
+  },
+  "audit": {
+    "verified": true,
+    "recordCount": 8,
+    "headHash": "53582c249a325d24fbc70983fa67ed1b38b1fbc86e2e76958ecc88e3b672f58e"
+  },
+  "sourceFingerprint": {
+    "algorithm": "sha256",
+    "digest": "e392e347149ce6900edd5f3d0d3dde610b6220aa6b03217d293132f21c8b2a7e",
+    "files": {
+      "server/operationalSimulator.ts": "4e8b8420ad51ff0530a5222671ac9d3651695f17d2a4b4cfdc2a80fdce99b783",
+      "server/publicEvidencePlugin.ts": "555da7fe4aab515e6c43098e87f18b7ac9de0e3e0b5bde0c43bbca9553946fa8",
+      "shared/portTelemetryContract.ts": "cffd750e2ccea66021bf797509f3ac0c594e229202635cd0e47664cb8562ac10",
+      "src/components/OperationalEvidenceCenter.tsx": "33b4cbf190712bea0b93936455d0b981d9d6506ab3afa038b22e89373052b73e",
+      "src/integrations/operationsControlAdapter.ts": "e1444f805ec5b5645ccab996c5cd1b18c4288b79c6bdc500567515f9de40ad6a",
+      "data/rl/mpa_vessel_arrivals_monthly.csv": "1135cd3ceac593a70b1407e40fc38fb36e06f3da4823418b50ddd3bcc5a9f12a",
+      "package.json": "6c9897a1ab7e84f7e18b933e88f06a60ba98257b648e8b1f9013dcd062b944d7",
+      "pnpm-lock.yaml": "f3df4501411a10905cd78122798660286d14a75e826f6b226d025fcbedbbe6c3"
+    }
+  },
+  "claimBoundary": [
+    "This artifact is a real execution of the backend simulator and control service.",
+    "It is not a live-port, measured field KPI, production saving, or autonomous control claim.",
+    "Historical RL benchmark artifacts remain unchanged and are verified separately."
+  ]
+}

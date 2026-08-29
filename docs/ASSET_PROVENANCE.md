@@ -1,9 +1,9 @@
-# 视觉资产来源与开源发布门禁 / Asset provenance
+# 视觉资产来源 / Asset provenance
 
-开源副本包含小懿 AI 原项目的同名身份素材、本项目为发布版绘制的 SVG，以及运行应用后产生的
+仓库包含小懿 AI 原项目的同名身份素材、本项目绘制的 SVG，以及运行应用后产生的
 界面截图；不依赖第三方照片、地图瓦片、商标图形或未知来源的角色图片。
 
-| 文件 | 类型 | 来源 | 发布状态 |
+| 文件 | 类型 | 来源 | 使用说明 |
 |---|---|---|---|
 | `public/assets/backgrounds/malacca-operations-grid.svg` | 沙盘背景 | 项目原创矢量图 | 可按 Apache-2.0 再分发 |
 | `public/assets/backgrounds/shanghai-operations-grid.svg` | 上海场景背景 | 项目原创矢量图 | 可按 Apache-2.0 再分发 |
@@ -16,9 +16,9 @@
 | `docs/assets/sandbox-command-center.jpg` | 港航态势与核心闭环 | 从本仓库本地运行版本采集，1280×720 | 随仓库用于工程展示 |
 | `docs/assets/human-review-gate.jpg` | 小懿执行报告与人工门禁 | 从本仓库本地运行版本采集，1280×720 | 随仓库用于工程展示 |
 
-原工作目录中的参考 PNG、软著材料、构建产物、导出包和 Godot Web 二进制不进入独立开源副本。
-若以后通过 Release 分发 Godot 构建物，仍需对模型、贴图、字体、音频和插件逐项建立许可清单。
+参考 PNG、软著材料、构建产物、导出包和 Godot Web 二进制不在本仓库中。
+通过 Release 分发 Godot 构建物时，模型、贴图、字体、音频和插件需分别附带许可信息。
 
-The release copy uses the canonical Xiaoyi AI repository image for the assistant identity. Other release
-artwork is project-original, and interface screenshots are captured from this repository. Registration
-materials, unrelated reference exports and Godot binaries are intentionally excluded.
+The repository uses the canonical Xiaoyi AI image for the assistant identity. Other artwork is
+project-original, and interface screenshots are captured from this repository. Registration materials,
+unrelated reference exports, and Godot binaries are not included.

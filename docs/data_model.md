@@ -264,7 +264,7 @@ AI 决策建议派生结果包括：
 
 ### GodotIntegrationContract
 
-Godot 对接契约用于连接 Web 宏观沙盘与 `/Users/apple/Desktop/航行模拟器` 微观验证层，字段包括：
+Godot 对接契约用于连接 Web 宏观沙盘与 `/path/to/sailing-simulator` 微观验证层，字段包括：
 
 - 协议版本。
 - 桥接方式，首期使用 `file-json`，后续可扩展到 HTTP 或 WebSocket。
@@ -309,6 +309,6 @@ Godot 回写 Web 的验证结果包括：
 
 - 第 8 步已补全马六甲港口节点配置，当前节点数据作为沙盘推演种子数据使用。
 - 第 9 步已将 `routeOverlays` 和 `vesselMarkers` 扩展为动态航线与船流动画数据。
-- 第 28 步已定义 Web 与 `/Users/apple/Desktop/航行模拟器` 的单船验证接口。
+- 第 28 步已定义 Web 与 `/path/to/sailing-simulator` 的单船验证接口。
 - 第 29 步以后可以让模块切换联动地图浮层、右侧面板和底部摘要指标，展示不同模块下的推演重点。
-- 第 29 步以后可以实现 `GodotValidationRequest` 导出器，把 `vesselMarkers` 中的单船参数传递给 `/Users/apple/Desktop/航行模拟器`。
+- 第 29 步以后可以实现 `GodotValidationRequest` 导出器，把 `vesselMarkers` 中的单船参数传递给 `/path/to/sailing-simulator`。
