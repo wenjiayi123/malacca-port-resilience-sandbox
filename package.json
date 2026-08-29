@@ -1,7 +1,7 @@
 {
   "name": "malacca-port-resilience-sandbox",
   "private": false,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Evidence-aware port digital-twin sandbox with auditable control baselines, held-out evaluation and human-gated orchestration.",
   "license": "Apache-2.0",
   "author": "Wen Jiayi",
@@ -34,8 +34,13 @@
     "data:sync:infore-ais": "node scripts/data/sync_infore_ais.mjs",
     "benchmark:public-data": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/rl/runPublicDatasetComparison.ts",
     "benchmark:public-data:verify": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/rl/verifyPublicDatasetComparison.ts",
+    "benchmark:regulatory": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/rl/runRegulatoryResilienceBenchmark.ts",
+    "benchmark:regulatory:verify": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/rl/verifyRegulatoryResilienceBenchmark.ts",
+    "acceptance:operations": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/operations/runOperationalAcceptance.ts",
+    "acceptance:operations:verify": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/operations/verifyOperationalAcceptance.ts",
     "check": "pnpm lint && pnpm test && pnpm build",
-    "release:check": "pnpm check && pnpm benchmark:rl:verify && pnpm benchmark:public-data:verify && node scripts/release/check.mjs",
+    "security:audit": "pnpm audit --audit-level=moderate",
+    "release:check": "pnpm check && pnpm benchmark:rl:verify && pnpm benchmark:public-data:verify && pnpm benchmark:regulatory:verify && pnpm acceptance:operations:verify && pnpm security:audit && node scripts/release/check.mjs",
     "data:sync:mpa": "node scripts/data/sync_mpa_dataset.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "demo:web": "bash scripts/demo/start_web_demo.sh",
@@ -51,12 +56,14 @@
   "dependencies": {
     "clsx": "^2.1.1",
     "lucide-react": "^1.25.0",
+    "maplibre-gl": "^5.24.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "recharts": "^3.9.2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/geojson": "^7946.0.16",
     "@types/node": "^26.1.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",

@@ -2,7 +2,7 @@
 
 ## 目标
 
-将马六甲沙盘项目的主系统确定为 Web 大屏应用，并搭建 Vite + React + TypeScript 基础工程。Godot `/Users/apple/Desktop/航行模拟器` 保留为后续微观单船航行验证子系统。
+将马六甲沙盘项目的主系统确定为 Web 大屏应用，并搭建 Vite + React + TypeScript 基础工程。Godot `/path/to/sailing-simulator` 保留为后续微观单船航行验证子系统。
 
 ## 本步范围
 

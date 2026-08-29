@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/port-operations-telemetry.v1.json",
+  "title": "Port operations telemetry v1",
+  "type": "object",
+  "required": [
+    "protocolVersion",
+    "schema_version",
+    "sequence",
+    "seed",
+    "run_id",
+    "event_time",
+    "ingest_time",
+    "site_id",
+    "correlation_id",
+    "authority",
+    "calibration",
+    "quality",
+    "snapshot_hash",
+    "operationalTelemetry",
+    "forecast",
+    "kpis"
+  ],
+  "properties": {
+    "protocolVersion": { "const": "port-operations.telemetry.v1" },
+    "schema_version": { "const": "port-operations.telemetry.v1" },
+    "sequence": { "type": "integer", "minimum": 0 },
+    "seed": { "type": "integer", "minimum": 0 },
+    "run_id": { "type": "string", "minLength": 8 },
+    "event_time": { "type": "string", "format": "date-time" },
+    "ingest_time": { "type": "string", "format": "date-time" },
+    "site_id": { "type": "string", "minLength": 1 },
+    "correlation_id": { "type": "string", "minLength": 8 },
+    "snapshot_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "authority": {
+      "type": "object",
+      "required": ["simulation_mode", "live_data_verified", "dispatch_allowed", "production_authority"],
+      "properties": {
+        "simulation_mode": { "const": true },
+        "live_data_verified": { "const": false },
+        "dispatch_allowed": { "const": false },
+        "production_authority": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "operationalTelemetry": {
+      "type": "object",
+      "required": ["navigation", "terminal", "equipment", "energy", "building", "safety"],
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": { "$ref": "#/$defs/telemetryField" }
+      }
+    },
+    "forecast": {
+      "type": "object",
+      "required": ["protocol_version", "output_status", "model", "input_snapshot_hash", "points"]
+    },
+    "quality": { "type": "object" },
+    "calibration": { "type": "object" },
+    "kpis": { "type": "object", "additionalProperties": { "type": "number" } }
+  },
+  "$defs": {
+    "telemetryField": {
+      "type": "object",
+      "required": [
+        "value",
+        "unit",
+        "event_time",
+        "ingest_time",
+        "source_type",
+        "source_id",
+        "quality_status",
+        "confidence",
+        "is_measured",
+        "is_simulated",
+        "is_derived",
+        "site_id",
+        "asset_id",
+        "schema_version",
+        "trace_id"
+      ],
+      "properties": {
+        "value": { "type": ["number", "string", "boolean", "null"] },
+        "unit": { "type": "string" },
+        "event_time": { "type": "string", "format": "date-time" },
+        "ingest_time": { "type": "string", "format": "date-time" },
+        "source_type": {
+          "enum": [
+            "public_observation",
+            "public_reanalysis",
+            "official_aggregate",
+            "historical_replay",
+            "physics_simulation",
+            "engineering_derived",
+            "field_measured"
+          ]
+        },
+        "source_id": { "type": "string", "minLength": 1 },
+        "quality_status": { "enum": ["normal", "interpolated", "delayed", "drift", "offline", "anomaly"] },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "is_measured": { "type": "boolean" },
+        "is_simulated": { "type": "boolean" },
+        "is_derived": { "type": "boolean" },
+        "site_id": { "type": "string", "minLength": 1 },
+        "asset_id": { "type": "string", "minLength": 1 },
+        "schema_version": { "const": "port-operations.telemetry.v1" },
+        "trace_id": { "type": "string", "minLength": 8 }
+      },
+      "additionalProperties": false
+    }
+  }
+}

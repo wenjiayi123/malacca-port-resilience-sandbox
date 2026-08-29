@@ -1,6 +1,6 @@
 # 第 37 步：Godot Web 内嵌微观仿真视窗
 
-本步骤把 `/Users/apple/Desktop/航行模拟器` 从“工程版打开展示”升级为“Web 主沙盘内嵌运行展示”：React 页面可以在沙盘推演模块中直接召出 Godot Web 仿真视窗，让宏观港航网络推演和微观单船航行验证出现在同一个演示界面里。
+本步骤把 `/path/to/sailing-simulator` 从“工程版打开展示”升级为“Web 主沙盘内嵌运行展示”：React 页面可以在沙盘推演模块中直接召出 Godot Web 仿真视窗，让宏观港航网络推演和微观单船航行验证出现在同一个演示界面里。
 
 ## 新增能力
 
@@ -20,13 +20,13 @@ pnpm demo:godot:web
 该命令会调用：
 
 ```text
-/Users/apple/Downloads/Godot.app/Contents/MacOS/Godot
+/path/to/Godot
 ```
 
 并从以下工程导出 Web 版本：
 
 ```text
-/Users/apple/Desktop/航行模拟器
+/path/to/sailing-simulator
 ```
 
 导出结果位于：

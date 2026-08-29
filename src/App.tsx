@@ -1,4 +1,6 @@
 import {
+  lazy,
+  Suspense,
   useEffect,
   useMemo,
   useRef,
@@ -6,7 +8,9 @@ import {
   type CSSProperties,
   type KeyboardEvent,
   type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
+  type WheelEvent as ReactWheelEvent,
 } from 'react';
 import {
   Activity,
@@ -83,6 +87,7 @@ import {
 import type {
   AiDecisionRecommendation,
   ChannelRole,
+  ChannelStatus,
   EmergencyContingencyAssessment,
   EventLogEntry,
   GodotRiskLevel,
@@ -105,6 +110,41 @@ import type {
   VesselMarker,
 } from './types/sandbox';
 
+const OperationalEvidenceCenter = lazy(async () => ({
+  default: (await import('./components/OperationalEvidenceCenter')).OperationalEvidenceCenter,
+}));
+
+const LiveSatelliteMap = lazy(async () => ({
+  default: (await import('./components/LiveSatelliteMap')).LiveSatelliteMap,
+}));
+
+const isGodotValidationResult = (value: unknown): value is GodotValidationResult => {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<GodotValidationResult>;
+  const numericFields: Array<keyof GodotValidationResult> = [
+    'estimatedTravelMinutes',
+    'recommendedSpeedKnots',
+    'simulatedDurationSeconds',
+    'averageSpeedKnots',
+    'minClearanceMeters',
+    'collisionCount',
+    'groundingCount',
+    'riskEventResolvedCount',
+    'delayDeltaMinutes',
+    'carbonDeltaTons',
+  ];
+  return Boolean(
+    candidate.requestId &&
+    candidate.vesselId &&
+    candidate.summary &&
+    ['pending', 'running', 'passed', 'failed', 'degraded'].includes(candidate.status ?? '') &&
+    ['low', 'medium', 'high', 'critical'].includes(candidate.riskLevel ?? '') &&
+    typeof candidate.safePass === 'boolean' &&
+    typeof candidate.reachedDestination === 'boolean' &&
+    numericFields.every((field) => Number.isFinite(candidate[field] as number)),
+  );
+};
+
 const routeClassByRole: Record<ChannelRole, string> = {
   main: 'main',
   secondary: 'secondary',
@@ -126,8 +166,8 @@ const statusColorByTone: Record<StatusTone, string> = {
 const portDataStatusLabel: Record<PortDataConnectionStatus, string> = {
   demo: '仿真沙盘 · 等待接入港口',
   connecting: '数据同步中',
-  public: '公开数据驱动仿真 · 等待接入港口',
-  live: '实时港口数据',
+  public: '公开数据校准实时模拟',
+  live: '现场数据源已接入（需生产验收）',
   fallback: '等待接入港口 · 仿真回退',
 };
 
@@ -463,6 +503,7 @@ const dashboardModules = [
   { id: 'resilience', label: '韧性评估', icon: Gauge },
   { id: 'dispatch', label: '调度优化', icon: Route },
   { id: 'emergency', label: '应急预案', icon: AlertTriangle },
+  { id: 'evidence', label: '证据与闭环', icon: CircleGauge },
 ] as const;
 
 type DashboardModuleId = (typeof dashboardModules)[number]['id'];
@@ -479,6 +520,7 @@ type LinkedDemoCaseId =
   | 'low-carbon-dispatch';
 
 type MapViewMode = 'operations' | 'congestion' | 'carbon' | 'emergency';
+type MapSurfaceMode = 'reproducible-simulation' | 'satellite-live';
 
 type MapOverlayPanelId = 'congestion' | 'delay' | 'carbon' | 'strategy' | 'propagation';
 
@@ -1802,6 +1844,10 @@ const routeLayerFilters: Array<{
 ];
 
 const formatInteger = (value: number) => value.toLocaleString('en-US');
+const formatPolicyReduction = (value: number, digits: number, unit: string) =>
+  `${value >= 0 ? '-' : '+'}${Math.abs(value).toFixed(digits)}${unit}`;
+const formatPolicyIncrease = (value: number, digits: number, unit: string) =>
+  `${value >= 0 ? '+' : '-'}${Math.abs(value).toFixed(digits)}${unit}`;
 
 const formatPercent = (value: number) => `${value.toFixed(1)}%`;
 
@@ -1928,6 +1974,50 @@ const parseScreenPercent = (value: string) => {
 
   return Number.isFinite(parsed) ? parsed : 0;
 };
+
+interface SimulationMapViewport {
+  zoom: number;
+  panX: number;
+  panY: number;
+}
+
+const SIMULATION_MAP_MIN_ZOOM = 0.42;
+const SIMULATION_MAP_MAX_ZOOM = 3.2;
+const SIMULATION_MAP_OVERVIEW_ZOOM = 0.58;
+const SIMULATION_MAP_BASE_WIDTH = 1000;
+const SIMULATION_MAP_BASE_HEIGHT = 720;
+
+const createSimulationMapOverview = (): SimulationMapViewport => ({
+  zoom: SIMULATION_MAP_OVERVIEW_ZOOM,
+  panX: 0,
+  panY: 0,
+});
+
+const getSimulationMapViewBox = ({ zoom, panX, panY }: SimulationMapViewport) => {
+  const width = SIMULATION_MAP_BASE_WIDTH / zoom;
+  const height = SIMULATION_MAP_BASE_HEIGHT / zoom;
+  const x = SIMULATION_MAP_BASE_WIDTH / 2 - (0.5 + panX / 100) * width;
+  const y = SIMULATION_MAP_BASE_HEIGHT / 2 - (0.5 + panY / 100) * height;
+
+  return `${x.toFixed(2)} ${y.toFixed(2)} ${width.toFixed(2)} ${height.toFixed(2)}`;
+};
+
+const projectSimulationMapPosition = (
+  position: PortNode['position'],
+  { zoom, panX, panY }: SimulationMapViewport,
+) => ({
+  left: `${50 + (parseScreenPercent(position.x) - 50) * zoom + panX}%`,
+  top: `${50 + (parseScreenPercent(position.y) - 50) * zoom + panY}%`,
+});
+
+const projectSimulationMapCoordinate = (
+  x: number,
+  y: number,
+  { zoom, panX, panY }: SimulationMapViewport,
+) => ({
+  left: `${50 + (x - 50) * zoom + panX}%`,
+  top: `${50 + (y - 50) * zoom + panY}%`,
+});
 
 const screenPositionToSvgPoint = (position: PortNode['position']) => ({
   x: parseScreenPercent(position.x) * 10,
@@ -2355,6 +2445,7 @@ function Panel({
       className={`hud-panel${isExpandable ? ' hud-panel--expandable' : ''}${isExpanded ? ' hud-panel--expanded' : ''} ${className}`.trim()}
       onClick={handlePanelClick}
       onKeyDown={handlePanelKeyDown}
+      role={isExpandable && !isExpanded ? 'button' : undefined}
       tabIndex={isExpandable && !isExpanded ? 0 : undefined}
     >
       <header className="hud-panel__header">
@@ -2555,12 +2646,16 @@ export function App() {
     id: baseScenario.vesselMarkers[0]?.id ?? '',
   });
   const [activeMapView, setActiveMapView] = useState<MapViewMode>('operations');
+  const [mapSurfaceMode, setMapSurfaceMode] = useState<MapSurfaceMode>('reproducible-simulation');
+  const [simulationMapViewport, setSimulationMapViewport] =
+    useState<SimulationMapViewport>(createSimulationMapOverview);
+  const [isSimulationMapDragging, setIsSimulationMapDragging] = useState(false);
   const [routeLayerFilter, setRouteLayerFilter] = useState<RouteLayerFilter>('all');
   const [vesselCategoryFilter, setVesselCategoryFilter] =
     useState<VesselCategoryFilter>('all');
   const [selectedPortId, setSelectedPortId] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [showCoreClosure, setShowCoreClosure] = useState(true);
+  const [showCoreClosure, setShowCoreClosure] = useState(false);
   const [showLegend, setShowLegend] = useState(true);
   const [motionEnabled, setMotionEnabled] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -2580,11 +2675,17 @@ export function App() {
   }>({ type: 'none', intensity: 0 });
   const [rlPolicyInference, setRlPolicyInference] = useState<RlPolicyInferenceResponse | null>(null);
   const [rlPolicyApplied, setRlPolicyApplied] = useState(false);
+  const [isRlPolicyApplyConfirmationOpen, setIsRlPolicyApplyConfirmationOpen] = useState(false);
   const [expandedPanelTitle, setExpandedPanelTitle] = useState<string | null>(null);
   const [godotSimulatorStatus, setGodotSimulatorStatus] =
     useState<GodotSimulatorStatus>('checking');
   const [godotSimulatorReloadKey, setGodotSimulatorReloadKey] = useState(0);
+  const [godotImportFeedback, setGodotImportFeedback] = useState<{
+    tone: 'ok' | 'danger';
+    message: string;
+  } | null>(null);
   const [inspectorPanel, setInspectorPanel] = useState<InspectorPanel | null>(null);
+  const [reportExportSequence, setReportExportSequence] = useState(0);
   const [contextInspectorWindow, setContextInspectorWindow] =
     useState<ContextInspectorWindowState>(() => getCenteredContextInspectorWindowState());
   const [openMapOverlays, setOpenMapOverlays] = useState<Record<MapOverlayPanelId, boolean>>({
@@ -2608,7 +2709,7 @@ export function App() {
     appliedAt: string | null;
   }>({ status: 'idle', scope: null, message: '', appliedAt: null });
   const [isXiaoyiAssistantOpen, setIsXiaoyiAssistantOpen] = useState(true);
-  const [isXiaoyiAssistantMinimized, setIsXiaoyiAssistantMinimized] = useState(false);
+  const [isXiaoyiAssistantMinimized, setIsXiaoyiAssistantMinimized] = useState(true);
   const [xiaoyiAssistantPosition, setXiaoyiAssistantPosition] = useState(() => ({
     x: typeof window === 'undefined' ? 1080 : Math.max(24, window.innerWidth - 330),
     y: 150,
@@ -2623,9 +2724,86 @@ export function App() {
   );
   const godotResultInputRef = useRef<HTMLInputElement | null>(null);
   const godotSimulatorFrameRef = useRef<HTMLIFrameElement | null>(null);
+  const simulationMapDragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    startPanX: number;
+    startPanY: number;
+  } | null>(null);
   const xiaoyiAdviceRequestIdRef = useRef(0);
   const xiaoyiApplyFeedbackTimerRef = useRef<number | null>(null);
   const godotResultReceiverRef = useRef<(result: GodotValidationResult) => void>(() => undefined);
+  const simulationMapViewBox = getSimulationMapViewBox(simulationMapViewport);
+  const simulationMapZoomPercent = Math.round(simulationMapViewport.zoom * 100);
+
+  const updateSimulationMapZoom = (
+    requestedZoom: number,
+    focusXPercent = 50,
+    focusYPercent = 50,
+  ) => {
+    setSimulationMapViewport((current) => {
+      const zoom = clampNumber(requestedZoom, SIMULATION_MAP_MIN_ZOOM, SIMULATION_MAP_MAX_ZOOM);
+      const ratio = zoom / current.zoom;
+
+      return {
+        zoom,
+        panX: focusXPercent - 50 - (focusXPercent - 50 - current.panX) * ratio,
+        panY: focusYPercent - 50 - (focusYPercent - 50 - current.panY) * ratio,
+      };
+    });
+  };
+
+  const handleSimulationMapWheel = (event: ReactWheelEvent<HTMLElement>) => {
+    if (mapSurfaceMode !== 'reproducible-simulation') return;
+    const target = event.target as Element;
+    if (target.closest('.simulation-render-layer, .event-impact-banner, .legend-box, .simulation-map-viewport-controls')) {
+      return;
+    }
+    event.preventDefault();
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const focusX = ((event.clientX - bounds.left) / Math.max(1, bounds.width)) * 100;
+    const focusY = ((event.clientY - bounds.top) / Math.max(1, bounds.height)) * 100;
+    const wheelFactor = Math.exp(-event.deltaY * 0.0014);
+    updateSimulationMapZoom(simulationMapViewport.zoom * wheelFactor, focusX, focusY);
+  };
+
+  const handleSimulationMapPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
+    if (mapSurfaceMode !== 'reproducible-simulation' || event.button !== 0) return;
+    const target = event.target as Element;
+    if (target.closest('button, [role="button"], .simulation-render-layer, .event-impact-banner, .legend-box')) {
+      return;
+    }
+    simulationMapDragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startPanX: simulationMapViewport.panX,
+      startPanY: simulationMapViewport.panY,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setIsSimulationMapDragging(true);
+  };
+
+  const handleSimulationMapPointerMove = (event: ReactPointerEvent<HTMLElement>) => {
+    const drag = simulationMapDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    setSimulationMapViewport((current) => ({
+      ...current,
+      panX: drag.startPanX + ((event.clientX - drag.startX) / Math.max(1, bounds.width)) * 100,
+      panY: drag.startPanY + ((event.clientY - drag.startY) / Math.max(1, bounds.height)) * 100,
+    }));
+  };
+
+  const stopSimulationMapDrag = (event: ReactPointerEvent<HTMLElement>) => {
+    if (simulationMapDragRef.current?.pointerId !== event.pointerId) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    simulationMapDragRef.current = null;
+    setIsSimulationMapDragging(false);
+  };
   const rlPolicyRecoveryProgress = clampNumber(
     policyRecovery.advancedMinutes / Math.max(1, policyRecovery.targetMinutes),
     0,
@@ -3145,48 +3323,57 @@ export function App() {
                 : job.phase === 'evaluating' ? 'evaluation'
                   : job.phase === 'checkpointing' || job.phase === 'completed' ? 'interface-package'
                     : getRlTrainingStageByProgress(job.progressPercent).id;
-        setSandboxRuntime((runtime) => ({
-          ...runtime,
-          rlTraining: {
-            ...runtime.rlTraining,
-            status: job.status,
-            selectedAlgorithmId: job.status === 'completed' && job.result
-              ? job.result.bestAlgorithmId
-              : runtime.rlTraining.selectedAlgorithmId,
-            progressPercent: job.progressPercent,
-            currentStageId: stageId,
-            startedAt: job.startedAt,
-            startedAtEpochMs: job.startedAt ? Date.parse(job.startedAt) : runtime.rlTraining.startedAtEpochMs,
-            episodeCursor: job.completedEpisodes,
-            completedAt: job.completedAt,
-            backend: {
-              ...runtime.rlTraining.backend,
-              status: job.status === 'failed' ? 'failed' : 'connected',
-              lastMessage: job.message,
+        setSandboxRuntime((runtime) => {
+          if (runtime.rlTraining.jobId !== job.jobId) return runtime;
+          return {
+            ...runtime,
+            rlTraining: {
+              ...runtime.rlTraining,
+              status: job.status,
+              selectedAlgorithmId: job.status === 'completed' && job.result
+                ? job.result.bestAlgorithmId
+                : runtime.rlTraining.selectedAlgorithmId,
+              progressPercent: job.progressPercent,
+              currentStageId: stageId,
+              startedAt: job.startedAt,
+              startedAtEpochMs: job.startedAt ? Date.parse(job.startedAt) : runtime.rlTraining.startedAtEpochMs,
+              episodeCursor: job.completedEpisodes,
+              completedAt: job.completedAt,
+              backend: {
+                ...runtime.rlTraining.backend,
+                status: job.status === 'failed' ? 'failed' : 'connected',
+                lastMessage: job.message,
+              },
+              policyTest: {
+                ...runtime.rlTraining.policyTest,
+                status:
+                  job.status === 'completed' && runtime.rlTraining.policyTest.status === 'locked'
+                    ? 'idle'
+                    : runtime.rlTraining.policyTest.status,
+              },
             },
-            policyTest: {
-              ...runtime.rlTraining.policyTest,
-              status:
-                job.status === 'completed' && runtime.rlTraining.policyTest.status === 'locked'
-                  ? 'idle'
-                  : runtime.rlTraining.policyTest.status,
-            },
-          },
-        }));
+          };
+        });
         if (job.status === 'queued' || job.status === 'running') {
           timer = window.setTimeout(() => void poll(), 650);
         }
       } catch (error) {
         if (controller.signal.aborted) return;
+        const message = error instanceof Error ? error.message : '训练任务轮询失败';
+        const isExpiredStoredJob = /job not found|HTTP 404|任务不存在/i.test(message);
         setSandboxRuntime((runtime) => ({
           ...runtime,
           rlTraining: {
             ...runtime.rlTraining,
-            status: 'failed',
+            status: isExpiredStoredJob ? 'idle' : 'failed',
+            jobId: isExpiredStoredJob ? null : runtime.rlTraining.jobId,
+            progressPercent: isExpiredStoredJob ? 0 : runtime.rlTraining.progressPercent,
             backend: {
               ...runtime.rlTraining.backend,
-              status: 'failed',
-              lastMessage: error instanceof Error ? error.message : '训练任务轮询失败',
+              status: isExpiredStoredJob ? 'disconnected' : 'failed',
+              lastMessage: isExpiredStoredJob
+                ? '上次训练任务编号已随服务重启失效；历史评估摘要仍保留，但当前检查点需重新训练后再用于推理。'
+                : message,
             },
           },
         }));
@@ -3404,8 +3591,8 @@ export function App() {
       mode,
       endpoint:
         mode === 'public'
-          ? '/api/public-data/snapshot'
-          : mode === 'live' && config.endpoint === '/api/public-data/snapshot'
+          ? '/api/operations/snapshot'
+          : mode === 'live' && ['/api/public-data/snapshot', '/api/operations/snapshot'].includes(config.endpoint)
             ? 'http://127.0.0.1:8090/api/v1/port-network/snapshot'
             : config.endpoint,
     }));
@@ -5392,6 +5579,10 @@ export function App() {
   };
 
   const applyGodotValidationResult = (parsed: GodotValidationResult) => {
+      setGodotImportFeedback({
+        tone: 'ok',
+        message: `验证结果已绑定 ${parsed.requestId} / ${parsed.vesselId} 并完成指标回写。`,
+      });
       setSandboxRuntime((runtime) => ({
         ...runtime,
         importedGodotResult: parsed,
@@ -5462,31 +5653,51 @@ export function App() {
 
     try {
       const text = await file.text();
-      const parsed = JSON.parse(text) as GodotValidationResult;
-      if (!parsed.requestId || !parsed.vesselId || !parsed.status) {
-        throw new Error('Godot 结果缺少 requestId、vesselId 或 status');
+      const parsed = JSON.parse(text) as unknown;
+      if (!isGodotValidationResult(parsed)) {
+        throw new Error('结果字段不完整或包含无效数值');
+      }
+      if (!generatedGodotRequest) {
+        throw new Error('请先生成当前单船验证请求');
+      }
+      if (
+        parsed.requestId !== generatedGodotRequest.requestId ||
+        parsed.vesselId !== generatedGodotRequest.vesselId
+      ) {
+        throw new Error('结果与当前 requestId 或 vesselId 不匹配');
       }
       applyGodotValidationResult(parsed);
-    } catch {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '结果文件无法解析';
+      setGodotImportFeedback({ tone: 'danger', message: `导入已拒绝：${message}。` });
       setSandboxRuntime((runtime) => ({
         ...runtime,
-        importedGodotResult: null,
         phases: patchSandboxPhases(runtime.phases, [
           {
             id: 'micro-validation',
-            status: runtime.generatedGodotRequest ? 'running' : 'pending',
-            summary: runtime.generatedGodotRequest
-              ? '结果文件无法解析，微观验证仍等待有效回传'
-              : sandboxPhaseDefinitions['micro-validation'].initialSummary,
+            status: runtime.importedGodotResult
+              ? 'completed'
+              : runtime.generatedGodotRequest ? 'running' : 'pending',
+            summary: runtime.importedGodotResult
+              ? `新导入结果未通过绑定校验；保留已验证结果 ${runtime.importedGodotResult.requestId}`
+              : runtime.generatedGodotRequest
+                ? '结果文件未通过校验，微观验证仍等待与当前请求匹配的有效回传'
+                : sandboxPhaseDefinitions['micro-validation'].initialSummary,
           },
           {
             id: 'metric-feedback',
-            status: 'pending',
-            startedAt: pendingPhaseStartLabel,
-            startedMinute: 0,
-            completedAt: undefined,
-            completedMinute: undefined,
-            summary: sandboxPhaseDefinitions['metric-feedback'].initialSummary,
+            status: runtime.importedGodotResult ? 'completed' : 'pending',
+            startedAt: runtime.importedGodotResult
+              ? runtime.phases.find((phase) => phase.id === 'metric-feedback')?.startedAt ?? scenarioClockLabel
+              : pendingPhaseStartLabel,
+            startedMinute: runtime.importedGodotResult
+              ? runtime.phases.find((phase) => phase.id === 'metric-feedback')?.startedMinute ?? runtime.elapsedMinutes
+              : 0,
+            completedAt: runtime.importedGodotResult ? scenarioClockLabel : undefined,
+            completedMinute: runtime.importedGodotResult ? runtime.elapsedMinutes : undefined,
+            summary: runtime.importedGodotResult
+              ? '拒绝不匹配结果；已验证指标回写保持不变'
+              : sandboxPhaseDefinitions['metric-feedback'].initialSummary,
           },
         ]),
       }));
@@ -5933,10 +6144,25 @@ export function App() {
     const url = URL.createObjectURL(
       new Blob([JSON.stringify(report, null, 2)], { type: 'application/json;charset=utf-8' }),
     );
+    const filename = `malacca-closure-report-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `malacca-closure-report-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+    anchor.download = filename;
     anchor.click();
+    setReportExportSequence((sequence) => sequence + 1);
+    openInspectorPanel({
+      id: 'closure-report-exported',
+      title: '闭环报告已生成',
+      subtitle: filename,
+      body: '报告已交给浏览器下载，包含数据模式、事件、计算审计、策略、RL、单船验证和闭环状态；可在浏览器下载记录中查看。',
+      tone: 'ok',
+      metrics: [
+        { label: '闭环步骤', value: `${completedClosureStepCount}/${coreClosureJourney.length}` },
+        { label: '事件', value: String(injectedEvents.length), unit: '项' },
+        { label: '数据模式', value: portDataStatus },
+        { label: '协议', value: report.protocolVersion },
+      ],
+    });
     window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
   };
   const sandboxRuntimeStatusLabel = rlPolicyApplied && policyRecovery.advancedMinutes > 0
@@ -6219,6 +6445,8 @@ export function App() {
   const rlTrainRecordCount = rlTrainingJob?.dataset?.trainRecordCount ?? rlBenchmark?.dataset.trainRecordCount ?? 0;
   const rlValidationRecordCount = rlTrainingJob?.dataset?.validationRecordCount ?? rlBenchmark?.dataset.validationRecordCount ?? 0;
   const rlTestRecordCount = rlTrainingJob?.dataset?.testRecordCount ?? rlBenchmark?.dataset.testRecordCount ?? 0;
+  const rlCheckpointEpisodeCount = rlTrainingJob?.completedEpisodes ?? rlBenchmark?.episodes ?? 0;
+  const rlEvaluationStepCount = rlPolicyEvaluation?.trace.length ?? 0;
   const rlDatasetQuality = rlTrainingJob?.dataset?.quality ?? rlBenchmark?.dataset.quality;
   const rlVisibleCurve = (curve: Array<{ episode: number; reward: number }>) => {
     if (rlTraining.status === 'idle') return [];
@@ -6422,7 +6650,10 @@ export function App() {
     }
     setRlDisturbance({ type, intensity });
     setRlPolicyApplied(false);
+    setIsRlPolicyApplyConfirmationOpen(false);
     setIsRlDecisionPanelOpen(true);
+    setIsGodotSimulatorOpen(false);
+    setRlTrainingWindowState((windowState) => ({ ...windowState, isOpen: false }));
     setSandboxRuntime((runtime) => ({
       ...runtime,
       policyRecovery: {
@@ -6451,6 +6682,9 @@ export function App() {
       return;
     }
     setIsRlDecisionPanelOpen(true);
+    setIsRlPolicyApplyConfirmationOpen(false);
+    setIsGodotSimulatorOpen(false);
+    setRlTrainingWindowState((windowState) => ({ ...windowState, isOpen: false }));
     if (rlInferenceRunId === 0 || rlInferenceStatus === 'failed') {
       setSandboxRuntime((runtime) => ({
         ...runtime,
@@ -6481,6 +6715,7 @@ export function App() {
       120,
     );
     setRlPolicyApplied(true);
+    setIsRlPolicyApplyConfirmationOpen(false);
     setIsRlDecisionPanelOpen(false);
     setActiveModule('dispatch');
     setExpandedPanelTitle(null);
@@ -6889,11 +7124,14 @@ export function App() {
     const selectedAlgorithm =
       rlAlgorithmOptions.find((algorithm) => algorithm.id === algorithmId) ?? rlAlgorithmOptions[0];
 
+    setRlTrainingJob(null);
+    setRlPolicyEvaluation(null);
     setSandboxRuntime((runtime) => ({
       ...runtime,
       rlTraining: {
         ...runtime.rlTraining,
         selectedAlgorithmId: selectedAlgorithm.id,
+        jobId: null,
         status: 'idle',
         progressPercent: 0,
         currentStageId: 'snapshot-build',
@@ -7199,6 +7437,9 @@ export function App() {
   const openRlTrainingWindow = () => {
     setActiveModule('sandbox');
     setIsXiaoyiAssistantOpen(true);
+    setIsRlDecisionPanelOpen(false);
+    setIsRlPolicyApplyConfirmationOpen(false);
+    setIsGodotSimulatorOpen(false);
     setRlTrainingWindowState((windowState) => ({
       ...windowState,
       isOpen: true,
@@ -7372,6 +7613,19 @@ export function App() {
     window.open(GODOT_SIMULATOR_URL, '_blank', 'noopener,noreferrer');
   };
 
+  const toggleGodotSimulator = () => {
+    const nextOpen = !isGodotSimulatorOpen;
+    if (nextOpen) {
+      setInspectorPanel(null);
+      setIsEventInjectionPanelOpen(false);
+      setIsRlDecisionPanelOpen(false);
+      setIsRlPolicyApplyConfirmationOpen(false);
+      setRlTrainingWindowState((windowState) => ({ ...windowState, isOpen: false }));
+    }
+    setHasPreviewedGodotSimulator(true);
+    setIsGodotSimulatorOpen(nextOpen);
+  };
+
   const setMapView = (modeId: MapViewMode) => {
     const viewMode = mapViewModes.find((item) => item.id === modeId);
 
@@ -7510,6 +7764,31 @@ export function App() {
         { label: '拥堵', value: `${channel?.congestionPercent ?? 0}%`, tone: channel?.tone ?? route.tone },
       ],
       action: { label: '生成验证信息流', module: 'sandbox' },
+    });
+  };
+
+  const openChannelInspector = (channel: ChannelStatus) => {
+    const route = scenario.routeOverlays.find((routeItem) => routeItem.channelId === channel.id);
+    setRouteLayerFilter(channel.role);
+    if (route) {
+      openRouteInspector(route);
+      return;
+    }
+    setActiveMapView('congestion');
+    setActiveModule('resilience');
+    openInspectorPanel({
+      id: `channel-${channel.id}`,
+      title: channel.label,
+      subtitle: channelRoleLabelByRole[channel.role],
+      body: '该航道已完成筛选与韧性模块联动；当前数据集中没有绑定可回放的代表航线，因此仅展示航道级状态，不虚构船舶轨迹。',
+      tone: channel.tone,
+      metrics: [
+        { label: '拥堵', value: `${channel.congestionPercent}%`, tone: channel.tone },
+        { label: '延误', value: String(channel.delayMinutes), unit: '分', tone: getDelayTone(channel.delayMinutes) },
+        { label: '航道类型', value: channelRoleLabelByRole[channel.role] },
+        { label: '代表航线', value: '未绑定' },
+      ],
+      action: { label: '查看韧性评估', module: 'resilience' },
     });
   };
 
@@ -7690,6 +7969,7 @@ export function App() {
       className={[
         'dashboard-shell',
         `dashboard-shell--view-${activeMapView}`,
+        `dashboard-shell--module-${activeModule}`,
         motionEnabled ? '' : 'dashboard-shell--motion-paused',
         rlTraining.status === 'queued' || rlTraining.status === 'running'
           ? 'dashboard-shell--training-headless'
@@ -7751,6 +8031,7 @@ export function App() {
             <BilingualText className="bilingual-label--button" text="系统设置" />
           </button>
           <button
+            aria-label={`切换地图视角，当前${activeMapViewDefinition.label}`}
             data-xiaoyi-action="cycle-map-view"
             onClick={cycleMapView}
             title={`当前视角：${activeMapViewDefinition.label}\n${activeMapViewDefinition.detail}`}
@@ -7759,7 +8040,12 @@ export function App() {
             <Compass size={15} />
             <BilingualText className="bilingual-label--button" text={activeMapViewDefinition.label} />
           </button>
-          <button data-xiaoyi-action="toggle-fullscreen" onClick={() => void toggleFullscreen()} type="button">
+          <button
+            aria-label={isFullscreen ? '退出全屏' : '全屏显示'}
+            data-xiaoyi-action="toggle-fullscreen"
+            onClick={() => void toggleFullscreen()}
+            type="button"
+          >
             {isFullscreen ? <Minimize size={15} /> : <Expand size={15} />}
             <BilingualText
               className="bilingual-label--button"
@@ -7954,21 +8240,9 @@ export function App() {
               <li
                 className={routeLayerFilter === item.role ? 'status-list__item--active' : ''}
                 key={item.label}
-                onClick={() => {
-                  const route = scenario.routeOverlays.find((routeItem) => routeItem.channelId === item.id);
-                  setRouteLayerFilter(item.role);
-                  if (route) {
-                    openRouteInspector(route);
-                  }
-                }}
+                onClick={() => openChannelInspector(item)}
                 onKeyDown={(event) =>
-                  handleValidationKeyDown(event, () => {
-                    const route = scenario.routeOverlays.find((routeItem) => routeItem.channelId === item.id);
-                    setRouteLayerFilter(item.role);
-                    if (route) {
-                      openRouteInspector(route);
-                    }
-                  })
+                  handleValidationKeyDown(event, () => openChannelInspector(item))
                 }
                 role="button"
                 style={
@@ -8024,20 +8298,101 @@ export function App() {
         </Panel>
       </aside>
 
+      {activeModule !== 'evidence' && (
+        <nav className="map-surface-switch" aria-label="中央地图模式">
+          <button
+            aria-pressed={mapSurfaceMode === 'reproducible-simulation'}
+            className={mapSurfaceMode === 'reproducible-simulation' ? 'is-active' : ''}
+            onClick={() => setMapSurfaceMode('reproducible-simulation')}
+            type="button"
+          >
+            <Activity size={13} />
+            <span>可复现实况模拟</span>
+            <small>PUBLIC CALIBRATED</small>
+          </button>
+          <button
+            aria-pressed={mapSurfaceMode === 'satellite-live'}
+            className={mapSurfaceMode === 'satellite-live' ? 'is-active' : ''}
+            onClick={() => setMapSurfaceMode('satellite-live')}
+            type="button"
+          >
+            <MapPinned size={13} />
+            <span>卫星实时定位</span>
+            <small>AUTHORIZED AIS</small>
+          </button>
+        </nav>
+      )}
+
       <section
-        className="map-stage"
+        className={`map-stage${mapSurfaceMode === 'satellite-live' ? ' map-stage--satellite-live' : ' map-stage--simulation'}${isSimulationMapDragging ? ' map-stage--dragging' : ''}`}
         aria-label={`${scenario.regionLabel ?? scenario.name}沙盘地图`}
+        onPointerCancel={stopSimulationMapDrag}
+        onPointerDown={handleSimulationMapPointerDown}
+        onPointerMove={handleSimulationMapPointerMove}
+        onPointerUp={stopSimulationMapDrag}
+        onWheel={handleSimulationMapWheel}
         style={{
-          backgroundImage: scenario.mapBackgroundAsset ? `url("${scenario.mapBackgroundAsset}")` : undefined,
-          backgroundPosition: 'center',
-          backgroundSize: 'cover',
+          backgroundColor: '#031426',
         }}
       >
+        {mapSurfaceMode === 'satellite-live' && (
+          <Suspense fallback={<div className="satellite-map-loading">正在加载地理引擎…</div>}>
+            <LiveSatelliteMap ports={scenario.ports} />
+          </Suspense>
+        )}
+
+        {mapSurfaceMode === 'reproducible-simulation' && (
+          <>
+            <div
+              aria-hidden="true"
+              className="simulation-map-background"
+              style={
+                {
+                  backgroundImage: scenario.mapBackgroundAsset ? `url("${scenario.mapBackgroundAsset}")` : undefined,
+                  '--simulation-map-pan-x': `${simulationMapViewport.panX}%`,
+                  '--simulation-map-pan-y': `${simulationMapViewport.panY}%`,
+                  '--simulation-map-zoom': simulationMapViewport.zoom,
+                } as CSSProperties
+              }
+            />
+            <svg
+              aria-hidden="true"
+              className="simulation-sea-current-layer"
+              viewBox={simulationMapViewBox}
+            >
+              <defs>
+                <linearGradient id="simulation-current-gradient" x1="0" x2="1">
+                  <stop offset="0" stopColor="#29dfff" stopOpacity="0" />
+                  <stop offset="0.42" stopColor="#54e9ff" stopOpacity="0.82" />
+                  <stop offset="1" stopColor="#23e6a8" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {[
+                'M20 118 C210 174 350 258 512 366 S790 570 1030 648',
+                'M-20 188 C176 232 344 326 526 440 S802 642 1048 704',
+                'M112 66 C290 132 444 232 632 310 S878 420 1040 512',
+                'M232 418 C404 492 578 588 806 696',
+              ].map((path, index) => (
+                <g key={path} style={{ '--simulation-current-delay': `${index * -1.35}s` } as CSSProperties}>
+                  <path className="simulation-sea-current" d={path} />
+                  <path className="simulation-sea-current simulation-sea-current--spark" d={path} />
+                </g>
+              ))}
+            </svg>
+            <div className="simulation-map-runtime-chip" role="status">
+              <Activity size={11} />
+              <strong>公开校准仿真</strong>
+              <span>模拟潮流 {scenario.weather.currentSpeedKnots.toFixed(1)} kn</span>
+              <em>{scenario.vesselMarkers.length} 艘动画验证船</em>
+            </div>
+          </>
+        )}
+
         {(scenario.mapLabels ?? []).map((label) => (
           <div
             className="map-country"
             key={label.id}
-            style={{ left: label.position.x, top: label.position.y }}
+            style={projectSimulationMapPosition(label.position, simulationMapViewport)}
           >
             <span>{label.flag}</span>
             <strong>{label.label}</strong>
@@ -8154,7 +8509,7 @@ export function App() {
         )}
 
         {!isOperationalSceneTelemetryPending && openMapOverlays.propagation && (
-          <svg className="impact-propagation-layer" viewBox="0 0 1000 720" aria-hidden="true">
+          <svg className="impact-propagation-layer" viewBox={simulationMapViewBox} aria-hidden="true">
             {impactPropagationLinks.map((link) => (
               <g
                 key={link.id}
@@ -8178,7 +8533,7 @@ export function App() {
         )}
 
         {!isOperationalSceneTelemetryPending && openMapOverlays.strategy && strategyFlowVectors.length > 0 && (
-          <svg className="strategy-flow-layer" viewBox="0 0 1000 720" aria-hidden="true">
+          <svg className="strategy-flow-layer" viewBox={simulationMapViewBox} aria-hidden="true">
             {strategyFlowVectors.map((vector) => (
               <g
                 key={vector.id}
@@ -8221,7 +8576,7 @@ export function App() {
           </svg>
         )}
 
-        <svg className="route-layer" viewBox="0 0 1000 720" aria-label="可点击航段与船舶验证入口">
+        <svg className="route-layer" viewBox={simulationMapViewBox} aria-label="可点击航段与船舶验证入口">
           {scenario.routeOverlays.map((route) => {
             const isRouteSelected = selectedValidationResolvedRoute?.id === route.id;
             const isRouteMuted = routeLayerFilter !== 'all' && route.role !== routeLayerFilter;
@@ -8399,8 +8754,7 @@ export function App() {
                       ? rlPolicyRecoveryColor
                       : statusColorByTone[activeInjectedEventTemplate.tone]
                     : statusColorByTone.ok,
-                  left: vessel.position.x,
-                  top: vessel.position.y,
+                  ...projectSimulationMapPosition(vessel.position, simulationMapViewport),
                 } as CSSProperties
               }
               title={[
@@ -8434,8 +8788,7 @@ export function App() {
                   '--impact-node-color': statusColorByTone[node.tone],
                   '--impact-node-radius': `${node.radius}px`,
                   '--impact-node-intensity': node.intensity,
-                  left: `${node.x}%`,
-                  top: `${node.y}%`,
+                  ...projectSimulationMapCoordinate(node.x, node.y, simulationMapViewport),
                 } as CSSProperties
               }
               title={[
@@ -8458,7 +8811,7 @@ export function App() {
             className={`port-marker${selectedPort?.id === port.id ? ' port-marker--selected' : ''}`}
             key={port.name}
             onClick={() => openPortInspector(port)}
-            style={{ left: port.position.x, top: port.position.y }}
+            style={projectSimulationMapPosition(port.position, simulationMapViewport)}
             title={getPortNodeTitle(port)}
             type="button"
           >
@@ -8469,6 +8822,40 @@ export function App() {
             <em>{port.englishName}</em>
           </button>
         ))}
+
+        <div className="simulation-map-viewport-controls" aria-label="沙盘地图缩放控制">
+          <button
+            aria-label="缩小沙盘地图"
+            disabled={simulationMapViewport.zoom <= SIMULATION_MAP_MIN_ZOOM}
+            onClick={() => updateSimulationMapZoom(simulationMapViewport.zoom / 1.28)}
+            title="缩小"
+            type="button"
+          >
+            −
+          </button>
+          <output aria-live="polite" title="当前地图缩放比例">
+            {simulationMapZoomPercent}%
+          </output>
+          <button
+            aria-label="放大沙盘地图"
+            disabled={simulationMapViewport.zoom >= SIMULATION_MAP_MAX_ZOOM}
+            onClick={() => updateSimulationMapZoom(simulationMapViewport.zoom * 1.28)}
+            title="放大"
+            type="button"
+          >
+            +
+          </button>
+          <button
+            className="simulation-map-viewport-controls__overview"
+            onClick={() => setSimulationMapViewport(createSimulationMapOverview())}
+            title="恢复超大全局视图"
+            type="button"
+          >
+            <RotateCcw size={11} />
+            全局
+          </button>
+          <small>滚轮缩放 · 空白处拖拽</small>
+        </div>
 
         {showLegend && (
           <>
@@ -8717,6 +9104,7 @@ export function App() {
             <tbody>
               {rankedPortCongestion.slice(0, 4).map((item) => (
                 <tr
+                  aria-label={`查看港口 ${item.portName}`}
                   key={item.portId}
                   onClick={() => {
                     const port = portById.get(item.portId);
@@ -8724,7 +9112,13 @@ export function App() {
                       openPortInspector(port);
                     }
                   }}
+                  onKeyDown={(event) => handleValidationKeyDown(event, () => {
+                    const port = portById.get(item.portId);
+                    if (port) openPortInspector(port);
+                  })}
+                  role="button"
                   style={{ '--port-congestion-color': statusColorByTone[item.tone] } as CSSProperties}
+                  tabIndex={0}
                 >
                   <td>{item.portName}</td>
                   <td>{item.expectedWaitingHours.toFixed(1)}h</td>
@@ -8787,6 +9181,7 @@ export function App() {
               <tbody>
                 {rankedVesselDelays.slice(0, 4).map((item) => (
                   <tr
+                    aria-label={`查看船舶 ${item.vesselName}`}
                     key={item.vesselId}
                     onClick={() => {
                       const vessel = scenario.vesselMarkers.find((marker) => marker.id === item.vesselId);
@@ -8794,7 +9189,13 @@ export function App() {
                         openVesselInspector(vessel);
                       }
                     }}
+                    onKeyDown={(event) => handleValidationKeyDown(event, () => {
+                      const vessel = scenario.vesselMarkers.find((marker) => marker.id === item.vesselId);
+                      if (vessel) openVesselInspector(vessel);
+                    })}
+                    role="button"
                     style={{ '--vessel-delay-color': statusColorByTone[item.tone] } as CSSProperties}
+                    tabIndex={0}
                   >
                     <td>{item.vesselName}</td>
                     <td>{item.destinationPortName}</td>
@@ -8858,6 +9259,7 @@ export function App() {
               <tbody>
                 {rankedVesselEmissions.slice(0, 4).map((item) => (
                   <tr
+                    aria-label={`查看船舶碳排 ${item.vesselName}`}
                     key={item.vesselId}
                     onClick={() => {
                       const vessel = scenario.vesselMarkers.find((marker) => marker.id === item.vesselId);
@@ -8865,7 +9267,13 @@ export function App() {
                         openVesselInspector(vessel);
                       }
                     }}
+                    onKeyDown={(event) => handleValidationKeyDown(event, () => {
+                      const vessel = scenario.vesselMarkers.find((marker) => marker.id === item.vesselId);
+                      if (vessel) openVesselInspector(vessel);
+                    })}
+                    role="button"
                     style={{ '--fuel-carbon-color': statusColorByTone[item.tone] } as CSSProperties}
+                    tabIndex={0}
                     title={[
                       item.routeLabel,
                       `航程 ${item.distanceNm}nm / 航速 ${item.speedKnots}kn / 等待 ${item.waitingHours.toFixed(1)}h`,
@@ -8935,9 +9343,13 @@ export function App() {
               <tbody>
                 {rankedGreenStrategies.map((item) => (
                   <tr
+                    aria-label={`查看策略 ${item.label}`}
                     key={item.strategyId}
                     onClick={() => openStrategyInspector(item)}
+                    onKeyDown={(event) => handleValidationKeyDown(event, () => openStrategyInspector(item))}
+                    role="button"
                     style={{ '--green-strategy-color': statusColorByTone[item.tone] } as CSSProperties}
+                    tabIndex={0}
                     title={[
                       item.target,
                       item.actionSummary,
@@ -9059,14 +9471,21 @@ export function App() {
             </div>
             <div className="rl-decision-cockpit__model">
               <strong>{rlPolicyInference?.model.policyId ?? '等待真实训练检查点'}</strong>
-              <span>{rlInferenceStatus === 'running' ? `神经网络前向推理 ${rlInferenceProgress.toFixed(2)}%` : rlPolicyApplied ? '策略已下发沙盘' : rlInferenceStatus === 'completed' ? '推理完成 · 等待采用' : '策略服务待命'}</span>
+              <span>{rlInferenceStatus === 'running' ? `检查点策略推理 ${rlInferenceProgress.toFixed(2)}%` : rlPolicyApplied ? '策略已进入沙盘回放' : rlInferenceStatus === 'completed' ? '推理完成 · 等待采用' : '策略服务待命'}</span>
             </div>
             <div className="rl-decision-cockpit__header-actions">
               <button aria-label="打开RL训练中心" onClick={openRlTrainingWindow} type="button">
                 <Gauge size={13} />
                 训练中心
               </button>
-              <button aria-label="关闭RL策略推理舱" onClick={() => setIsRlDecisionPanelOpen(false)} type="button">
+              <button
+                aria-label="关闭RL策略推理舱"
+                onClick={() => {
+                  setIsRlPolicyApplyConfirmationOpen(false);
+                  setIsRlDecisionPanelOpen(false);
+                }}
+                type="button"
+              >
                 <X size={13} />
               </button>
             </div>
@@ -9089,14 +9508,14 @@ export function App() {
 
           <div className="rl-decision-cockpit__body">
             <section className="rl-decision-card rl-decision-card--model">
-              <header><span>01</span><strong>已部署神经网络与状态张量</strong></header>
+              <header><span>01</span><strong>已部署策略模型与观测状态</strong></header>
               <div className="rl-model-metadata">
                 <span><small>算法</small><strong>{rlPolicyInference?.model.algorithm ?? activeRlAlgorithmOption.shortLabel}</strong></span>
                 <span><small>结构</small><strong>{rlPolicyInference?.model.architecture ?? '等待检查点'}</strong></span>
-                <span><small>Checkpoint</small><strong>Episode 3,000</strong></span>
-                <span><small>评估</small><strong>500 Episodes</strong></span>
+                <span><small>检查点轮数</small><strong>{rlCheckpointEpisodeCount ? formatInteger(rlCheckpointEpisodeCount) : '等待训练'}</strong></span>
+                <span><small>冻结测试步数</small><strong>{rlEvaluationStepCount ? formatInteger(rlEvaluationStepCount) : '尚未执行'}</strong></span>
               </div>
-              <div className="rl-state-tensor" aria-label="RL输入状态张量">
+              <div className="rl-state-tensor" aria-label="强化学习输入观测状态">
                 {(rlPolicyInference?.inputTensor ?? [
                   { id: 'c', label: '拥堵度', raw: peakPortCongestion.congestionScore, normalized: peakPortCongestion.congestionScore / 100, unit: '%' },
                   { id: 'd', label: '延误', raw: peakVesselDelay?.delayMinutes ?? 0, normalized: (peakVesselDelay?.delayMinutes ?? 0) / 180, unit: '分' },
@@ -9183,27 +9602,27 @@ export function App() {
                 </div>
               )}
               <div className="rl-action-distribution">
-                {(rlPolicyInference?.actionDistribution ?? []).map((action, index) => (
-                  <span className={index === 0 ? 'is-selected' : ''} key={action.id}>
+                {(rlPolicyInference?.actionDistribution ?? []).map((action) => (
+                  <span className={action.id === rlPolicyInference?.selectedAction.id ? 'is-selected' : ''} key={action.id}>
                     <small>{action.label}</small>
-                    <strong>{action.probability.toFixed(1)}% <em>±{action.uncertainty.toFixed(2)}</em></strong>
-                    <i><b style={{ width: `${action.probability}%` }} /></i>
+                    <strong>{(action.probability * 100).toFixed(1)}% <em>不确定度 {(action.uncertainty * 100).toFixed(1)}%</em></strong>
+                    <i><b style={{ width: `${action.probability * 100}%` }} /></i>
                   </span>
                 ))}
               </div>
               {rlPolicyInference && (
                 <div className="rl-policy-comparison">
-                  <span><small>拥堵下降</small><strong>-{rlPolicyInference.comparison.improvement.congestionPoints.toFixed(1)}pt</strong></span>
-                  <span><small>延误下降</small><strong>-{rlPolicyInference.comparison.improvement.delayMinutes}分</strong></span>
-                  <span><small>碳排下降</small><strong>-{rlPolicyInference.comparison.improvement.carbonTons.toFixed(1)}t</strong></span>
-                  <span><small>韧性提升</small><strong>+{rlPolicyInference.comparison.improvement.resiliencePoints.toFixed(1)}</strong></span>
+                  <span><small>拥堵变化</small><strong>{formatPolicyReduction(rlPolicyInference.comparison.improvement.congestionPoints, 1, 'pt')}</strong></span>
+                  <span><small>延误变化</small><strong>{formatPolicyReduction(rlPolicyInference.comparison.improvement.delayMinutes, 1, '分')}</strong></span>
+                  <span><small>碳排变化</small><strong>{formatPolicyReduction(rlPolicyInference.comparison.improvement.carbonTons, 1, 't')}</strong></span>
+                  <span><small>韧性变化</small><strong>{formatPolicyIncrease(rlPolicyInference.comparison.improvement.resiliencePoints, 1, '')}</strong></span>
                 </div>
               )}
               <div className="rl-decision-actions">
                 <button
                   className="control-button control-button--primary"
                   disabled={!rlPolicyInference || rlInferenceStatus !== 'completed' || rlPolicyApplied}
-                  onClick={applyRlPolicyDecision}
+                  onClick={() => setIsRlPolicyApplyConfirmationOpen(true)}
                   type="button"
                 >
                   <Play size={14} />
@@ -9213,6 +9632,26 @@ export function App() {
                   <Gauge size={14} />
                   查看训练参数
                 </button>
+                {isRlPolicyApplyConfirmationOpen && rlPolicyInference && (
+                  <div className="rl-policy-approval" role="alert">
+                    <strong>人工确认：将“{rlPolicyInference.selectedAction.label}”写入当前沙盘回放？</strong>
+                    <span>仅作用于当前模拟快照；不会获得真实港口生产执行权限。</span>
+                    <button
+                      className="control-button"
+                      onClick={() => setIsRlPolicyApplyConfirmationOpen(false)}
+                      type="button"
+                    >
+                      取消
+                    </button>
+                    <button
+                      className="control-button control-button--primary"
+                      onClick={applyRlPolicyDecision}
+                      type="button"
+                    >
+                      确认写入沙盘
+                    </button>
+                  </div>
+                )}
               </div>
             </section>
           </div>
@@ -9314,6 +9753,7 @@ export function App() {
                 aria-label="让小懿按优化目标智能配置训练"
                 className="rl-xiaoyi-global-button"
                 data-xiaoyi-action="rl-xiaoyi-configure"
+                data-xiaoyi-state={xiaoyiAdvisorStatus}
                 disabled={xiaoyiAdvisorStatus === 'thinking'}
                 onClick={() => void askXiaoyiForRlTraining('all')}
                 type="button"
@@ -10107,6 +10547,7 @@ export function App() {
                         <button
                           className={`control-button control-button--primary${rlTraining.policyTest.status === 'running' ? ' control-button--active' : ''}`}
                           data-xiaoyi-action="rl-policy-test"
+                          data-xiaoyi-state={rlTraining.policyTest.status}
                           disabled={!isRlPolicyTestUnlocked || rlTraining.policyTest.status === 'running'}
                           onClick={startRlPolicyTest}
                           type="button"
@@ -10613,14 +11054,18 @@ export function App() {
             <tbody>
               {monitoredRuntimePorts.map((row) => (
                 <tr
+                  aria-label={`查看关键节点 ${row.name}`}
                   key={row.id}
                   onClick={() => openPortInspector(row)}
+                  onKeyDown={(event) => handleValidationKeyDown(event, () => openPortInspector(row))}
+                  role="button"
                   style={
                     {
                       '--node-status-color': statusColorByTone[row.tone],
                       '--node-congestion-percent': `${row.congestionPercent}%`,
                     } as CSSProperties
                   }
+                  tabIndex={0}
                   title={[
                     getPortNodeTitle(row),
                     `拥堵度 ${row.congestionPercent}%`,
@@ -10647,8 +11092,13 @@ export function App() {
         </Panel>
       </aside>
 
-      <footer className={`bottom-console${isSimulationRunning ? ' bottom-console--running' : ''}`}>
+      <footer className={`bottom-console${isSimulationRunning ? ' bottom-console--running' : ''}${activeModule === 'evidence' ? ' bottom-console--evidence' : ''}`}>
         <section className={`module-panel module-panel--${activeModule}`} aria-live="polite">
+          {activeModule === 'evidence' && (
+            <Suspense fallback={<section className="operational-evidence-center operational-evidence-center--loading"><strong>正在加载证据与闭环中心</strong></section>}>
+              <OperationalEvidenceCenter authToken={portDataConfig.apiKey} />
+            </Suspense>
+          )}
           {activeModule === 'overview' && (
             <>
               <div className="event-feed">
@@ -10718,7 +11168,13 @@ export function App() {
                     <RotateCcw size={16} />
                     <BilingualText text="重置" />
                   </button>
-                  <button className="control-button" data-xiaoyi-action="simulation-step" onClick={advanceSimulation} type="button">
+                  <button
+                    className="control-button"
+                    data-xiaoyi-action="simulation-step"
+                    data-xiaoyi-state={String(elapsedMinutes)}
+                    onClick={advanceSimulation}
+                    type="button"
+                  >
                     <Clock size={16} />
                     <span className="control-button__combo">
                       <BilingualText text="推进" />
@@ -10740,19 +11196,34 @@ export function App() {
                     <BilingualText text="事件注入" />
                   </button>
                   <button
+                    aria-expanded={isRlDecisionPanelOpen || rlTrainingWindowState.isOpen}
                     className={`control-button${rlInferenceStatus === 'running' || rlPolicyApplied ? ' control-button--active' : ''}`}
                     data-xiaoyi-action="open-rl-decision"
+                    data-xiaoyi-state={isRlDecisionPanelOpen ? 'decision-open' : rlTrainingWindowState.isOpen ? 'training-open' : 'closed'}
                     onClick={openRlDecisionPanel}
                     type="button"
                   >
                     <Activity size={16} />
                     <BilingualText text="RL策略推理" />
                   </button>
-                  <button className="control-button" data-xiaoyi-action="open-rl-training" onClick={openRlTrainingWindow} type="button">
+                  <button
+                    aria-expanded={rlTrainingWindowState.isOpen}
+                    className="control-button"
+                    data-xiaoyi-action="open-rl-training"
+                    data-xiaoyi-state={rlTrainingWindowState.isOpen ? 'open' : 'closed'}
+                    onClick={openRlTrainingWindow}
+                    type="button"
+                  >
                     <Gauge size={16} />
                     <BilingualText text="训练中心" />
                   </button>
-                  <button className="control-button" data-xiaoyi-action="export-report" onClick={downloadClosureReport} type="button">
+                  <button
+                    className="control-button"
+                    data-xiaoyi-action="export-report"
+                    data-xiaoyi-state={String(reportExportSequence)}
+                    onClick={downloadClosureReport}
+                    type="button"
+                  >
                     <Download size={16} />
                     <BilingualText text="导出报告" />
                   </button>
@@ -10902,7 +11373,7 @@ export function App() {
                       </small>
                     )}
                   </div>
-                  <div className="micro-validation-actions">
+                  <div className={`micro-validation-actions${godotImportFeedback ? ' micro-validation-actions--with-feedback' : ''}`}>
                     <div className="micro-validation-action-row">
                       <button
                         className="control-button control-button--primary micro-validation-button"
@@ -10925,10 +11396,7 @@ export function App() {
                       <button
                         className={`control-button micro-validation-button${isGodotSimulatorOpen ? ' control-button--active' : ''}`}
                         disabled={!generatedGodotRequest}
-                        onClick={() => {
-                          setHasPreviewedGodotSimulator(true);
-                          setIsGodotSimulatorOpen((value) => !value);
-                        }}
+                        onClick={toggleGodotSimulator}
                         type="button"
                       >
                         <Expand size={16} />
@@ -10961,6 +11429,14 @@ export function App() {
                         type="file"
                       />
                     </div>
+                    {godotImportFeedback && (
+                      <p
+                        className={`micro-validation-import-feedback micro-validation-import-feedback--${godotImportFeedback.tone}`}
+                        role="status"
+                      >
+                        {godotImportFeedback.message}
+                      </p>
+                    )}
                     <div className="micro-validation-feed" aria-label="滚动验证信息流">
                       <header>
                         <BilingualText text="本地渲染流" />
@@ -11081,6 +11557,7 @@ export function App() {
               <ul className="module-rank-list">
                 {resilienceAssessment.keyNodePressures.slice(0, 3).map((item) => (
                   <li
+                    aria-label={`查看韧性节点 ${item.nodeName}`}
                     key={item.nodeId}
                     onClick={() => {
                       const port = portById.get(item.nodeId);
@@ -11088,7 +11565,13 @@ export function App() {
                         openPortInspector(port);
                       }
                     }}
+                    onKeyDown={(event) => handleValidationKeyDown(event, () => {
+                      const port = portById.get(item.nodeId);
+                      if (port) openPortInspector(port);
+                    })}
+                    role="button"
                     style={{ '--module-rank-color': statusColorByTone[item.tone] } as CSSProperties}
+                    tabIndex={0}
                   >
                     <span>{item.nodeName}</span>
                     <strong>{item.pressureScore.toFixed(0)}</strong>
@@ -11102,11 +11585,11 @@ export function App() {
           {activeModule === 'dispatch' && (
             <>
               {rlPolicyApplied && rlPolicyInference ? (
-                <section className="rl-applied-dispatch" aria-label="已训练策略下发结果">
+                <section className="rl-applied-dispatch" aria-label="已训练策略沙盘回放结果">
                   <header>
                     <span>
                       <Activity size={15} />
-                      已训练策略已下发
+                      已训练策略已进入沙盘回放
                     </span>
                     <strong>{rlPolicyInference.model.policyId}</strong>
                     <em>置信 {rlPolicyInference.inference.confidencePercent.toFixed(1)}%</em>
@@ -11119,11 +11602,11 @@ export function App() {
                     <em>{rlPolicyInference.selectedAction.affectedScope} · {rlPolicyInference.inference.safetyShield}</em>
                   </div>
                   <div className="rl-applied-dispatch__metrics">
-                    <span><small>拥堵下降</small><strong>-{rlPolicyInference.comparison.improvement.congestionPoints.toFixed(1)}pt</strong></span>
-                    <span><small>延误下降</small><strong>-{rlPolicyInference.comparison.improvement.delayMinutes}分</strong></span>
-                    <span><small>碳排下降</small><strong>-{rlPolicyInference.comparison.improvement.carbonTons.toFixed(1)}t</strong></span>
-                    <span><small>韧性提升</small><strong>+{rlPolicyInference.comparison.improvement.resiliencePoints.toFixed(1)}</strong></span>
-                    <span><small>最高概率情景</small><strong>{rlPolicyInference.scenarioForecasts[0]?.label ?? '--'} {rlPolicyInference.scenarioForecasts[0]?.probability.toFixed(1) ?? '--'}%</strong></span>
+                    <span><small>拥堵变化</small><strong>{formatPolicyReduction(rlPolicyInference.comparison.improvement.congestionPoints, 1, 'pt')}</strong></span>
+                    <span><small>延误变化</small><strong>{formatPolicyReduction(rlPolicyInference.comparison.improvement.delayMinutes, 1, '分')}</strong></span>
+                    <span><small>碳排变化</small><strong>{formatPolicyReduction(rlPolicyInference.comparison.improvement.carbonTons, 1, 't')}</strong></span>
+                    <span><small>韧性变化</small><strong>{formatPolicyIncrease(rlPolicyInference.comparison.improvement.resiliencePoints, 1, '')}</strong></span>
+                    <span><small>最高概率情景</small><strong>{rlPolicyInference.scenarioForecasts[0]?.label ?? '--'} {rlPolicyInference.scenarioForecasts[0] ? (rlPolicyInference.scenarioForecasts[0].probability * 100).toFixed(1) : '--'}%</strong></span>
                   </div>
                   <div className="rl-applied-dispatch__actions">
                     <button className="control-button control-button--primary" onClick={() => setActiveModule('sandbox')} type="button">
@@ -11157,6 +11640,7 @@ export function App() {
                 <ul className="ai-advice-list">
                   {aiDecisionRecommendation.recommendations.map((item) => (
                     <li
+                      aria-label={`查看规则建议 ${item.title}`}
                       key={item.topic}
                       onClick={() => {
                         const moduleByTopic: Record<AiDecisionRecommendation['recommendations'][number]['topic'], DashboardModuleId> = {
@@ -11179,7 +11663,30 @@ export function App() {
                           action: { label: '查看关联模块', module: moduleByTopic[item.topic] },
                         });
                       }}
+                      onKeyDown={(event) => handleValidationKeyDown(event, () => {
+                        const moduleByTopic: Record<AiDecisionRecommendation['recommendations'][number]['topic'], DashboardModuleId> = {
+                          'congestion-cause': 'resilience',
+                          'risk-judgement': 'emergency',
+                          'dispatch-suggestion': 'dispatch',
+                          'carbon-optimization': 'dispatch',
+                        };
+                        setActiveModule(moduleByTopic[item.topic]);
+                        openInspectorPanel({
+                          id: `ai-${item.topic}`,
+                          title: item.title,
+                          subtitle: item.summary,
+                          body: item.evidence,
+                          tone: item.tone,
+                          metrics: [
+                            { label: '优先级', value: item.priority.toFixed(0), tone: item.tone },
+                            { label: '置信度', value: String(aiDecisionRecommendation.confidenceScore), unit: '%' },
+                          ],
+                          action: { label: '查看关联模块', module: moduleByTopic[item.topic] },
+                        });
+                      })}
+                      role="button"
                       style={{ '--ai-advice-color': statusColorByTone[item.tone] } as CSSProperties}
+                      tabIndex={0}
                       title={[item.title, item.summary, item.evidence].join('\n')}
                     >
                       <span>{item.title}</span>
@@ -11222,6 +11729,7 @@ export function App() {
               <ul className="emergency-plan-list">
                 {emergencyContingencyAssessment.plans.map((plan) => (
                   <li
+                    aria-label={`查看应急预案 ${plan.label}`}
                     key={plan.scenario}
                     onClick={() => {
                       setActiveMapView('emergency');
@@ -11238,7 +11746,24 @@ export function App() {
                         ],
                       });
                     }}
+                    onKeyDown={(event) => handleValidationKeyDown(event, () => {
+                      setActiveMapView('emergency');
+                      openInspectorPanel({
+                        id: `plan-${plan.scenario}`,
+                        title: plan.label,
+                        subtitle: plan.affectedArea,
+                        body: `${plan.priorityAction}。${plan.supportAction}`,
+                        tone: plan.tone,
+                        metrics: [
+                          { label: '严重度', value: String(plan.severityScore), tone: plan.tone },
+                          { label: '准备度', value: String(plan.readinessPercent), unit: '%' },
+                          { label: '恢复', value: plan.estimatedRecoveryHours.toFixed(1), unit: 'h' },
+                        ],
+                      });
+                    })}
+                    role="button"
                     style={{ '--emergency-plan-color': statusColorByTone[plan.tone] } as CSSProperties}
+                    tabIndex={0}
                     title={[
                       plan.label,
                       plan.affectedArea,
@@ -11316,14 +11841,14 @@ export function App() {
                   onClick={() => setPortDataMode('public')}
                   type="button"
                 >
-                  公开实证
+                  公开校准实时模拟
                 </button>
                 <button
                   aria-pressed={portDataConfig.mode === 'live'}
                   onClick={() => setPortDataMode('live')}
                   type="button"
                 >
-                  生产接口
+                  待切换现场数据源
                 </button>
               </div>
               <label>
