@@ -4,10 +4,10 @@
 
 ## 本地演示结构
 
-- Web 主系统：`/Users/apple/Desktop/马六甲沙盘港口推演`
+- Web 主系统：`/path/to/malacca-port-resilience-sandbox`
 - Web 本地地址：`http://127.0.0.1:5180/`
-- Godot 子系统工程版：`/Users/apple/Desktop/航行模拟器`
-- Godot 默认可执行路径：`/Users/apple/Downloads/Godot.app/Contents/MacOS/Godot`
+- Godot 子系统工程版：`/path/to/sailing-simulator`
+- Godot 默认可执行路径：`/path/to/Godot`
 - Web 静态构建输出：`dist/`
 - 演示导出目录：`exports/`
 
@@ -29,7 +29,7 @@ pnpm demo:check
 pnpm demo:godot
 ```
 
-打开 `/Users/apple/Desktop/航行模拟器` 的 Godot 工程版，便于现场查看微观航行验证工程、场景和脚本。
+打开 `/path/to/sailing-simulator` 的 Godot 工程版，便于现场查看微观航行验证工程、场景和脚本。
 
 ```bash
 pnpm demo:bundle
@@ -68,7 +68,7 @@ exports/malacca-web-demo-20260706-184500/
 
 3. Godot 微观验证层
 
-- 当前阶段保留 `/Users/apple/Desktop/航行模拟器` 工程版，便于继续开发和现场查看。
+- 当前阶段保留 `/path/to/sailing-simulator` 工程版，便于继续开发和现场查看。
 - 后续稳定后，可选择导出 Godot 子系统为独立可执行文件，再由桌面壳按需启动。
 
 ## 当前边界

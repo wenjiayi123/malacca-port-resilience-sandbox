@@ -1,15 +1,22 @@
 import { readFile, readdir, stat } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 
 const root = process.cwd();
 const errors = [];
+
+try {
+  execFileSync('python3', ['scripts/public_privacy_scan.py'], { cwd: root, stdio: 'inherit' });
+} catch {
+  errors.push('公开发布隐私扫描失败');
+}
 const required = [
   'LICENSE', 'NOTICE', 'README.md', 'SECURITY.md', 'CONTRIBUTING.md', '.env.example',
   'pnpm-workspace.yaml',
   'CODE_OF_CONDUCT.md', 'GOVERNANCE.md', 'SUPPORT.md', 'CITATION.cff',
   'docs/DATASET_CONTRACT.md', 'docs/RL_ARCHITECTURE.md', 'docs/PORT_CALL_INTEROPERABILITY.md',
-  'docs/OPERATIONAL_SIMULATOR_DATA_CARD.md', 'docs/LOCAL_ACCEPTANCE.md', 'docs/LIVE_SATELLITE_MAP.md',
-  'docs/DEMO_GUIDE.md', 'docs/RESUME_CLAIMS.md',
+  'docs/OPERATIONAL_SIMULATOR_DATA_CARD.md', 'docs/TESTING.md', 'docs/LIVE_SATELLITE_MAP.md',
+  'docs/DEMO_GUIDE.md', 'docs/PROJECT_METRICS.md',
   'docs/ASSET_PROVENANCE.md', 'docs/schemas/port-call-event.schema.json', 'Dockerfile',
   'docs/schemas/port-operations-telemetry.schema.json',
   'docs/MODEL_CARD.md', 'CHANGELOG.md', 'docs/assets/hero.svg',
@@ -18,7 +25,7 @@ const required = [
   'public/assets/backgrounds/malacca-operations-grid.svg', 'public/assets/xiaoyi-maritime-officer.svg',
   'public/assets/xiaoyi-ai-port-hero.png',
   'shared/rlObjectivePresets.ts', 'shared/rlOperationalCalibration.ts',
-  'scripts/rl/runResumeBenchmark.ts',
+  'scripts/rl/runRLBaselineBenchmark.ts',
   'scripts/rl/verifyBenchmarkReport.ts',
   'reports/rl-benchmark-balanced-resilience-calibrated-v2.json',
   'reports/rl-benchmark-balanced-resilience-calibrated-v2.md',
@@ -110,7 +117,10 @@ for (const file of candidateFiles) {
   if (fileStat.size > 90 * 1024 * 1024) errors.push(`候选发布文件超过 90 MiB：${file.relative}`);
   if (fileStat.size > 2 * 1024 * 1024) continue;
   const content = await readFile(file.absolute, 'utf8').catch(() => '');
-  if (secretPatterns.some((pattern) => pattern.test(content))) errors.push(`疑似密钥：${file.relative}`);
+  if (file.relative !== 'scripts/public_privacy_scan.py'
+      && secretPatterns.some((pattern) => pattern.test(content))) {
+    errors.push(`疑似密钥：${file.relative}`);
+  }
 }
 
 for (const workflow of (await readdir(path.join(root, '.github/workflows'))).filter((file) => file.endsWith('.yml'))) {
@@ -133,7 +143,7 @@ if (
   || !applicationReferences.includes('模型真实推理输出')
   || !applicationReferences.includes('待切换现场数据源')
 ) {
-  errors.push('开源沙盘缺少实时模拟、真实推理或待切换现场源的显式真实性状态');
+  errors.push('系统缺少实时模拟、真实推理或待切换现场源的显式状态');
 }
 for (const legacyAsset of [
   'malacca_background_clean.png',
@@ -142,7 +152,7 @@ for (const legacyAsset of [
   'xiaoyi-maritime-officer.svg',
   'xiaoyi-maritime-officer.png',
 ]) {
-  if (applicationReferences.includes(legacyAsset)) errors.push(`应用仍引用未纳入发布的历史图片：${legacyAsset}`);
+  if (applicationReferences.includes(legacyAsset)) errors.push(`应用仍引用已停用的历史图片：${legacyAsset}`);
 }
 if (!applicationReferences.includes('/assets/xiaoyi-ai-port-hero.png')) {
   errors.push('应用没有引用小懿 AI 原版港航形象');
@@ -150,4 +160,4 @@ if (!applicationReferences.includes('/assets/xiaoyi-ai-port-hero.png')) {
 
 for (const error of errors) process.stderr.write(`ERROR ${error}\n`);
 if (errors.length) process.exit(1);
-process.stdout.write('Release gate passed.\n');
+process.stdout.write('Project integrity check passed.\n');

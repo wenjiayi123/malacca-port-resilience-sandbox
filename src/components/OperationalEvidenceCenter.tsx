@@ -7,8 +7,10 @@ import {
   fetchOperationalModels,
   fetchOperationalRecommendations,
   fetchOperationsSnapshot,
+  fetchRegulatoryResilience,
   fetchXiaoyiOperationalHandoff,
   injectOperationalScenario,
+  injectRegulatoryScenario,
   rollbackOperationalDecision,
   setOperationalSimulatorRunning,
   type AuditTrail,
@@ -18,6 +20,8 @@ import {
   type OperationalRecommendationResponse,
   type OperationalScenarioId,
   type PortOperationsSnapshot,
+  type RegulatoryResilienceEvidence,
+  type RegulatoryScenarioId,
   type XiaoyiOperationalHandoff,
 } from '../integrations/operationsControlAdapter';
 import type { TelemetryField } from '../../shared/portTelemetryContract';
@@ -26,13 +30,14 @@ interface OperationalEvidenceCenterProps {
   authToken?: string;
 }
 
-type EvidenceTabId = 'live' | 'twin' | 'forecast' | 'decision' | 'lineage' | 'governance' | 'models' | 'audit' | 'adapters';
+type EvidenceTabId = 'live' | 'twin' | 'forecast' | 'decision' | 'regulatory' | 'lineage' | 'governance' | 'models' | 'audit' | 'adapters';
 
 const tabs: Array<{ id: EvidenceTabId; label: string }> = [
   { id: 'live', label: '实时遥测' },
   { id: 'twin', label: '数字孪生' },
   { id: 'forecast', label: '预测模型' },
   { id: 'decision', label: '策略闭环' },
+  { id: 'regulatory', label: '监管韧性' },
   { id: 'lineage', label: '数据血缘' },
   { id: 'governance', label: '安全治理' },
   { id: 'models', label: '模型版本' },
@@ -49,6 +54,13 @@ const scenarioLabels: Record<OperationalScenarioId, string> = {
   'channel-congestion': '航道拥堵/传感器漂移',
   'yard-saturation': '堆场饱和',
   'data-loss': '数据失联',
+};
+
+const regulatoryScenarioLabels: Record<RegulatoryScenarioId, string> = {
+  baseline: '常态监管链',
+  'maritime-inspection': '海事集中检查',
+  'customs-document-hold': '海关单证/查验滞留',
+  'dual-inspection-recovery': '双重检查与放行恢复',
 };
 
 const controllerLabels: Record<OperationalControllerId, string> = {
@@ -90,17 +102,19 @@ export function OperationalEvidenceCenter({ authToken = '' }: OperationalEvidenc
   const [decision, setDecision] = useState<OperationalDecision | null>(null);
   const [audit, setAudit] = useState<AuditTrail | null>(null);
   const [models, setModels] = useState<ModelRegistry | null>(null);
+  const [regulatory, setRegulatory] = useState<RegulatoryResilienceEvidence | null>(null);
   const [handoff, setHandoff] = useState<XiaoyiOperationalHandoff | null>(null);
   const [statusMessage, setStatusMessage] = useState('正在读取后端权威运行状态');
   const [controlError, setControlError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(async (signal?: AbortSignal) => {
-    const [snapshotResult, recommendationResult, auditResult, modelResult] = await Promise.allSettled([
+    const [snapshotResult, recommendationResult, auditResult, modelResult, regulatoryResult] = await Promise.allSettled([
       fetchOperationsSnapshot(authToken, signal),
       fetchOperationalRecommendations(authToken, signal),
       fetchOperationalAudit(authToken, signal),
       fetchOperationalModels(authToken, signal),
+      fetchRegulatoryResilience(authToken, signal),
     ]);
     if (snapshotResult.status === 'fulfilled') {
       setSnapshot(snapshotResult.value);
@@ -115,6 +129,7 @@ export function OperationalEvidenceCenter({ authToken = '' }: OperationalEvidenc
     }
     if (auditResult.status === 'fulfilled') setAudit(auditResult.value);
     if (modelResult.status === 'fulfilled') setModels(modelResult.value);
+    if (regulatoryResult.status === 'fulfilled') setRegulatory(regulatoryResult.value);
   }, [authToken]);
 
   useEffect(() => {
@@ -173,6 +188,11 @@ export function OperationalEvidenceCenter({ authToken = '' }: OperationalEvidenc
     if (scenario === 'data-loss') setRecommendations(null);
   });
 
+  const injectRegulatory = (scenario: RegulatoryScenarioId) => runAction(
+    `注入${regulatoryScenarioLabels[scenario]}`,
+    async () => setRegulatory(await injectRegulatoryScenario(scenario, authToken)),
+  );
+
   const generateHandoff = () => runAction('生成小懿交班报告', async () => {
     setHandoff(await fetchXiaoyiOperationalHandoff(authToken));
   });
@@ -215,6 +235,7 @@ export function OperationalEvidenceCenter({ authToken = '' }: OperationalEvidenc
             aria-pressed={activeTab === tab.id}
             className={activeTab === tab.id ? 'is-active' : ''}
             data-evidence-tab={tab.id}
+            data-xiaoyi-action={`evidence-tab-${tab.id}`}
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             type="button"
@@ -383,6 +404,80 @@ export function OperationalEvidenceCenter({ authToken = '' }: OperationalEvidenc
           </div>
         )}
 
+        {activeTab === 'regulatory' && (regulatory ? (
+          <div
+            className="operational-governance-layout"
+            data-regulatory-evidence={regulatory.strategy.status}
+            data-regulatory-scenario={regulatory.scenario}
+          >
+            <section className="authority-boundary">
+              <header><strong>海事/海关权责边界</strong><em>主管机关信号外生</em></header>
+              {Object.entries(regulatory.authority).map(([key, value]) => (
+                <span className={value ? 'is-true' : 'is-false'} key={key}>
+                  <small>{key}</small><strong>{String(value)}</strong>
+                </span>
+              ))}
+              <p>系统不能选择检查对象、改变检查结论或提前放行，只优化检查准备和官方放行后的恢复资源。</p>
+            </section>
+
+            <section className="lineage-summary" aria-label="监管状态链">
+              <span><small>海事检查队列</small><strong>{regulatory.state.maritimeHoldVessels?.toFixed(2)}</strong></span>
+              <span><small>海关查验队列</small><strong>{regulatory.state.customsHoldVessels?.toFixed(2)}</strong></span>
+              <span><small>已放行恢复队列</small><strong>{regulatory.state.releasedRecoveryVessels?.toFixed(2)}</strong></span>
+              <span><small>监管延误</small><strong>{regulatory.impact.regulatoryDelayMinutes?.toFixed(2)} min</strong></span>
+              <span><small>增量能耗</small><strong>{regulatory.impact.incrementalEnergyKwh?.toFixed(2)} kWh</strong></span>
+              <span><small>官方本步放行</small><strong>{regulatory.impact.officialReleasedVessels?.toFixed(2)}</strong></span>
+            </section>
+
+            <section className="forecast-model-card">
+              <small>{regulatory.strategy.status}</small>
+              <strong>{regulatory.strategy.id}</strong>
+              <span>12维监管观测 · 9种补充动作 · 原5类港口动作保持不变</span>
+              <span>3 seeds × {regulatory.strategy.training.episodesPerSeed.toLocaleString()} episodes · selected seed {regulatory.strategy.selectedSeed}</span>
+              <span>准备度 {regulatory.strategy.inspectionReadinessRatio} · 放行后恢复优先级 {regulatory.strategy.postReleaseRecoveryPriorityRatio}</span>
+              <code>{shortHash(regulatory.businessEvidence.evidenceSha256)}</code>
+              <p>{regulatory.businessEvidence.scope}</p>
+            </section>
+
+            <section className="operational-kpi-grid" aria-label="监管策略离线业务价值">
+              <span><small>场景成本降低</small><strong>{regulatory.businessEvidence.costReductionPercent.toFixed(4)}%</strong><em>冻结测试</em></span>
+              <span><small>成本95%区间</small><strong>{regulatory.businessEvidence.costReductionCi95.lower95Percent.toFixed(4)}–{regulatory.businessEvidence.costReductionCi95.upper95Percent.toFixed(4)}%</strong><em>{regulatory.businessEvidence.costReductionCi95.pairedRows} rows</em></span>
+              <span><small>能耗降低</small><strong>{regulatory.businessEvidence.energyReductionPercent.toFixed(4)}%</strong><em>同恢复服务</em></span>
+              <span><small>碳排降低</small><strong>{regulatory.businessEvidence.carbonReductionPercent.toFixed(4)}%</strong><em>同监管延误</em></span>
+              <span><small>监管延误变化</small><strong>{regulatory.businessEvidence.regulatoryDelayReductionPercent.toFixed(4)}%</strong><em>不退化</em></span>
+              <span><small>安全违规变化</small><strong>{regulatory.businessEvidence.expectedSafetyViolationChange.toFixed(6)}</strong><em>不退化</em></span>
+            </section>
+
+            <section className="scenario-controls">
+              <header><strong>监管压力情景</strong><em>当前：{regulatoryScenarioLabels[regulatory.scenario]}</em></header>
+              <div>
+                {(Object.keys(regulatoryScenarioLabels) as RegulatoryScenarioId[]).map((scenario) => (
+                  <button
+                    aria-pressed={regulatory.scenario === scenario}
+                    disabled={busy}
+                    key={scenario}
+                    onClick={() => void injectRegulatory(scenario)}
+                    type="button"
+                  >
+                    {regulatoryScenarioLabels[scenario]}
+                  </button>
+                ))}
+              </div>
+              <p>v1 无门控候选因能耗、碳排和安全退化被阻断并保留；v2 通过优势投影后才获得离线准入。</p>
+            </section>
+
+            <section className="calibration-datasets">
+              {regulatory.sources.map((source) => (
+                <article key={source.url}>
+                  <strong>{source.authority}</strong>
+                  <span>{source.subject}</span>
+                  <a href={source.url} rel="noreferrer" target="_blank">官方依据</a>
+                </article>
+              ))}
+            </section>
+          </div>
+        ) : <p>监管韧性证据正在从后端加载。</p>)}
+
         {activeTab === 'lineage' && (
           <div className="operational-lineage-layout">
             <section className="lineage-summary">
@@ -461,7 +556,16 @@ export function OperationalEvidenceCenter({ authToken = '' }: OperationalEvidenc
                 <strong>小懿运行解释与交班</strong>
                 <em>{handoff?.xiaoyi_model.status ?? '尚未生成'}</em>
               </header>
-              <button disabled={busy} onClick={() => void generateHandoff()} type="button">基于当前后端快照生成</button>
+              <button
+                aria-busy={busy}
+                data-xiaoyi-action="xiaoyi-operational-handoff"
+                data-xiaoyi-state={busy ? 'loading' : handoff ? 'ready' : 'idle'}
+                disabled={busy}
+                onClick={() => void generateHandoff()}
+                type="button"
+              >
+                {busy ? '正在生成并校验证据' : handoff ? '重新基于最新快照生成' : '基于当前后端快照生成'}
+              </button>
               {handoff ? (
                 <div>
                   <p>{handoff.state_summary}</p>

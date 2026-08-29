@@ -1,6 +1,6 @@
 # 第 31 步：Godot 单船验证场景
 
-本步骤在 `/Users/apple/Desktop/航行模拟器` 中完成，不破坏原有驾驶、舰队和 HUD 逻辑，只扩展 `MalaccaValidationBridge` 的外部验证能力。
+本步骤在 `/path/to/sailing-simulator` 中完成，不破坏原有驾驶、舰队和 HUD 逻辑，只扩展 `MalaccaValidationBridge` 的外部验证能力。
 
 ## 已实现能力
 
@@ -27,10 +27,10 @@
 
 ## 对接文件
 
-- Godot 桥接脚本：`/Users/apple/Desktop/航行模拟器/scripts/integration/malacca_validation_bridge.gd`
-- Godot 桥接说明：`/Users/apple/Desktop/航行模拟器/docs/malacca_validation_bridge.md`
-- Web 请求样例：`/Users/apple/Desktop/马六甲沙盘港口推演/docs/godot_validation_request.example.json`
-- Web 结果样例：`/Users/apple/Desktop/马六甲沙盘港口推演/docs/godot_validation_result.example.json`
+- Godot 桥接脚本：`/path/to/sailing-simulator/scripts/integration/malacca_validation_bridge.gd`
+- Godot 桥接说明：`/path/to/sailing-simulator/docs/malacca_validation_bridge.md`
+- Web 请求样例：`/path/to/malacca-port-resilience-sandbox/docs/godot_validation_request.example.json`
+- Web 结果样例：`/path/to/malacca-port-resilience-sandbox/docs/godot_validation_result.example.json`
 
 ## 下一步建议
 

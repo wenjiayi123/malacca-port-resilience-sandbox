@@ -47,6 +47,11 @@ import {
 } from './operationalSimulator.ts';
 import { PORT_TELEMETRY_CONTRACT } from '../shared/portTelemetryContract.ts';
 import {
+  REGULATORY_SCENARIOS,
+  RegulatoryResilienceRuntime,
+  type RegulatoryScenarioId,
+} from './regulatoryResilienceRuntime.ts';
+import {
   RealtimeAisGateway,
   getSatelliteMapConfiguration,
 } from './realtimeAisGateway.ts';
@@ -588,6 +593,7 @@ const generateXiaoyiOperationalHandoff = async (operations: OperationalControlSe
 
 export const createPublicEvidenceMiddleware = () => {
   const operations = new OperationalControlService();
+  const regulatoryResilience = new RegulatoryResilienceRuntime();
   const realtimeAis = new RealtimeAisGateway();
   return async (
     request: IncomingMessage,
@@ -662,6 +668,8 @@ export const createPublicEvidenceMiddleware = () => {
           },
           '/api/port-calls/validate': { post: { summary: '校验并规范化 port-call-event.v1 事件', security: [{ bearerAuth: [] }], responses: { '200': { description: '规范化事件' }, '422': { description: '事件合同校验失败' } } } },
           '/api/operations/snapshot': { get: { summary: '读取公开数据校准的连续实时模拟、预测和逐字段血缘', responses: { '200': { description: 'port-operations.telemetry.v1' } } } },
+          '/api/operations/regulatory-resilience': { get: { summary: '读取海事检查、海关查验、官方放行和放行后恢复的版本化韧性证据', responses: { '200': { description: 'port-regulatory-resilience.v1' } } } },
+          '/api/operations/regulatory-resilience/scenario': { post: { summary: '注入预声明监管压力情景；不改变主管机关权力边界', security: [{ bearerAuth: [] }], responses: { '200': { description: '注入后的监管状态链' }, '422': { description: '情景不在白名单' } } } },
           '/api/operations/contracts/telemetry': { get: { summary: '读取稳定逐字段遥测合同和现场适配器槽', responses: { '200': { description: '合同描述' } } } },
           '/api/operations/recommendations': { get: { summary: '读取 FCFS、SOP、运筹优化、MPC 与可选 RL 检查点候选', responses: { '200': { description: '同一输入快照上的控制候选' }, '409': { description: '数据质量或模拟器门禁阻断' } } } },
           '/api/operations/handoff': { get: { summary: '生成基于同一后端快照的小懿状态底稿，并在配置时真实调用小懿模型', responses: { '200': { description: '状态摘要、预警、策略、交班与模型连接状态' } } } },
@@ -704,6 +712,19 @@ export const createPublicEvidenceMiddleware = () => {
     }
     if (request.method === 'GET' && url.pathname === '/api/operations/snapshot') {
       jsonResponse(response, operations.snapshot());
+      return;
+    }
+    if (request.method === 'GET' && url.pathname === '/api/operations/regulatory-resilience') {
+      jsonResponse(response, regulatoryResilience.snapshot(operations.snapshot()));
+      return;
+    }
+    if (request.method === 'POST' && url.pathname === '/api/operations/regulatory-resilience/scenario') {
+      const body = await readJsonBody<{ scenario?: RegulatoryScenarioId }>(request);
+      if (!body.scenario || !REGULATORY_SCENARIOS.includes(body.scenario)) {
+        throw new HttpError(422, '不支持的监管压力 scenario');
+      }
+      regulatoryResilience.setScenario(body.scenario);
+      jsonResponse(response, regulatoryResilience.snapshot(operations.snapshot()));
       return;
     }
     if (request.method === 'GET' && url.pathname === '/api/geospatial/live') {
@@ -768,6 +789,15 @@ export const createPublicEvidenceMiddleware = () => {
             family: 'four tabular RL methods plus MPC',
             evidence_artifact: 'reports/rl-benchmark-balanced-resilience-calibrated-v2.json',
             evidence_scope: 'public-data offline replay, not field KPI',
+          },
+          {
+            id: 'regulatory-incremental-q-with-dominance-projection-v2',
+            version: 'regulatory-resilience-v2',
+            run_id: '2026-08-21-regulatory-offline',
+            status: 'candidate',
+            family: 'tabular Q-learning regulatory supplement with dominance projection',
+            evidence_artifact: 'reports/regulatory-resilience-v2.json',
+            evidence_scope: 'predeclared maritime/customs inspection stress scenario; authority signals remain exogenous',
           },
           {
             id: 'legacy-rl-benchmark-balanced-resilience',

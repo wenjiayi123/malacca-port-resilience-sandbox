@@ -1,0 +1,180 @@
+{
+  "schemaVersion": "malacca-regulatory-q-table.v1",
+  "seed": 37,
+  "episodes": 2500,
+  "environmentSteps": 657500,
+  "parameterUpdates": 657500,
+  "observationContract": [
+    "maritime_inspection_ratio",
+    "customs_inspection_ratio",
+    "maritime_release_ratio",
+    "customs_release_ratio",
+    "document_readiness_ratio",
+    "inspection_resource_available_ratio",
+    "expected_hold_hours",
+    "maritime_hold_to_capacity",
+    "customs_hold_to_capacity",
+    "released_recovery_to_capacity",
+    "queue_to_capacity",
+    "energy_carbon_pressure"
+  ],
+  "actionContract": [
+    {
+      "id": "readiness-20-recovery-30",
+      "readinessRatio": 0.2,
+      "recoveryPriorityRatio": 0.3
+    },
+    {
+      "id": "readiness-20-recovery-60",
+      "readinessRatio": 0.2,
+      "recoveryPriorityRatio": 0.6
+    },
+    {
+      "id": "readiness-20-recovery-90",
+      "readinessRatio": 0.2,
+      "recoveryPriorityRatio": 0.9
+    },
+    {
+      "id": "readiness-50-recovery-30",
+      "readinessRatio": 0.5,
+      "recoveryPriorityRatio": 0.3
+    },
+    {
+      "id": "readiness-50-recovery-60",
+      "readinessRatio": 0.5,
+      "recoveryPriorityRatio": 0.6
+    },
+    {
+      "id": "readiness-50-recovery-90",
+      "readinessRatio": 0.5,
+      "recoveryPriorityRatio": 0.9
+    },
+    {
+      "id": "readiness-80-recovery-30",
+      "readinessRatio": 0.8,
+      "recoveryPriorityRatio": 0.3
+    },
+    {
+      "id": "readiness-80-recovery-60",
+      "readinessRatio": 0.8,
+      "recoveryPriorityRatio": 0.6
+    },
+    {
+      "id": "readiness-80-recovery-90",
+      "readinessRatio": 0.8,
+      "recoveryPriorityRatio": 0.9
+    }
+  ],
+  "qTable": {
+    "0": [
+      -23.52022171,
+      -23.58058131,
+      -24.50461805,
+      -23.52676499,
+      -22.99607602,
+      -23.26486715,
+      -23.39234521,
+      -23.08457079,
+      -22.38164889
+    ],
+    "1": [
+      -64.00384219,
+      -63.12861098,
+      -63.68216009,
+      -63.29885043,
+      -62.43251435,
+      -62.55119043,
+      -63.1331577,
+      -62.09105023,
+      -61.15426786
+    ],
+    "16": [
+      -34.99572838,
+      -33.55289264,
+      -31.97812301,
+      -34.14156735,
+      -33.46590177,
+      -32.37655892,
+      -34.3440616,
+      -33.02503677,
+      -29.8754509
+    ],
+    "17": [
+      -15.75525826,
+      -15.14666109,
+      -15.31200676,
+      -15.32340431,
+      -15.42810417,
+      -17.52383508,
+      -15.39308657,
+      -15.6410011,
+      -18.82869381
+    ],
+    "32": [
+      -63.20702729,
+      -60.9086607,
+      -57.16794899,
+      -59.61682156,
+      -58.92931232,
+      -59.53538161,
+      -60.86063699,
+      -59.67884684,
+      -60.03482801
+    ],
+    "33": [
+      -8.53829645,
+      -9.17787001,
+      -9.21013405,
+      -8.1712523,
+      -8.21953334,
+      -8.8433321,
+      -9.7360384,
+      -8.78430261,
+      -8.48627403
+    ],
+    "48": [
+      -69.31849998,
+      -68.64720147,
+      -69.61987703,
+      -71.24251353,
+      -69.51967657,
+      -70.09790844,
+      -69.61356648,
+      -69.62294007,
+      -70.02929997
+    ],
+    "49": [
+      -6.93180255,
+      -7.36328555,
+      -5.50226736,
+      -5.69045865,
+      -6.95021214,
+      -5.45283659,
+      -6.1077826,
+      -5.56783137,
+      -6.89383419
+    ],
+    "64": [
+      -75.30734936,
+      -75.31558194,
+      -75.97884185,
+      -75.59478689,
+      -78.06014146,
+      -75.92181561,
+      -76.29747172,
+      -77.23944818,
+      -74.80441914
+    ],
+    "65": [
+      -10.56944234,
+      -7.462991,
+      -8.1439014,
+      -7.46095623,
+      -6.62070027,
+      -9.618508,
+      -9.06308563,
+      -6.95370553,
+      -6.57268676
+    ]
+  }
+}
