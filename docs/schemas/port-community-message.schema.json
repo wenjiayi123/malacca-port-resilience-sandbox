@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:malacca-port-resilience:port-community-message:v1",
+  "title": "Port community signed exchange envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocolVersion", "messageID", "conversationID", "sender", "recipient", "sentAt",
+    "idempotencyKey", "messageType", "payload", "payloadSHA256", "signature"
+  ],
+  "properties": {
+    "protocolVersion": { "const": "port-community-message.v1" },
+    "messageID": { "$ref": "#/$defs/id" },
+    "conversationID": { "$ref": "#/$defs/id" },
+    "correlationID": { "$ref": "#/$defs/id" },
+    "sender": { "$ref": "#/$defs/party" },
+    "recipient": { "$ref": "#/$defs/party" },
+    "sentAt": { "type": "string", "format": "date-time" },
+    "idempotencyKey": { "$ref": "#/$defs/id" },
+    "messageType": { "enum": ["PORT_CALL_EVENT", "CLEARANCE_STATUS", "ACKNOWLEDGEMENT"] },
+    "payload": { "type": "object" },
+    "payloadSHA256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "signature": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9._:/-]{2,180}$" },
+    "party": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["partyID", "role"],
+      "properties": {
+        "partyID": { "$ref": "#/$defs/id" },
+        "role": {
+          "enum": [
+            "CARRIER", "SHIP_AGENT", "TERMINAL", "PORT_AUTHORITY", "VESSEL_TRAFFIC_SERVICE",
+            "MARITIME_SINGLE_WINDOW", "PORT_COMMUNITY_SYSTEM", "CUSTOMS", "IMMIGRATION",
+            "HEALTH_AUTHORITY", "SECURITY_AUTHORITY", "SERVICE_PROVIDER"
+          ]
+        }
+      }
+    }
+  }
+}

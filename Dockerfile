@@ -7,14 +7,15 @@ COPY . .
 RUN pnpm build
 
 FROM node:24-bookworm-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03 AS runtime
-ENV NODE_ENV=production HOST=0.0.0.0 PORT=4173 STATIC_DIR=/app/dist RL_ARTIFACT_DIR=/app/runtime/rl-jobs PORT_OPERATION_AUDIT_FILE=/app/runtime/operations/audit-chain.jsonl
+ENV NODE_ENV=production HOST=0.0.0.0 PORT=4173 STATIC_DIR=/app/dist RL_ARTIFACT_DIR=/app/runtime/rl-jobs PORT_OPERATION_AUDIT_FILE=/app/runtime/operations/audit-chain.jsonl PORT_OPERATOR_INTEGRATION_STATE_FILE=/app/runtime/operator-integration/state.json
 WORKDIR /app
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/server ./server
 COPY --from=build /app/shared ./shared
 COPY --from=build /app/data ./data
+COPY --from=build /app/reports ./reports
 COPY --from=build /app/package.json ./package.json
-RUN mkdir -p /app/runtime/rl-jobs && chown -R node:node /app
+RUN mkdir -p /app/runtime/rl-jobs /app/runtime/operator-integration && chown -R node:node /app
 USER node
 EXPOSE 4173
 VOLUME ["/app/runtime"]

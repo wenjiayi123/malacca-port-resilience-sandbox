@@ -1,6 +1,11 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
+import { createOperatorIntegrationMiddleware } from './operatorIntegrationPlugin.ts';
+import { createPortCommunityMiddleware } from './portCommunityPlugin.ts';
+import { createVesselTrafficSafetyMiddleware } from './vesselTrafficSafetyPlugin.ts';
+import { createProductionAuthorityMiddleware } from './productionAuthorityPlugin.ts';
+import { createPortBusinessRlMiddleware } from './portBusinessRlPlugin.ts';
 import { createPublicEvidenceMiddleware } from './publicEvidencePlugin.ts';
 import { ensureRlTrainingJobsRestored } from './rlTrainingJobs.ts';
 import { validateRuntimeSecurityConfiguration } from './runtimeSecurity.ts';
@@ -84,11 +89,21 @@ const staticResponse = async (request: IncomingMessage, response: ServerResponse
 
 await stat(path.join(distributionDirectory, 'index.html'));
 await ensureRlTrainingJobsRestored();
+const operatorIntegrationMiddleware = createOperatorIntegrationMiddleware();
+const portCommunityMiddleware = createPortCommunityMiddleware();
+const vesselTrafficSafetyMiddleware = createVesselTrafficSafetyMiddleware();
+const productionAuthorityMiddleware = createProductionAuthorityMiddleware();
+const portBusinessRlMiddleware = createPortBusinessRlMiddleware();
 const apiMiddleware = createPublicEvidenceMiddleware();
 const server = createServer(async (request, response) => {
   const startedAt = performance.now();
   try {
-    await apiMiddleware(request, response, () => undefined);
+    await portBusinessRlMiddleware(request, response, () => undefined);
+    if (!response.writableEnded) await productionAuthorityMiddleware(request, response, () => undefined);
+    if (!response.writableEnded) await vesselTrafficSafetyMiddleware(request, response, () => undefined);
+    if (!response.writableEnded) await portCommunityMiddleware(request, response, () => undefined);
+    if (!response.writableEnded) await operatorIntegrationMiddleware(request, response, () => undefined);
+    if (!response.writableEnded) await apiMiddleware(request, response, () => undefined);
     if (!response.writableEnded && new URL(request.url ?? '/', 'http://127.0.0.1').pathname.startsWith('/api/')) {
       response.statusCode = 404;
       response.setHeader('Content-Type', 'application/json; charset=utf-8');

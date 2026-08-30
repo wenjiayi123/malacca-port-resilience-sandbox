@@ -10,6 +10,21 @@ try {
 } catch {
   errors.push('公开发布隐私扫描失败');
 }
+for (const verifier of [
+  'scripts/integration/verifyOperatorDataReadiness.ts',
+  'scripts/integration/verifyTopTierHardeningEvidence.ts',
+  'scripts/rl/verifyPortBusinessChampion.ts',
+]) {
+  try {
+    execFileSync(process.execPath, [
+      '--experimental-strip-types',
+      '--experimental-specifier-resolution=node',
+      verifier,
+    ], { cwd: root, stdio: 'inherit' });
+  } catch {
+    errors.push(`集成证据验证失败：${verifier}`);
+  }
+}
 const required = [
   'LICENSE', 'NOTICE', 'README.md', 'SECURITY.md', 'CONTRIBUTING.md', '.env.example',
   'pnpm-workspace.yaml',
@@ -48,6 +63,37 @@ const required = [
   'reports/public-dataset-credibility-comparison.json',
   'reports/public-dataset-credibility-comparison.md',
   'public/assets/backgrounds/shanghai-operations-grid.svg',
+  'server/operatorSourceManifest.ts', 'server/operatorIntegrationGateway.ts',
+  'server/operatorIntegrationPlugin.ts', 'server/portCommunityGateway.ts',
+  'server/portCommunityPlugin.ts', 'server/vesselTrafficSafety.ts',
+  'server/vesselTrafficSafetyPlugin.ts', 'server/productionAuthorityGate.ts',
+  'server/productionAuthorityPlugin.ts', 'server/highFidelityPortTwin.ts',
+  'server/algorithmAssuranceGate.ts', 'server/reliableStateStore.ts',
+  'server/siteAcceptanceGate.ts',
+  'config/port-profiles/operator-data-source.example.json',
+  'config/port-profiles/site-acceptance.example.json',
+  'docs/REAL_PORT_DATA_INTEGRATION.md', 'docs/VESSEL_TRAFFIC_SAFETY.md',
+  'docs/PRODUCTION_IDENTITY_AND_OT_SAFETY.md', 'docs/HIGH_FIDELITY_TWIN.md',
+  'docs/ALGORITHM_ASSURANCE.md', 'docs/RELIABILITY_AND_DISASTER_RECOVERY.md',
+  'docs/FIELD_ACCEPTANCE.md',
+  'docs/schemas/operator-data-source-manifest.schema.json',
+  'docs/schemas/operator-snapshot.schema.json',
+  'docs/schemas/port-community-message.schema.json',
+  'reports/operator-data-readiness-v1.json', 'reports/operator-data-readiness-v1.md',
+  'reports/top-tier-hardening-evidence-v1.json', 'reports/top-tier-hardening-evidence-v1.md',
+  'scripts/integration/runOperatorDataReadiness.ts',
+  'scripts/integration/verifyOperatorDataReadiness.ts',
+  'scripts/integration/runTopTierHardeningEvidence.ts',
+  'scripts/integration/verifyTopTierHardeningEvidence.ts',
+  'shared/portBusinessRlContract.ts',
+  'server/portBusinessDataset.ts', 'server/portBusinessControlPlane.ts',
+  'server/portBusinessRlEngine.ts', 'server/portBusinessRlService.ts',
+  'server/portBusinessRlPlugin.ts', 'tests/portBusinessRl.test.ts',
+  'scripts/rl/runPortBusinessChampion.ts', 'scripts/rl/verifyPortBusinessChampion.ts',
+  'docs/PORT_BUSINESS_RL_V3.md',
+  'docs/schemas/port-business-dataset-v3.schema.json',
+  'reports/port-business-rl-champion-v3.json',
+  'reports/port-business-rl-champion-v3.md',
 ];
 const excluded = new Set(['.git', 'node_modules', 'dist', '.runtime', 'soft_copyright', 'output', 'tmp']);
 
@@ -76,6 +122,9 @@ const dockerfile = await readFile(path.join(root, 'Dockerfile'), 'utf8');
 if (!dockerfile.includes('COPY --from=build /app/shared ./shared')) {
   errors.push('Docker runtime 缺少 shared/，服务器端目标函数模块将无法加载');
 }
+if (!dockerfile.includes('COPY --from=build /app/reports ./reports')) {
+  errors.push('Docker runtime 缺少 reports/，全业务冠军状态接口将无法验证证据');
+}
 
 try {
   JSON.parse(await readFile(path.join(root, 'docs/schemas/port-call-event.schema.json'), 'utf8'));
@@ -91,6 +140,23 @@ try {
   JSON.parse(await readFile(path.join(root, 'docs/schemas/port-operations-telemetry.schema.json'), 'utf8'));
 } catch (error) {
   errors.push(`实时运行遥测 JSON Schema 无法解析：${error instanceof Error ? error.message : 'unknown error'}`);
+}
+for (const schema of [
+  'docs/schemas/operator-data-source-manifest.schema.json',
+  'docs/schemas/operator-snapshot.schema.json',
+  'docs/schemas/port-community-message.schema.json',
+  'docs/schemas/port-business-dataset-v3.schema.json',
+]) {
+  try {
+    JSON.parse(await readFile(path.join(root, schema), 'utf8'));
+  } catch (error) {
+    errors.push(`生产强化 JSON Schema 无法解析：${schema}: ${error instanceof Error ? error.message : 'unknown error'}`);
+  }
+}
+
+const environmentExample = await readFile(path.join(root, '.env.example'), 'utf8');
+for (const serverOnlySecret of ['PORT_OPERATOR_SIGNING_KEYS_JSON', 'PORT_COMMUNITY_PARTNERS_JSON']) {
+  if (environmentExample.includes(`VITE_${serverOnlySecret}`)) errors.push(`${serverOnlySecret} 不得暴露给浏览器`);
 }
 
 const candidateFiles = [];

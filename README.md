@@ -7,6 +7,7 @@
   <a href="docs/SHANGHAI_PORT_LANDING.md">上海港接入 / Shanghai landing</a> ·
   <a href="docs/DATASET_CONTRACT.md">数据契约 / Data contract</a> ·
   <a href="docs/RL_ARCHITECTURE.md">算法架构 / RL architecture</a> ·
+  <a href="docs/PORT_BUSINESS_RL_V3.md">全业务RL / Business RL v3</a> ·
   <a href="docs/MODEL_CARD.md">模型卡 / Model card</a> ·
   <a href="SECURITY.md">安全策略 / Security</a>
 </p>
@@ -118,6 +119,31 @@ hash chain. It is not a live-port or production-control claim.
 ```text
 simulation_mode=true · live_data_verified=false · dispatch_allowed=false · production_authority=false
 ```
+
+### 顶级系统对标补齐 / Production-hardening gates
+
+在不改写原有算法、检查点、基准、回放、失败实验和仿真闭环的前提下，工程层新增八个可独立验证的生产前置门禁。每个门禁都分开“软件已实现”与“现场外部证据已取得”：
+
+| 领域 | 已补齐的软件能力 | 默认仍关闭的现场门禁 |
+|---|---|---|
+| 真实港口数据 | 六源清单、HMAC/SHA-256、字段/单位/时效/顺序/重放检查、37 字段原子影子快照 | 运营方授权、六个实时源、独立计量验收 |
+| 港口社区互操作 | 签名消息、会话/关联/幂等、权威放行角色、DCSA/IALA/IMO 投影边界 | 交易方证书、官方一致性、Maritime Single Window/港口社区系统连接 |
+| 船舶交通安全 | AIS/雷达/船舶交通服务/光电融合、源冲突、DCPA/TCPA、稀少信息失败关闭 | 雷达标定、航道几何、船舶交通服务值班与告警验收 |
+| 身份与运行技术安全 | Ed25519 身份绑定审批、多因素认证、职责分离、独立急停/通信/旁路联锁 | 身份提供方、安全联锁设备和经验收的物理执行适配器 |
+| 孪生忠实度 | 潮位/富余水深/下沉量、泊位互斥、岸桥事件、堆场守恒、能碳积分 | 水深/潮位/实船/设备实测标定、硬件在环和运营方模型验收 |
+| 算法保证 | 锁定最终测试、置信下界、离线策略评估、分布偏移、奖励投机、安全盾/急停/回退 | 授权影子运行、运营方验收、生产金丝雀 |
+| 24×7 可靠性 | 原子状态、上一代恢复、哈希日志、并发代数、fencing token、RPO/RTO/SLO 门禁 | 多副本/多故障域、隔离恢复演练、30 天可用性实测 |
+| 现场验收 | 30 天基线 + 720 小时影子、五类独立 KPI、FAT/SAT/UAT/灾备/网络安全/安全、五方签字 | 实际 KPI 抽取、见证测试、培训/值班/演练与运营方签字 |
+
+统一证据见 [`top-tier-hardening-evidence-v1.md`](reports/top-tier-hardening-evidence-v1.md)；分领域合同、限制和验证命令从 [`REAL_PORT_DATA_INTEGRATION.md`](docs/REAL_PORT_DATA_INTEGRATION.md) 开始。在现场证据未提供前，项目仍是可复现研究/工程验证系统，不是真实港口生产系统。
+
+### 港口全业务强化学习 v3 / Port-business RL v3
+
+新增 `port-business-rl.v3`，在完全保留原四种强化学习、模型预测控制、检查点和监管韧性模型的基础上，将泊位—岸桥、堆场—闸口、航道潮窗与引拖、岸电能碳、海铁水水联运、邻港协同、扰动恢复和服务公平性纳入同一可训练闭环。策略实际读取 33 维观测、选择 11 个有界建议动作，并使用 10 项奖励分量；航道、潮窗、危险品、资源容量和一周期冷却由确定性动作屏蔽器控制。
+
+公开数据锚点仍是新加坡海事及港务管理局月度到港/总吨位与 ERA5 风场。缺失的泊位、岸桥、堆场、闸口、引拖、岸电和转运字段均逐字段标为 `engineering-derived`，不会冒充马六甲现场测量。生成的 1,508 条时间记录按 70% / 15% / 15% 时序隔离；四种线性时序差分算法、两组超参数、五个随机种子和 260/520 两级课程均执行真实参数更新。
+
+验证选择的 `linear-dyna-q / curriculum-520` 通过封存测试：奖励改善 95% 下界 0.0489，有实质延误场景队列降低下界 1.93 艘，碳强度降低下界 0.139%，公平性差距降低下界 0.165 个百分点，最低吞吐保持率 99.754%，硬约束违规为 0。完整候选、冠军权重、数据指纹和生产禁用边界见 [`port-business-rl-champion-v3.md`](reports/port-business-rl-champion-v3.md)；设计、替换 Schema、非强化学习职责和运行接口见 [`PORT_BUSINESS_RL_V3.md`](docs/PORT_BUSINESS_RL_V3.md)。上述结果是公开数据锚定的离线仿真价值，不是现场 KPI。
 
 ### 海事/海关检查延误韧性 / Regulatory-delay resilience
 

@@ -86,6 +86,20 @@ curl http://127.0.0.1:5174/api/rl/datasets
 跨港平衡奖励，当前聚合投影不支持时保持禁用。字段齐全不等于动作可以自动生产执行，生产操作
 仍需 RBAC、审计、港口授权和人工确认。
 
+## `port-business-dataset.v3` 全业务替换包
+
+`port-business-rl.v3` 已把上述聚合投影中未启用的泊位—岸桥、堆场—闸口、能源成本、公平性和
+跨港协同补入独立训练闭环。默认包由 MPA/ERA5 公开数据锚定，所有缺失码头字段均标为
+`engineering-derived`。现场可将 `PORT_BUSINESS_DATASET_PATH` 指向符合
+`docs/schemas/port-business-dataset-v3.schema.json` 的 JSON；加载器至少要求 120 条完整记录、
+带时区且不重复的时间戳，并继续按时间执行 70% / 15% / 15% 隔离。
+
+这个 v3 包不会替代 `terminal-operations.v2` 的原始审计合同：前者是算法直接使用的同步特征包，
+后者是现场原始字段和映射清单。推荐由港口侧在可审计适配层把后者转换为前者，并同时保留原始
+事件、质量码、单位、来源、映射版本和指纹。数据文件自声明的 `operator-authorized` 会被加载器
+降级，必须由签名运营方网关、标定与现场验收在更外层提升权威级别；生产下发仍需独立授权。完整说明见
+`docs/PORT_BUSINESS_RL_V3.md`。
+
 ## 大规模公开 AIS 包
 
 `pnpm data:sync:infore-ais` 从 Zenodo 下载并校验 DOI `10.5281/zenodo.3754481` 的 Piraeus

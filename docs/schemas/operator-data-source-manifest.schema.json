@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/operator-data-source-manifest.schema.json",
+  "title": "Operator data source manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocolVersion", "manifestId", "siteId", "portId", "terminalId",
+    "sceneProfileId", "scenePortNodeId", "operatorOrganization", "evidenceLevel",
+    "timezone", "authorization", "adapters", "notes"
+  ],
+  "properties": {
+    "protocolVersion": { "const": "operator-data-source-manifest.v1" },
+    "manifestId": { "$ref": "#/$defs/stableId" },
+    "siteId": { "$ref": "#/$defs/stableId" },
+    "portId": { "$ref": "#/$defs/stableId" },
+    "terminalId": { "$ref": "#/$defs/stableId" },
+    "sceneProfileId": { "$ref": "#/$defs/stableId" },
+    "scenePortNodeId": { "$ref": "#/$defs/stableId" },
+    "operatorOrganization": { "type": "string", "minLength": 1 },
+    "evidenceLevel": { "enum": ["operator-authorized", "site-template"] },
+    "timezone": { "type": "string", "minLength": 1 },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference", "approvedBy", "approvedAt", "expiresAt", "permittedPurpose", "redistributionAllowed"],
+      "properties": {
+        "reference": { "type": "string", "minLength": 1 },
+        "approvedBy": { "type": "string", "minLength": 1 },
+        "approvedAt": { "type": "string", "format": "date-time" },
+        "expiresAt": { "type": "string", "format": "date-time" },
+        "permittedPurpose": { "const": "read-only-shadow" },
+        "redistributionAllowed": { "const": false }
+      }
+    },
+    "adapters": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": { "$ref": "#/$defs/adapter" }
+    },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "stableId": { "type": "string", "pattern": "^[A-Za-z0-9._:-]{2,128}$" },
+    "adapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "adapterId", "sourceSystem", "dataOwnerRole", "signingKeyId",
+        "fieldMappingReviewed", "unitsReviewed", "timezoneReviewed", "dataOwnerApproved"
+      ],
+      "properties": {
+        "adapterId": {
+          "enum": [
+            "ais_vessel_feed", "terminal_operating_system", "vessel_traffic_service",
+            "safety_regulatory_feed", "energy_carbon_feed", "intermodal_transfer_feed"
+          ]
+        },
+        "sourceSystem": { "type": "string", "minLength": 1 },
+        "dataOwnerRole": { "type": "string", "minLength": 1 },
+        "signingKeyId": { "type": "string", "minLength": 1 },
+        "fieldMappingReviewed": { "type": "boolean" },
+        "unitsReviewed": { "type": "boolean" },
+        "timezoneReviewed": { "type": "boolean" },
+        "dataOwnerApproved": { "type": "boolean" }
+      }
+    }
+  }
+}

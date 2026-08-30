@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/port-business-dataset-v3.schema.json",
+  "title": "Port Business Reinforcement Learning Dataset v3",
+  "type": "object",
+  "required": ["records"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "source": { "type": "string", "minLength": 1 },
+        "sourceUrls": { "type": "array", "items": { "type": "string", "format": "uri" } },
+        "license": { "type": "string", "minLength": 1 },
+        "evidenceLevel": {
+          "enum": ["operator-supplied-unverified", "operator-authorized"]
+        },
+        "limitations": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "records": {
+      "type": "array",
+      "minItems": 120,
+      "items": { "$ref": "#/$defs/record" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "nonNegative": { "type": "number", "minimum": 0 },
+    "ratio": { "type": "number", "minimum": 0, "maximum": 1 },
+    "record": {
+      "type": "object",
+      "required": [
+        "portId", "terminalId", "timestamp", "arrivals", "grossTonnage", "effectiveCapacity",
+        "etaDeviationHours", "berthUtilization", "craneProductivityIndex", "craneAvailabilityRatio",
+        "yardOccupancy", "truckTurnTimeMinutes", "gateQueuePressure", "railTransferDemand",
+        "waterTransferDemand", "transferCapacity", "channelAvailable", "tideWindowOpen",
+        "pilotAvailabilityRatio", "tugAvailabilityRatio", "windSpeedMs", "waveHeightM",
+        "visibilityKm", "currentSpeedKnots", "safetyRisk", "hazmatRestrictionActive",
+        "shorePowerAvailability", "carbonIntensity", "energyPriceIndex", "capacityLossRatio",
+        "vesselSizeIndex", "fairnessDemandSkew", "forecastUncertainty", "dataQualityScore"
+      ],
+      "properties": {
+        "portId": { "type": "string", "minLength": 1 },
+        "terminalId": { "type": "string", "minLength": 1 },
+        "timestamp": { "type": "string", "format": "date-time", "pattern": "(?:Z|[+-][0-9]{2}:[0-9]{2})$" },
+        "sourceMonth": { "type": "string" },
+        "publicAnchorArrivals": { "$ref": "#/$defs/nonNegative" },
+        "publicAnchorGrossTonnage": { "$ref": "#/$defs/nonNegative" },
+        "publicAnchorWindSpeedMs": { "$ref": "#/$defs/nonNegative" },
+        "arrivals": { "$ref": "#/$defs/nonNegative" },
+        "grossTonnage": { "$ref": "#/$defs/nonNegative" },
+        "effectiveCapacity": { "type": "number", "exclusiveMinimum": 0 },
+        "etaDeviationHours": { "type": "number" },
+        "berthUtilization": { "type": "number", "minimum": 0, "maximum": 1.2 },
+        "craneProductivityIndex": { "$ref": "#/$defs/nonNegative" },
+        "craneAvailabilityRatio": { "$ref": "#/$defs/ratio" },
+        "yardOccupancy": { "type": "number", "minimum": 0, "maximum": 1.2 },
+        "truckTurnTimeMinutes": { "$ref": "#/$defs/nonNegative" },
+        "gateQueuePressure": { "type": "number", "minimum": 0, "maximum": 2 },
+        "railTransferDemand": { "$ref": "#/$defs/nonNegative" },
+        "waterTransferDemand": { "$ref": "#/$defs/nonNegative" },
+        "transferCapacity": { "$ref": "#/$defs/nonNegative" },
+        "channelAvailable": { "type": "boolean" },
+        "tideWindowOpen": { "type": "boolean" },
+        "pilotAvailabilityRatio": { "$ref": "#/$defs/ratio" },
+        "tugAvailabilityRatio": { "$ref": "#/$defs/ratio" },
+        "windSpeedMs": { "$ref": "#/$defs/nonNegative" },
+        "waveHeightM": { "$ref": "#/$defs/nonNegative" },
+        "visibilityKm": { "$ref": "#/$defs/nonNegative" },
+        "currentSpeedKnots": { "$ref": "#/$defs/nonNegative" },
+        "safetyRisk": { "$ref": "#/$defs/ratio" },
+        "hazmatRestrictionActive": { "type": "boolean" },
+        "shorePowerAvailability": { "$ref": "#/$defs/ratio" },
+        "carbonIntensity": { "$ref": "#/$defs/nonNegative" },
+        "energyPriceIndex": { "$ref": "#/$defs/nonNegative" },
+        "capacityLossRatio": { "$ref": "#/$defs/ratio" },
+        "vesselSizeIndex": { "$ref": "#/$defs/nonNegative" },
+        "fairnessDemandSkew": { "$ref": "#/$defs/ratio" },
+        "forecastUncertainty": { "$ref": "#/$defs/ratio" },
+        "dataQualityScore": { "$ref": "#/$defs/ratio" }
+      },
+      "additionalProperties": true
+    }
+  }
+}

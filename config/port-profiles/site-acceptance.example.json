@@ -1,0 +1,36 @@
+{
+  "protocolVersion": "site-acceptance-evidence.v1",
+  "evidenceLevel": "TEST_FIXTURE",
+  "acceptanceID": "example.site.acceptance",
+  "siteID": "example.site",
+  "projectID": "example.project",
+  "observationWindow": {
+    "baselineStart": "2026-01-01T00:00:00Z",
+    "baselineEnd": "2026-01-31T00:00:00Z",
+    "shadowStart": "2026-02-01T00:00:00Z",
+    "shadowEnd": "2026-02-01T00:00:00Z"
+  },
+  "shadow": {
+    "completedHours": 0,
+    "minimumRequiredHours": 720,
+    "recommendationCount": 0,
+    "humanInterventionCount": 0,
+    "severeIncidentCount": 0,
+    "unresolvedIncidentCount": 0,
+    "productionDispatchCount": 0
+  },
+  "kpis": [],
+  "acceptanceTests": [],
+  "operationsReadiness": {
+    "operatorTrainingCompletionPercent": 0,
+    "maintainerTrainingCompletionPercent": 0,
+    "runbookApproved": false,
+    "onCallRosterActive": false,
+    "rollbackDrillPassed": false,
+    "dataRetentionApproved": false,
+    "cyberIncidentResponseDrillPassed": false
+  },
+  "artifacts": {},
+  "acceptanceDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+  "signoffs": []
+}

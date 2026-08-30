@@ -3593,7 +3593,7 @@ export function App() {
         mode === 'public'
           ? '/api/operations/snapshot'
           : mode === 'live' && ['/api/public-data/snapshot', '/api/operations/snapshot'].includes(config.endpoint)
-            ? 'http://127.0.0.1:8090/api/v1/port-network/snapshot'
+            ? '/api/operator-integration/shadow-snapshot'
             : config.endpoint,
     }));
     if (mode === 'demo') {

@@ -1,0 +1,86 @@
+{
+  "protocolVersion": "operator-data-source-manifest.v1",
+  "manifestId": "example.operator.manifest.v1",
+  "siteId": "example.site",
+  "portId": "example.port",
+  "terminalId": "example.terminal",
+  "sceneProfileId": "malacca-strait",
+  "scenePortNodeId": "singapore",
+  "operatorOrganization": "Example operator pending authorization",
+  "evidenceLevel": "site-template",
+  "timezone": "Asia/Singapore",
+  "authorization": {
+    "reference": "PENDING-OPERATOR-AUTHORIZATION",
+    "approvedBy": "Pending data owner",
+    "approvedAt": "2026-01-01T00:00:00+08:00",
+    "expiresAt": "2027-01-01T00:00:00+08:00",
+    "permittedPurpose": "read-only-shadow",
+    "redistributionAllowed": false
+  },
+  "adapters": [
+    {
+      "adapterId": "ais_vessel_feed",
+      "sourceSystem": "Pending AIS source",
+      "dataOwnerRole": "Pending vessel traffic data owner",
+      "signingKeyId": "pending.ais.key",
+      "fieldMappingReviewed": false,
+      "unitsReviewed": false,
+      "timezoneReviewed": false,
+      "dataOwnerApproved": false
+    },
+    {
+      "adapterId": "terminal_operating_system",
+      "sourceSystem": "Pending terminal operating system",
+      "dataOwnerRole": "Pending terminal data owner",
+      "signingKeyId": "pending.tos.key",
+      "fieldMappingReviewed": false,
+      "unitsReviewed": false,
+      "timezoneReviewed": false,
+      "dataOwnerApproved": false
+    },
+    {
+      "adapterId": "vessel_traffic_service",
+      "sourceSystem": "Pending vessel traffic service",
+      "dataOwnerRole": "Pending navigation safety data owner",
+      "signingKeyId": "pending.vts.key",
+      "fieldMappingReviewed": false,
+      "unitsReviewed": false,
+      "timezoneReviewed": false,
+      "dataOwnerApproved": false
+    },
+    {
+      "adapterId": "safety_regulatory_feed",
+      "sourceSystem": "Pending safety regulatory feed",
+      "dataOwnerRole": "Pending safety authority",
+      "signingKeyId": "pending.safety.key",
+      "fieldMappingReviewed": false,
+      "unitsReviewed": false,
+      "timezoneReviewed": false,
+      "dataOwnerApproved": false
+    },
+    {
+      "adapterId": "energy_carbon_feed",
+      "sourceSystem": "Pending energy and carbon metering",
+      "dataOwnerRole": "Pending energy data owner",
+      "signingKeyId": "pending.energy.key",
+      "fieldMappingReviewed": false,
+      "unitsReviewed": false,
+      "timezoneReviewed": false,
+      "dataOwnerApproved": false
+    },
+    {
+      "adapterId": "intermodal_transfer_feed",
+      "sourceSystem": "Pending intermodal transfer system",
+      "dataOwnerRole": "Pending intermodal data owner",
+      "signingKeyId": "pending.intermodal.key",
+      "fieldMappingReviewed": false,
+      "unitsReviewed": false,
+      "timezoneReviewed": false,
+      "dataOwnerApproved": false
+    }
+  ],
+  "notes": [
+    "This checked-in file is a fail-closed template, not operator authorization.",
+    "Copy it outside the repository, replace every pending value, obtain data-owner approval, and configure secrets out of band."
+  ]
+}

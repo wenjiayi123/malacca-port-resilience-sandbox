@@ -1,0 +1,194 @@
+{
+  "schemaVersion": "top-tier-hardening-evidence.v1",
+  "generatedAt": "2026-08-30T08:00:00.000Z",
+  "result": "PASS_SOFTWARE_PREREQUISITES_EXTERNAL_GATES_OPEN",
+  "areas": [
+    {
+      "id": "operator-data",
+      "name": "真实港口权威数据",
+      "sources": [
+        "server/operatorSourceManifest.ts",
+        "server/operatorIntegrationGateway.ts",
+        "server/operatorIntegrationPlugin.ts"
+      ],
+      "tests": [
+        "tests/operatorSourceManifest.test.ts",
+        "tests/operatorIntegrationGateway.test.ts"
+      ],
+      "documentation": "docs/REAL_PORT_DATA_INTEGRATION.md",
+      "softwareStatus": "PASS",
+      "externalBlockers": [
+        "operator_authorization",
+        "six_live_feeds",
+        "field_measurement_acceptance"
+      ]
+    },
+    {
+      "id": "port-community",
+      "name": "港口社区与国际互操作",
+      "sources": [
+        "server/portCommunityGateway.ts",
+        "server/portCommunityPlugin.ts"
+      ],
+      "tests": [
+        "tests/portCommunityGateway.test.ts"
+      ],
+      "documentation": "docs/PORT_CALL_INTEROPERABILITY.md",
+      "softwareStatus": "PASS",
+      "externalBlockers": [
+        "partner_certificate_exchange",
+        "official_conformance",
+        "msw_pcs_connection"
+      ]
+    },
+    {
+      "id": "vessel-traffic-safety",
+      "name": "船舶交通安全与多源态势",
+      "sources": [
+        "server/vesselTrafficSafety.ts",
+        "server/vesselTrafficSafetyPlugin.ts"
+      ],
+      "tests": [
+        "tests/vesselTrafficSafety.test.ts"
+      ],
+      "documentation": "docs/VESSEL_TRAFFIC_SAFETY.md",
+      "softwareStatus": "PASS",
+      "externalBlockers": [
+        "radar_calibration",
+        "vts_workflow_acceptance",
+        "alarm_fatigue_trials"
+      ]
+    },
+    {
+      "id": "identity-ot-safety",
+      "name": "身份、审批与运行技术安全",
+      "sources": [
+        "server/productionAuthorityGate.ts",
+        "server/productionAuthorityPlugin.ts"
+      ],
+      "tests": [
+        "tests/productionAuthorityGate.test.ts"
+      ],
+      "documentation": "docs/PRODUCTION_IDENTITY_AND_OT_SAFETY.md",
+      "softwareStatus": "PASS",
+      "externalBlockers": [
+        "identity_provider_connection",
+        "independent_interlock_acceptance",
+        "physical_dispatch_adapter"
+      ]
+    },
+    {
+      "id": "twin-fidelity",
+      "name": "高忠实度耦合数字孪生",
+      "sources": [
+        "server/highFidelityPortTwin.ts"
+      ],
+      "tests": [
+        "tests/highFidelityPortTwin.test.ts"
+      ],
+      "documentation": "docs/HIGH_FIDELITY_TWIN.md",
+      "softwareStatus": "PASS",
+      "externalBlockers": [
+        "hydrographic_and_equipment_calibration",
+        "hil",
+        "operator_model_acceptance"
+      ]
+    },
+    {
+      "id": "algorithm-assurance",
+      "name": "算法有效性与安全保证",
+      "sources": [
+        "server/algorithmAssuranceGate.ts"
+      ],
+      "tests": [
+        "tests/algorithmAssuranceGate.test.ts"
+      ],
+      "documentation": "docs/ALGORITHM_ASSURANCE.md",
+      "softwareStatus": "PASS",
+      "externalBlockers": [
+        "authorized_shadow_run",
+        "operator_acceptance",
+        "production_canary"
+      ]
+    },
+    {
+      "id": "reliability-dr",
+      "name": "24×7 可靠性与灾难恢复",
+      "sources": [
+        "server/reliableStateStore.ts"
+      ],
+      "tests": [
+        "tests/reliableStateStore.test.ts"
+      ],
+      "documentation": "docs/RELIABILITY_AND_DISASTER_RECOVERY.md",
+      "softwareStatus": "PASS",
+      "externalBlockers": [
+        "redundant_deployment",
+        "isolated_restore_drill",
+        "thirty_day_slo_evidence"
+      ]
+    },
+    {
+      "id": "field-acceptance",
+      "name": "现场 KPI、影子运行与验收",
+      "sources": [
+        "server/siteAcceptanceGate.ts"
+      ],
+      "tests": [
+        "tests/siteAcceptanceGate.test.ts"
+      ],
+      "documentation": "docs/FIELD_ACCEPTANCE.md",
+      "softwareStatus": "PASS",
+      "externalBlockers": [
+        "independent_kpi_measurement",
+        "fat_sat_uat",
+        "five_party_field_signoff"
+      ]
+    }
+  ],
+  "verification": {
+    "testCommand": "pnpm test",
+    "buildCommand": "pnpm build",
+    "releaseCommand": "pnpm release:check",
+    "sourceSha256": {
+      "docs/ALGORITHM_ASSURANCE.md": "d11723bc42649d363f9e89f5f509f3a01224caf4a7bdefa73aeca08359313606",
+      "docs/FIELD_ACCEPTANCE.md": "e67cbbda3f4d3298390e2eb4823ad0641f76c59127aef54017f3c06d69b8901c",
+      "docs/HIGH_FIDELITY_TWIN.md": "917b8b5f6b66ee08f66bf18da31e3d7f09d26d802189b908a37e5934ec98f5b0",
+      "docs/PORT_CALL_INTEROPERABILITY.md": "778a902cea535f816e055b02ad6fec90a5b62cbd6a67fdb0dc6d523528b93e86",
+      "docs/PRODUCTION_IDENTITY_AND_OT_SAFETY.md": "f2da5e74784afebf763c79210470e9ab0e1ca405c42b6ad4c1bf88d0eac29f45",
+      "docs/REAL_PORT_DATA_INTEGRATION.md": "8d76dc432dbe047911f7b7e3630d6cccb1dd96a4a8be5316dd9fcdfd63f7f1da",
+      "docs/RELIABILITY_AND_DISASTER_RECOVERY.md": "75f722f7631af3180a18bce864f015e63ec8f46a522d40017ebe9728484d68bc",
+      "docs/VESSEL_TRAFFIC_SAFETY.md": "85de65b8399e738710a440c1757aa48fb9dc4fc1f04826197c22cf8d2b791753",
+      "server/algorithmAssuranceGate.ts": "4209fc5015b98caa48c0d7b7eefdb57d472aeda6d9137d19b8d5811d25e558bb",
+      "server/highFidelityPortTwin.ts": "1d77691afa91cc2eaaeb404ed82a3c85ce279ad367db3d792edbfa717093beba",
+      "server/operatorIntegrationGateway.ts": "6bd3935978604b2b1c8b4535981362a3088bee540f8fe955c2500f1a4d59d059",
+      "server/operatorIntegrationPlugin.ts": "7bd11b1ac683ad66490cd4893c2a024524d69541e3bdbbdd94e370f081765ad5",
+      "server/operatorSourceManifest.ts": "354684e7df9bdd9656445bcece17be73597a4c5f44bcc1379b0b8ac7d0cd9850",
+      "server/portCommunityGateway.ts": "84f4afe239e86e50e4f943c26e418d92d3199c62bebfe56016003dc935c15671",
+      "server/portCommunityPlugin.ts": "626ff32574f96d4e83419bbe67845bcba27d44fe29182c0432d3895e68cb009a",
+      "server/productionAuthorityGate.ts": "cb9902bbd145f979a74a44bc1e986065606c54668734f439c7076c7ef0b0627f",
+      "server/productionAuthorityPlugin.ts": "31157ad90d360d345100bf18e708f1ec9f60a4c753708ce41b9db8672325740c",
+      "server/reliableStateStore.ts": "b1fbd752cf5dfec030154210e5ce53fb913164db4bb348600fef95b552818e8e",
+      "server/siteAcceptanceGate.ts": "b06eb744826187f4cd7788831d1c18179bd92dae2760c0fe6cca116d49e2efe5",
+      "server/vesselTrafficSafety.ts": "64d1acf5d7fac637292022363b48d96c72bd61b9957e79300779aba521c40553",
+      "server/vesselTrafficSafetyPlugin.ts": "49a22f25b0bc7d1b9f3fe673ad3dbb3fd47ad2c6e95de1bb910feefcb9c6f57d",
+      "tests/algorithmAssuranceGate.test.ts": "98d8c1efd7d0cec49613fc3078374b51f6f9c9a241b341c1ebcbcd2951f225a1",
+      "tests/highFidelityPortTwin.test.ts": "6b367333d1fde522488df3cbac22ebfa51024a0176e954a3e9b59ac2d26607a7",
+      "tests/operatorIntegrationGateway.test.ts": "454bcd46e6ae1740288d4386c7a6da7d8fb3c6b835c2a8e90c7366b1e6e72b92",
+      "tests/operatorSourceManifest.test.ts": "c494d75910e3853e31cf089a25ef0da5d5ff58e763d067cae2915e7ebeaf3546",
+      "tests/portCommunityGateway.test.ts": "80e15c43fa2bc3d4705edc96a41364cdeea27553c75c0eafb01ca95f52bed911",
+      "tests/productionAuthorityGate.test.ts": "5c4efb40fc8ab069927e66700a3435a8f648764bf724592ff954d137d30d3aac",
+      "tests/reliableStateStore.test.ts": "6d99aa32e557a7040649f9657170aa6cd007a0149476f51c36bc766194c1a767",
+      "tests/siteAcceptanceGate.test.ts": "3ebf62d58e098b7b2ae97d20689c2caf55c2d1c87022435cb7f5dc4fc8644e8d",
+      "tests/vesselTrafficSafety.test.ts": "2b56ec8ba547f653329f265e7063758a9655a1f3419784b0f5f46768948f8d55"
+    }
+  },
+  "overall": {
+    "softwarePrerequisiteAreaCount": 8,
+    "softwarePrerequisitePassCount": 8,
+    "connectedToRealPort": false,
+    "siteDeliveryReady": false,
+    "productionAuthority": false,
+    "dispatchAllowed": false
+  }
+}

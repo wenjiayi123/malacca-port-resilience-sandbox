@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/operator-snapshot.schema.json",
+  "title": "Signed operator snapshot envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "snapshot_id", "port_id", "terminal_id", "adapter_id",
+    "source_system", "source_record_id", "sequence", "observed_at", "emitted_at",
+    "payload", "units", "payload_sha256", "signature"
+  ],
+  "properties": {
+    "schema_version": { "const": "operator-snapshot.v1" },
+    "snapshot_id": { "$ref": "#/$defs/stableId" },
+    "port_id": { "$ref": "#/$defs/stableId" },
+    "terminal_id": { "$ref": "#/$defs/stableId" },
+    "adapter_id": {
+      "enum": [
+        "ais_vessel_feed", "terminal_operating_system", "vessel_traffic_service",
+        "safety_regulatory_feed", "energy_carbon_feed", "intermodal_transfer_feed"
+      ]
+    },
+    "source_system": { "$ref": "#/$defs/stableId" },
+    "source_record_id": { "$ref": "#/$defs/stableId" },
+    "sequence": { "type": "integer", "minimum": 0 },
+    "observed_at": { "type": "string", "format": "date-time" },
+    "emitted_at": { "type": "string", "format": "date-time" },
+    "payload": { "type": "object" },
+    "units": { "type": "object", "additionalProperties": { "type": "string", "minLength": 1 } },
+    "payload_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "signature": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  },
+  "$defs": {
+    "stableId": { "type": "string", "pattern": "^[A-Za-z0-9._:-]{2,160}$" }
+  }
+}
