@@ -85,6 +85,24 @@ export interface RlPolicyInferenceResponse {
     confidencePercent: number;
     safetyShield: string;
   };
+  admission: {
+    status: 'admitted' | 'abstain';
+    normalizedEntropy: number;
+    thresholds: {
+      minimumConfidencePercent: number;
+      maximumNormalizedEntropy: number;
+      requireBusinessNonRegression: true;
+    };
+    checks: {
+      confidence: boolean;
+      entropy: boolean;
+      congestionNonRegression: boolean;
+      delayNonRegression: boolean;
+      carbonNonRegression: boolean;
+      resilienceNonRegression: boolean;
+    };
+    blockers: string[];
+  };
   actionDistribution: Array<{
     id: string;
     label: string;
@@ -121,6 +139,11 @@ export interface RlPolicyInferenceResponse {
 }
 
 const ACTIONS = RL_OPERATIONAL_CALIBRATION.actions;
+const POLICY_ADMISSION_THRESHOLDS = {
+  minimumConfidencePercent: 45,
+  maximumNormalizedEntropy: 0.8,
+  requireBusinessNonRegression: true as const,
+};
 
 const disturbanceLabels: Record<RlDisturbanceType, string> = {
   none: '无附加扰动',
@@ -237,6 +260,48 @@ export const runRlPolicyInference = (
     carbonDeltaTons: round(projection.carbon * scenario.factor - state.carbonTons, 2),
     recoveryMinutes: Math.round(clamp(45 + projection.congestion * 0.8 * scenario.factor, 30, 180)),
   })).sort((left, right) => right.probability - left.probability);
+  const comparison = {
+    baseline: {
+      congestionPercent: round(state.congestionPercent, 1),
+      delayMinutes: round(state.delayMinutes, 1),
+      carbonTons: round(state.carbonTons, 2),
+      resilienceIndex: round(state.resilienceIndex, 1),
+    },
+    policy: {
+      congestionPercent: round(projection.congestion, 1),
+      delayMinutes: round(projection.delay, 1),
+      carbonTons: round(projection.carbon, 2),
+      resilienceIndex: round(projection.resilience, 1),
+    },
+    improvement: {
+      congestionPoints: round(state.congestionPercent - projection.congestion, 1),
+      delayMinutes: round(state.delayMinutes - projection.delay, 1),
+      carbonTons: round(state.carbonTons - projection.carbon, 2),
+      resiliencePoints: round(projection.resilience - state.resilienceIndex, 1),
+    },
+  };
+  const confidencePercent = round((probabilities[selectedIndex] ?? 0) * 100, 1);
+  const normalizedEntropy = round(entropy / Math.log(Math.max(2, ACTIONS.length)), 4);
+  const admissionChecks = {
+    confidence: confidencePercent >= POLICY_ADMISSION_THRESHOLDS.minimumConfidencePercent,
+    entropy: normalizedEntropy <= POLICY_ADMISSION_THRESHOLDS.maximumNormalizedEntropy,
+    congestionNonRegression: comparison.improvement.congestionPoints >= 0,
+    delayNonRegression: comparison.improvement.delayMinutes >= 0,
+    carbonNonRegression: comparison.improvement.carbonTons >= 0,
+    resilienceNonRegression: comparison.improvement.resiliencePoints >= 0,
+  };
+  const blockers = [
+    !admissionChecks.confidence
+      ? `动作置信度 ${confidencePercent.toFixed(1)}% 低于 ${POLICY_ADMISSION_THRESHOLDS.minimumConfidencePercent}% 门槛`
+      : null,
+    !admissionChecks.entropy
+      ? `归一化策略熵 ${normalizedEntropy.toFixed(3)} 高于 ${POLICY_ADMISSION_THRESHOLDS.maximumNormalizedEntropy.toFixed(2)} 门槛`
+      : null,
+    !admissionChecks.congestionNonRegression ? '拥堵业务指标预计退化' : null,
+    !admissionChecks.delayNonRegression ? '延误业务指标预计退化' : null,
+    !admissionChecks.carbonNonRegression ? '碳排业务指标预计退化' : null,
+    !admissionChecks.resilienceNonRegression ? '韧性业务指标预计退化' : null,
+  ].filter((blocker): blocker is string => blocker !== null);
   return {
     protocolVersion: 'rl-policy-inference.v2',
     requestId: request.requestId ?? `policy-${Date.now()}`,
@@ -258,8 +323,15 @@ export const runRlPolicyInference = (
       latencyMs: round(performance.now() - startedAt, 3),
       valueEstimate: round(Math.max(...trained.decision.values), 4),
       policyEntropy: round(entropy, 4),
-      confidencePercent: round((probabilities[selectedIndex] ?? 0) * 100, 1),
-      safetyShield: '动作仍需通过港口容量、航行安全与人工确认约束',
+      confidencePercent,
+      safetyShield: '动作必须通过置信度、策略熵、业务非退化、港口容量、航行安全与人工确认约束',
+    },
+    admission: {
+      status: blockers.length === 0 ? 'admitted' : 'abstain',
+      normalizedEntropy,
+      thresholds: POLICY_ADMISSION_THRESHOLDS,
+      checks: admissionChecks,
+      blockers,
     },
     actionDistribution,
     scenarioForecasts,
@@ -275,25 +347,6 @@ export const runRlPolicyInference = (
       commandSummary: `${selectedAction.label} / 目标航速 ${projection.speed.toFixed(1)}kn / 分流 ${projection.diversion}% / 到港偏移 ${projection.shift}min`,
       executionSteps: ['校验当前数据时间戳与容量边界', `生成候选动作 ${selectedAction.label}`, '通过安全约束后等待人工确认进入沙盘回放'],
     },
-    comparison: {
-      baseline: {
-        congestionPercent: round(state.congestionPercent, 1),
-        delayMinutes: round(state.delayMinutes, 1),
-        carbonTons: round(state.carbonTons, 2),
-        resilienceIndex: round(state.resilienceIndex, 1),
-      },
-      policy: {
-        congestionPercent: round(projection.congestion, 1),
-        delayMinutes: round(projection.delay, 1),
-        carbonTons: round(projection.carbon, 2),
-        resilienceIndex: round(projection.resilience, 1),
-      },
-      improvement: {
-        congestionPoints: round(state.congestionPercent - projection.congestion, 1),
-        delayMinutes: round(state.delayMinutes - projection.delay, 1),
-        carbonTons: round(state.carbonTons - projection.carbon, 2),
-        resiliencePoints: round(projection.resilience - state.resilienceIndex, 1),
-      },
-    },
+    comparison,
   };
 };

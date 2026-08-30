@@ -33,8 +33,15 @@ test('same-profile runtime patches channels and routes without dropping topology
     observedAt,
     source: 'runtime-simulator-test',
     telemetry: {
+      overview: { monitoredVesselCount: 1_292 },
       channels: [{ id: 'malacca-main', congestionPercent: 73, delayMinutes: 24 }],
       routeOverlays: [{ id: 'main-route-north', vesselVolume: 333, carbonEmissionTons: 777 }],
+    },
+    scenario: {
+      congestionHeatmap: {
+        ...malaccaScenario.congestionHeatmap,
+        hotspots: [{ nodeId: 'singapore', intensity: 49 }],
+      },
     },
   };
 
@@ -44,6 +51,8 @@ test('same-profile runtime patches channels and routes without dropping topology
   assert.equal(merged.routeOverlays.length, malaccaScenario.routeOverlays.length);
   assert.equal(merged.routeOverlays.find((item) => item.id === 'main-route-north')?.vesselVolume, 333);
   assert.equal(merged.routeOverlays.find((item) => item.id === 'main-route-north')?.carbonEmissionTons, 777);
+  assert.equal(merged.vesselTypeStats.reduce((sum, item) => sum + item.count, 0), 1_292);
+  assert.equal(merged.congestionHeatmap.hotspots[0]?.intensity, 0.49);
 });
 
 test('explicit topology replacement supports a Shanghai snapshot with no live vessels', () => {

@@ -64,7 +64,8 @@
       "name": "身份、审批与运行技术安全",
       "sources": [
         "server/productionAuthorityGate.ts",
-        "server/productionAuthorityPlugin.ts"
+        "server/productionAuthorityPlugin.ts",
+        "server/publicEvidencePlugin.ts"
       ],
       "tests": [
         "tests/productionAuthorityGate.test.ts"
@@ -115,7 +116,9 @@
       "id": "reliability-dr",
       "name": "24×7 可靠性与灾难恢复",
       "sources": [
-        "server/reliableStateStore.ts"
+        "server/reliableStateStore.ts",
+        "src/integrations/operationsControlAdapter.ts",
+        "src/components/OperationalEvidenceCenter.tsx"
       ],
       "tests": [
         "tests/reliableStateStore.test.ts"
@@ -132,7 +135,10 @@
       "id": "field-acceptance",
       "name": "现场 KPI、影子运行与验收",
       "sources": [
-        "server/siteAcceptanceGate.ts"
+        "server/siteAcceptanceGate.ts",
+        "server/publicEvidencePlugin.ts",
+        "src/integrations/operationsControlAdapter.ts",
+        "src/components/OperationalEvidenceCenter.tsx"
       ],
       "tests": [
         "tests/siteAcceptanceGate.test.ts"
@@ -168,10 +174,13 @@
       "server/portCommunityPlugin.ts": "626ff32574f96d4e83419bbe67845bcba27d44fe29182c0432d3895e68cb009a",
       "server/productionAuthorityGate.ts": "cb9902bbd145f979a74a44bc1e986065606c54668734f439c7076c7ef0b0627f",
       "server/productionAuthorityPlugin.ts": "31157ad90d360d345100bf18e708f1ec9f60a4c753708ce41b9db8672325740c",
+      "server/publicEvidencePlugin.ts": "ec6e8936ed0b00561c322d247875fee772f11f3b91e7419f548e1ffd9c94865c",
       "server/reliableStateStore.ts": "b1fbd752cf5dfec030154210e5ce53fb913164db4bb348600fef95b552818e8e",
       "server/siteAcceptanceGate.ts": "b06eb744826187f4cd7788831d1c18179bd92dae2760c0fe6cca116d49e2efe5",
       "server/vesselTrafficSafety.ts": "64d1acf5d7fac637292022363b48d96c72bd61b9957e79300779aba521c40553",
       "server/vesselTrafficSafetyPlugin.ts": "49a22f25b0bc7d1b9f3fe673ad3dbb3fd47ad2c6e95de1bb910feefcb9c6f57d",
+      "src/components/OperationalEvidenceCenter.tsx": "dd774f1186d1bb952726c8650a037a5c11d6c1bf96eec855aeb010947617d4fe",
+      "src/integrations/operationsControlAdapter.ts": "c910b85ae4caff795d3ff4473bbbc395c5854791980af782679162f829357ced",
       "tests/algorithmAssuranceGate.test.ts": "98d8c1efd7d0cec49613fc3078374b51f6f9c9a241b341c1ebcbcd2951f225a1",
       "tests/highFidelityPortTwin.test.ts": "6b367333d1fde522488df3cbac22ebfa51024a0176e954a3e9b59ac2d26607a7",
       "tests/operatorIntegrationGateway.test.ts": "454bcd46e6ae1740288d4386c7a6da7d8fb3c6b835c2a8e90c7366b1e6e72b92",

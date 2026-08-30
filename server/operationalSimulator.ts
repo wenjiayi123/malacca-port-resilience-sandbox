@@ -756,6 +756,67 @@ export class PortOperationsSimulator {
       { id: 'carbon-emission', label: '区间碳排', value: tick.tickCarbonTons.toString(), unit: 'tCO₂e/15分', detail: '负荷×公开/工程碳因子', trendLabel: `能耗 ${tick.tickEnergyKwh.toFixed(0)} kWh`, tone: 'warning' },
       { id: 'resilience-index', label: '运行韧性指数', value: resilienceIndex.toString(), unit: '分', detail: '队列、安全、堆场派生', trendLabel: `安全风险 ${safetyRiskPercent}%`, tone: resilienceIndex < 70 ? 'danger' : resilienceIndex < 85 ? 'warning' : 'ok' },
     ];
+    const monitoredVesselCount = Math.round(1_220 + tick.arrivals * 18);
+    const vesselTypeProfiles = [
+      ['cargo', '货船', 0.532],
+      ['tanker', '油轮', 0.133],
+      ['container', '集装箱船', 0.209],
+      ['bulk', '散货船', 0.088],
+      ['other', '其他', 0.038],
+    ] as const;
+    let assignedVesselTypes = 0;
+    const vesselTypeStats = vesselTypeProfiles.map(([category, label, share], index) => {
+      const count = index === vesselTypeProfiles.length - 1
+        ? monitoredVesselCount - assignedVesselTypes
+        : Math.round(monitoredVesselCount * share);
+      assignedVesselTypes += count;
+      return {
+        category,
+        label,
+        count,
+        percent: round(count / Math.max(1, monitoredVesselCount) * 100, 1),
+      };
+    });
+    const portProfiles = [
+      ['penang', 0.08, 0.52, 0.08],
+      ['port-klang', 0.16, 0.68, 0.16],
+      ['singapore', 0.31, 1, 0.31],
+      ['tanjung-pelepas', 0.14, 0.74, 0.14],
+      ['batam', 0.09, 0.48, 0.08],
+      ['dumai', 0.07, 0.42, 0.07],
+      ['belawan', 0.08, 0.5, 0.08],
+      ['kuantan', 0.07, 0.46, 0.08],
+    ] as const;
+    let assignedPortVessels = 0;
+    const portTelemetry = portProfiles.map(([id, vesselShare, stress, queueShare], index) => {
+      const vesselCount = index === portProfiles.length - 1
+        ? monitoredVesselCount - assignedPortVessels
+        : Math.round(monitoredVesselCount * vesselShare);
+      assignedPortVessels += vesselCount;
+      const congestionPercent = clamp(
+        Math.round(tick.berthUtilizationPercent * stress + tick.queueVessels * queueShare * 0.55),
+        0,
+        100,
+      );
+      const berthUtilizationPercent = clamp(
+        Math.round(tick.berthUtilizationPercent * (0.68 + stress * 0.32)),
+        0,
+        100,
+      );
+      const queueVessels = Math.max(0, Math.round(tick.queueVessels * queueShare));
+      const averageWaitingHours = round(delayMinutes / 60 * (0.45 + stress * 0.55), 1);
+      const tone = congestionPercent >= 76 ? 'danger' : congestionPercent >= 54 ? 'warning' : 'ok';
+      return {
+        id,
+        vesselCount,
+        congestionPercent,
+        berthUtilizationPercent,
+        queueVessels,
+        averageWaitingHours,
+        tone,
+        status: tone === 'danger' ? '拥堵' : tone === 'warning' ? '预警' : '正常',
+      };
+    });
     const channelProfiles = [
       ['malacca-main', 0.7],
       ['phillip-channel', 0.76],
@@ -856,6 +917,7 @@ export class PortOperationsSimulator {
         evidenceMode: 'public-evidence',
         currentTime: tick.eventTime.replace('T', ' ').replace('Z', '+00:00'),
         metrics,
+        vesselTypeStats,
         carbon: carbonSnapshot,
         congestionHeatmap: {
           id: 'malacca-operational-congestion-heatmap',
@@ -863,18 +925,14 @@ export class PortOperationsSimulator {
           lowLabel: '低',
           highLabel: '高',
           hotspots: [
-            { nodeId: 'singapore', intensity: clamp(Math.round(tick.berthUtilizationPercent * 0.86), 0, 100) },
-            { nodeId: 'port-klang', intensity: clamp(Math.round(tick.berthUtilizationPercent * 0.62), 0, 100) },
-            { nodeId: 'tanjung-pelepas', intensity: clamp(Math.round(tick.berthUtilizationPercent * 0.58), 0, 100) },
+            { nodeId: 'singapore', intensity: round((portTelemetry.find((item) => item.id === 'singapore')?.congestionPercent ?? 0) / 100, 2) },
+            { nodeId: 'port-klang', intensity: round((portTelemetry.find((item) => item.id === 'port-klang')?.congestionPercent ?? 0) / 100, 2) },
+            { nodeId: 'tanjung-pelepas', intensity: round((portTelemetry.find((item) => item.id === 'tanjung-pelepas')?.congestionPercent ?? 0) / 100, 2) },
           ],
         },
       },
       telemetry: {
-        ports: [
-          { id: 'singapore', congestionPercent: clamp(Math.round(tick.berthUtilizationPercent * 0.86), 0, 100), berthUtilizationPercent: Math.round(tick.berthUtilizationPercent), queueVessels: Math.round(tick.queueVessels), averageWaitingHours: round(delayMinutes / 60, 1), vesselCount: Math.round(380 + tick.arrivals * 12) },
-          { id: 'port-klang', congestionPercent: clamp(Math.round(tick.berthUtilizationPercent * 0.62), 0, 100), berthUtilizationPercent: clamp(Math.round(tick.berthUtilizationPercent * 0.82), 0, 100), queueVessels: Math.round(tick.queueVessels * 0.42), averageWaitingHours: round(delayMinutes / 60 * 0.7, 1) },
-          { id: 'tanjung-pelepas', congestionPercent: clamp(Math.round(tick.berthUtilizationPercent * 0.58), 0, 100), berthUtilizationPercent: clamp(Math.round(tick.berthUtilizationPercent * 0.78), 0, 100), queueVessels: Math.round(tick.queueVessels * 0.32), averageWaitingHours: round(delayMinutes / 60 * 0.62, 1) },
-        ],
+        ports: portTelemetry,
         vessels: vessels.map((vessel, index) => ({
           id: vessel.asset_id,
           mmsi: String(vessel.mmsi.value ?? vessel.asset_id),
@@ -909,7 +967,7 @@ export class PortOperationsSimulator {
           waterTemperatureC: 29.4,
           pressureHpa: 1009,
         },
-        overview: { portCount: 32, channelCount: 6, anchorageCount: 48, monitoredVesselCount: Math.round(1_220 + tick.arrivals * 18) },
+        overview: { portCount: 32, channelCount: 6, anchorageCount: 48, monitoredVesselCount },
         metrics,
         riskAlerts: this.scenario === 'normal' ? [] : [{ id: `ops-${this.scenario}`, label: `模拟场景：${this.scenario}`, description: '后端异常场景引擎已改变受约束状态', tone: this.scenario === 'data-loss' || this.scenario === 'channel-closure' ? 'danger' : 'warning', affectedArea: '参考码头与航道', estimatedImpact: `队列 ${tick.queueVessels} 艘 / 设备故障 ${tick.equipmentFaults}` }],
         eventLog: [{ id: `ops-tick-${tick.sequence}`, time: tick.eventTime.slice(11, 19), message: `实时模拟 tick ${tick.sequence} · 到港 ${tick.arrivals} / 服务 ${tick.servicedVessels} / 队列 ${tick.queueVessels}`, tone: tick.queueVessels > 30 ? 'warning' : 'ok' }],

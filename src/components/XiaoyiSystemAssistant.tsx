@@ -232,13 +232,13 @@ const xiaoyiActions: Record<string, XiaoyiAction> = {
   },
   'rl-decision': {
     id: 'rl-decision',
-    label: '打开 RL 策略推理',
+    label: '打开策略推理',
     summary: '进入沙盘模块并打开在线策略推理舱。',
     steps: [
       moduleStep('sandbox', '沙盘推演'),
       {
         target: 'open-rl-decision',
-        label: '点击“RL策略推理”',
+        label: '点击“策略推理”',
         verification: {
           mode: 'attribute',
           attribute: 'data-xiaoyi-state',

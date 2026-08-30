@@ -1,4 +1,11 @@
-import type { ChannelStatus, MalaccaScenario, PortNode, RouteOverlay, VesselMarker } from '../types/sandbox';
+import type {
+  ChannelStatus,
+  MalaccaScenario,
+  PortNode,
+  RouteOverlay,
+  VesselMarker,
+  VesselTypeStat,
+} from '../types/sandbox';
 
 export type PortDataMode = 'demo' | 'public' | 'live';
 export type PortDataConnectionStatus = 'demo' | 'connecting' | 'public' | 'live' | 'fallback';
@@ -91,6 +98,24 @@ const mergeById = <T extends { id: string }>(baseline: T[], patches?: Array<Part
   return [...merged, ...patches.filter((item): item is T => !knownIds.has(item.id) && Boolean(item.id))];
 };
 
+const clampUnitInterval = (value: number) => Math.max(0, Math.min(1, value > 1 ? value / 100 : value));
+
+const scaleVesselTypeStats = (baseline: VesselTypeStat[], total: number): VesselTypeStat[] => {
+  const safeTotal = Math.max(0, Math.round(total));
+  let assigned = 0;
+  return baseline.map((item, index) => {
+    const count = index === baseline.length - 1
+      ? Math.max(0, safeTotal - assigned)
+      : Math.round(safeTotal * item.percent / 100);
+    assigned += count;
+    return {
+      ...item,
+      count,
+      percent: safeTotal > 0 ? Number((count / safeTotal * 100).toFixed(1)) : 0,
+    };
+  });
+};
+
 export const mergePortTelemetry = (
   demoScenario: MalaccaScenario,
   snapshot: PortTelemetrySnapshot,
@@ -113,11 +138,26 @@ export const mergePortTelemetry = (
     throw new Error('topologyMode=replace 时必须提供至少一个港口节点');
   }
 
+  const overview = { ...demoScenario.overview, ...scenarioPatch.overview, ...telemetry.overview };
+  const congestionHeatmap = scenarioPatch.congestionHeatmap ?? demoScenario.congestionHeatmap;
+  const normalizedCongestionHeatmap = {
+    ...congestionHeatmap,
+    hotspots: congestionHeatmap.hotspots.map((hotspot) => ({
+      ...hotspot,
+      intensity: clampUnitInterval(hotspot.intensity),
+    })),
+  };
+  const vesselTypeStats = scenarioPatch.vesselTypeStats ?? (
+    snapshot.protocolVersion === 'port-operations.telemetry.v1'
+      ? scaleVesselTypeStats(demoScenario.vesselTypeStats, overview.monitoredVesselCount)
+      : demoScenario.vesselTypeStats
+  );
+
   return {
     ...demoScenario,
     ...scenarioPatch,
     currentTime: snapshot.observedAt || scenarioPatch.currentTime || demoScenario.currentTime,
-    overview: { ...demoScenario.overview, ...scenarioPatch.overview, ...telemetry.overview },
+    overview,
     weather: { ...demoScenario.weather, ...scenarioPatch.weather, ...telemetry.weather },
     ports: replaceTopology
       ? replacementPorts as PortNode[]
@@ -134,9 +174,9 @@ export const mergePortTelemetry = (
     metrics: telemetry.metrics ?? scenarioPatch.metrics ?? demoScenario.metrics,
     riskAlerts: telemetry.riskAlerts ?? scenarioPatch.riskAlerts ?? demoScenario.riskAlerts,
     eventLog: telemetry.eventLog ?? scenarioPatch.eventLog ?? demoScenario.eventLog,
-    vesselTypeStats: scenarioPatch.vesselTypeStats ?? demoScenario.vesselTypeStats,
+    vesselTypeStats,
     carbon: scenarioPatch.carbon ?? demoScenario.carbon,
-    congestionHeatmap: scenarioPatch.congestionHeatmap ?? demoScenario.congestionHeatmap,
+    congestionHeatmap: normalizedCongestionHeatmap,
     strategies: scenarioPatch.strategies ?? demoScenario.strategies,
   };
 };

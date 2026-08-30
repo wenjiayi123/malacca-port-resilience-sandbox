@@ -1,6 +1,7 @@
 import {
   lazy,
   Suspense,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -75,6 +76,12 @@ import {
   type RlPolicyInferenceEventContext,
   type RlPolicyInferenceResponse,
 } from './integrations/rlPolicyAdapter';
+import {
+  fetchPortBusinessChampionStatus,
+  type PortBusinessChampionStatus,
+  type PortBusinessDecisionReport,
+  type PortBusinessRuntimeDecision,
+} from './integrations/portBusinessRlAdapter';
 import {
   requestXiaoyiRlAdvice,
   type XiaoyiRlAdvisorResponse,
@@ -2185,7 +2192,7 @@ const englishTextByChinese: Record<string, string> = {
   暂停: 'Pause',
   重置: 'Reset',
   事件注入: 'Event Injection',
-  RL策略推理: 'RL Policy',
+  策略推理: 'Policy Inference',
   训练中心: 'Training Center',
   导出报告: 'Export Report',
   倍速: 'Speed',
@@ -2476,7 +2483,7 @@ function Panel({
 
 function RollingMetricValue({ value }: { value: string }) {
   return (
-    <span className="rolling-number" aria-label={value}>
+    <span className="rolling-number" aria-label={value} aria-live="polite" data-value={value} key={value}>
       {Array.from(value).map((character, index) => (
         <span
           aria-hidden="true"
@@ -2717,6 +2724,11 @@ export function App() {
   const [rlBenchmark, setRlBenchmark] = useState<RlBenchmarkResponse | null>(restoreRlBenchmark);
   const [rlTrainingJob, setRlTrainingJob] = useState<RlTrainingJobSnapshot | null>(null);
   const [rlPolicyEvaluation, setRlPolicyEvaluation] = useState<RlPolicyEvaluationResponse | null>(null);
+  const [portBusinessEvidence, setPortBusinessEvidence] = useState<{
+    champion: PortBusinessChampionStatus | null;
+    decision: PortBusinessRuntimeDecision | null;
+    report: PortBusinessDecisionReport | null;
+  }>({ champion: null, decision: null, report: null });
   const [rlBenchmarkMessage, setRlBenchmarkMessage] = useState(
     () => restoreRlBenchmark()
       ? '已恢复上次训练摘要；正在通过任务编号校验服务器检查点'
@@ -3540,6 +3552,22 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    const controller = new AbortController();
+    void fetchPortBusinessChampionStatus(portDataConfig.apiKey, controller.signal)
+      .then((champion) => setPortBusinessEvidence((current) => ({ ...current, champion })))
+      .catch(() => setPortBusinessEvidence((current) => ({ ...current, champion: null })));
+    return () => controller.abort();
+  }, [portDataConfig.apiKey]);
+
+  const handleBusinessEvidenceChange = useCallback((evidence: {
+    champion: PortBusinessChampionStatus | null;
+    decision: PortBusinessRuntimeDecision | null;
+    report: PortBusinessDecisionReport | null;
+  }) => {
+    setPortBusinessEvidence(evidence);
+  }, []);
+
+  useEffect(() => {
     if (portDataConfig.mode === 'demo') return undefined;
 
     let canceled = false;
@@ -3651,6 +3679,7 @@ export function App() {
     setSelectedEventTemplateId(
       eventInjectionTemplates[sandboxRuntime.injectionCursor % eventInjectionTemplates.length].id,
     );
+    setInspectorPanel(null);
     setIsRlDecisionPanelOpen(false);
     setIsEventInjectionPanelOpen(true);
   };
@@ -3733,7 +3762,7 @@ export function App() {
             startedMinute: 0,
             completedAt: undefined,
             completedMinute: undefined,
-            summary: '事件影响已完成传播计算，等待点击 RL 策略推理',
+            summary: '事件影响已完成传播计算，等待点击策略推理',
           },
           {
             id: 'micro-validation',
@@ -4009,7 +4038,7 @@ export function App() {
       id: 'vessel-total',
       label:
         portDataStatus === 'public'
-          ? '月度到港船舶'
+          ? '校准模拟船流'
           : portDataStatus === 'live'
             ? '实时船舶总数'
             : '代表船统计',
@@ -4017,7 +4046,7 @@ export function App() {
       unit: '艘',
       detail:
         portDataStatus === 'public'
-          ? `MPA ${publicEvidence?.mpa.period ?? '公开数据期'}`
+          ? `公开 AIS 研究分布校准 · MPA ${publicEvidence?.mpa.period ?? '公开数据期'}`
           : portDataStatus === 'live'
             ? '授权 AIS 在线监测'
             : '合成场景映射',
@@ -4053,9 +4082,14 @@ export function App() {
     const queueRisk =
       Math.min(1, port.queueVessels / 80) *
       (isRecoveryHotspot ? 1 - rlPolicyRecoveryProgress * 0.72 : 1);
+    const normalizedHotspotIntensity = clampNumber(
+      hotspot.intensity > 1 ? hotspot.intensity / 100 : hotspot.intensity,
+      0,
+      1,
+    );
     const hotspotFloor = isRecoveryHotspot
-      ? hotspot.intensity * (1 - rlPolicyRecoveryProgress * 0.72)
-      : hotspot.intensity;
+      ? normalizedHotspotIntensity * (1 - rlPolicyRecoveryProgress * 0.72)
+      : normalizedHotspotIntensity;
     const intensity = Math.min(
       1,
       Math.max(hotspotFloor, port.congestionPercent / 100, queueRisk),
@@ -5798,7 +5832,7 @@ export function App() {
       ? {
           tone: 'ok' as StatusTone,
           label: `${rlPolicyInference.model.policyId} · ${rlPolicyInference.selectedAction.label}`,
-          detail: `概率 ${rlPolicyInference.selectedAction.probability.toFixed(1)}% / ${rlPolicyInference.selectedAction.commandSummary}`,
+          detail: `概率 ${(rlPolicyInference.selectedAction.probability * 100).toFixed(1)}% / ${rlPolicyInference.selectedAction.commandSummary}`,
         }
       : bestGreenStrategy
         ? {
@@ -6043,7 +6077,7 @@ export function App() {
     {
       id: 'ai-dispatch',
       label: '已训练策略检查点推理',
-      shortLabel: 'RL策略',
+      shortLabel: '策略推理',
       status: rlPolicyApplied ? 'completed' : phaseStatus('vessel-dispatch'),
       value: rlPolicyApplied && rlPolicyInference
         ? rlPolicyInference.selectedAction.label
@@ -6083,10 +6117,15 @@ export function App() {
     (step) => step.status === 'completed',
   ).length;
   const downloadClosureReport = () => {
+    const closureComplete = completedClosureStepCount === coreClosureJourney.length;
+    const missingClosureSteps = coreClosureJourney
+      .filter((step) => step.status !== 'completed')
+      .map((step) => ({ id: step.id, label: step.label, status: step.status }));
     const report = {
       protocolVersion: 'malacca-closure-report.v1',
       generatedAt: new Date().toISOString(),
       title: `${scenario.regionLabel ?? '港航网络'}韧性数字孪生闭环报告`,
+      completionStatus: closureComplete ? 'COMPLETE' : 'DRAFT_INCOMPLETE',
       dataMode: portDataStatus,
       dataEvidence: publicEvidence,
       scenario: {
@@ -6127,14 +6166,17 @@ export function App() {
         recovery: policyRecovery,
         baselineBenchmark: rlBenchmark,
         training: rlTraining,
+        portBusinessRuntime: portBusinessEvidence,
       },
       godotValidation: {
         request: generatedGodotRequest,
         result: importedGodotResult,
       },
       closure: {
+        closureComplete,
         completedSteps: completedClosureStepCount,
         totalSteps: coreClosureJourney.length,
+        missingSteps: missingClosureSteps,
         steps: coreClosureJourney,
         resultSynced: Boolean(importedGodotResult),
         reportUpdated: phaseStatus('metric-feedback') === 'completed',
@@ -6144,7 +6186,7 @@ export function App() {
     const url = URL.createObjectURL(
       new Blob([JSON.stringify(report, null, 2)], { type: 'application/json;charset=utf-8' }),
     );
-    const filename = `malacca-closure-report-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+    const filename = `malacca-closure-report-${closureComplete ? 'complete' : 'draft-incomplete'}-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
     const anchor = document.createElement('a');
     anchor.href = url;
     anchor.download = filename;
@@ -6152,10 +6194,12 @@ export function App() {
     setReportExportSequence((sequence) => sequence + 1);
     openInspectorPanel({
       id: 'closure-report-exported',
-      title: '闭环报告已生成',
+      title: closureComplete ? '闭环报告已生成' : '闭环报告草稿已生成',
       subtitle: filename,
-      body: '报告已交给浏览器下载，包含数据模式、事件、计算审计、策略、RL、单船验证和闭环状态；可在浏览器下载记录中查看。',
-      tone: 'ok',
+      body: closureComplete
+        ? '完整报告已交给浏览器下载，包含数据模式、事件、计算审计、策略、在线控制、单船验证和闭环状态。'
+        : `报告已按 DRAFT_INCOMPLETE 标记；尚缺 ${missingClosureSteps.map((step) => step.label).join('、')}，不可作为闭环完成证明。`,
+      tone: closureComplete ? 'ok' : 'warning',
       metrics: [
         { label: '闭环步骤', value: `${completedClosureStepCount}/${coreClosureJourney.length}` },
         { label: '事件', value: String(injectedEvents.length), unit: '项' },
@@ -6172,7 +6216,7 @@ export function App() {
     : generatedGodotRequest
       ? '信息流已生成'
       : rlPolicyApplied
-        ? 'RL策略已执行'
+        ? '策略已执行'
         : rlInferenceStatus === 'running'
           ? '检查点推理中'
       : isSimulationRunning
@@ -6204,7 +6248,7 @@ export function App() {
             ? `查看RL推理 ${rlInferenceProgress.toFixed(2)}%`
             : rlPolicyInference
               ? '采用已训练策略'
-              : '打开RL策略推理舱'
+              : '打开策略推理舱'
         : '启动或注入事件';
   const sandboxCapabilityItems: SandboxCapabilityItem[] = [
     {
@@ -6248,11 +6292,11 @@ export function App() {
     },
     {
       id: 'strategy',
-      label: 'RL策略',
+      label: '策略',
       value: rlPolicyApplied
         ? `${rlPolicyRecoveryPercent}%`
         : rlPolicyInference
-        ? `${rlPolicyInference.selectedAction.probability.toFixed(1)}%`
+        ? `${(rlPolicyInference.selectedAction.probability * 100).toFixed(1)}%`
         : rlInferenceStatus === 'running'
           ? `${rlInferenceProgress.toFixed(0)}%`
           : '--',
@@ -6681,6 +6725,8 @@ export function App() {
       openRlTrainingWindow();
       return;
     }
+    setInspectorPanel(null);
+    setIsEventInjectionPanelOpen(false);
     setIsRlDecisionPanelOpen(true);
     setIsRlPolicyApplyConfirmationOpen(false);
     setIsGodotSimulatorOpen(false);
@@ -6705,7 +6751,11 @@ export function App() {
   };
 
   const applyRlPolicyDecision = () => {
-    if (!rlPolicyInference || rlInferenceStatus !== 'completed') return;
+    if (
+      !rlPolicyInference
+      || rlInferenceStatus !== 'completed'
+      || rlPolicyInference.admission.status !== 'admitted'
+    ) return;
     const mostLikelyForecast = [...rlPolicyInference.scenarioForecasts].sort(
       (left, right) => right.probability - left.probability,
     )[0];
@@ -7586,6 +7636,9 @@ export function App() {
     window.addEventListener('mouseup', handleMouseUp);
   };
   const openInspectorPanel = (panel: InspectorPanel) => {
+    setIsEventInjectionPanelOpen(false);
+    setIsRlDecisionPanelOpen(false);
+    setIsRlPolicyApplyConfirmationOpen(false);
     setContextInspectorWindow(getCenteredContextInspectorWindowState());
     setInspectorPanel(panel);
   };
@@ -8021,6 +8074,7 @@ export function App() {
         </div>
         <div className="top-bar__right">
           <button
+            aria-label="系统设置"
             aria-expanded={isSettingsOpen}
             data-xiaoyi-action="open-settings"
             onClick={() => setIsSettingsOpen((value) => !value)}
@@ -8232,6 +8286,13 @@ export function App() {
               <em>艘</em>
             </div>
           </div>
+          <p className="ship-status__evidence">
+            {portDataStatus === 'live'
+              ? '授权船舶自动识别系统分类快照'
+              : portDataStatus === 'public'
+                ? '公开研究分布校准的模拟分类，非实时实船统计'
+                : '合成场景分类，仅用于界面验证'}
+          </p>
         </Panel>
 
         <Panel title="航道通航状态" {...getPanelExpandProps('航道通航状态')}>
@@ -8488,7 +8549,7 @@ export function App() {
                 : latestInjectedEvent.impact.summary}
             </p>
             {rlPolicyApplied && (
-              <div className="event-impact-banner__recovery" aria-label={`RL策略恢复进度 ${rlPolicyRecoveryPercent}%`}>
+              <div className="event-impact-banner__recovery" aria-label={`策略恢复进度 ${rlPolicyRecoveryPercent}%`}>
                 <b />
               </div>
             )}
@@ -9402,14 +9463,13 @@ export function App() {
             </button>
           </header>
 
-          <div className="event-injection-options" role="list">
+          <div aria-label="可注入事件" className="event-injection-options">
             {eventInjectionTemplates.map((template, index) => (
               <button
                 aria-pressed={selectedEventTemplateId === template.id}
                 className={`event-injection-option event-injection-option--${template.tone}`}
                 key={template.id}
                 onClick={() => setSelectedEventTemplateId(template.id)}
-                role="listitem"
                 style={
                   {
                     '--event-option-color': statusColorByTone[template.tone],
@@ -9453,7 +9513,7 @@ export function App() {
 
       {activeModule === 'sandbox' && isRlDecisionPanelOpen && (
         <section
-          aria-label="RL 在线策略推理舱"
+          aria-label="在线策略推理舱"
           className={`rl-decision-cockpit rl-decision-cockpit--${rlInferenceStatus}${rlPolicyApplied ? ' rl-decision-cockpit--applied' : ''}`}
           style={
             {
@@ -9465,7 +9525,7 @@ export function App() {
             <div>
               <Activity size={16} />
               <span>
-                <strong>RL 在线策略推理舱</strong>
+                <strong>在线策略推理舱</strong>
                 <small>ONLINE POLICY INFERENCE · UNCERTAINTY-AWARE WHAT-IF</small>
               </span>
             </div>
@@ -9474,12 +9534,12 @@ export function App() {
               <span>{rlInferenceStatus === 'running' ? `检查点策略推理 ${rlInferenceProgress.toFixed(2)}%` : rlPolicyApplied ? '策略已进入沙盘回放' : rlInferenceStatus === 'completed' ? '推理完成 · 等待采用' : '策略服务待命'}</span>
             </div>
             <div className="rl-decision-cockpit__header-actions">
-              <button aria-label="打开RL训练中心" onClick={openRlTrainingWindow} type="button">
+              <button aria-label="打开策略训练中心" onClick={openRlTrainingWindow} type="button">
                 <Gauge size={13} />
                 训练中心
               </button>
               <button
-                aria-label="关闭RL策略推理舱"
+                aria-label="关闭在线策略推理舱"
                 onClick={() => {
                   setIsRlPolicyApplyConfirmationOpen(false);
                   setIsRlDecisionPanelOpen(false);
@@ -9491,7 +9551,7 @@ export function App() {
             </div>
           </header>
 
-          <div className="rl-inference-pipeline" aria-label="RL推理流水线进度">
+          <div className="rl-inference-pipeline" aria-label="策略推理流水线进度">
             {['状态离散化', '检查点决策', '动作价值归一化', '单步模型投影', '安全人工约束'].map((stage, index) => {
               const threshold = (index + 1) * 20;
               const stageProgress = clampNumber((rlInferenceProgress - index * 20) * 5, 0, 100);
@@ -9573,8 +9633,8 @@ export function App() {
                 {(rlPolicyInference?.scenarioForecasts ?? []).map((forecast, index) => (
                   <article key={forecast.id}>
                     <span>{String(index + 1).padStart(2, '0')}</span>
-                    <strong>{forecast.label}<em>{forecast.probability.toFixed(1)}%</em></strong>
-                    <i><b style={{ width: `${forecast.probability}%` }} /></i>
+                    <strong>{forecast.label}<em>{(forecast.probability * 100).toFixed(1)}%</em></strong>
+                    <i><b style={{ width: `${forecast.probability * 100}%` }} /></i>
                     <small>拥堵 {forecast.congestionPercent.toFixed(1)}% · 延误 {forecast.delayMinutes}分 · 恢复 {forecast.recoveryMinutes}分 · 碳 {forecast.carbonDeltaTons > 0 ? '+' : ''}{forecast.carbonDeltaTons.toFixed(1)}t</small>
                   </article>
                 ))}
@@ -9601,6 +9661,27 @@ export function App() {
                   <em>影响范围：{rlPolicyInference.selectedAction.affectedScope} · {rlPolicyInference.inference.safetyShield}</em>
                 </div>
               )}
+              {rlPolicyInference && (
+                <div
+                  aria-live="polite"
+                  className={`rl-policy-admission rl-policy-admission--${rlPolicyInference.admission.status}`}
+                >
+                  <strong>
+                    {rlPolicyInference.admission.status === 'admitted'
+                      ? 'ADMITTED · 可进入人工确认'
+                      : 'ABSTAIN · 策略拒绝下发'}
+                  </strong>
+                  <span>
+                    归一化策略熵 {rlPolicyInference.admission.normalizedEntropy.toFixed(3)} / 上限{' '}
+                    {rlPolicyInference.admission.thresholds.maximumNormalizedEntropy.toFixed(2)}
+                  </span>
+                  {rlPolicyInference.admission.blockers.length > 0 && (
+                    <ul>
+                      {rlPolicyInference.admission.blockers.map((blocker) => <li key={blocker}>{blocker}</li>)}
+                    </ul>
+                  )}
+                </div>
+              )}
               <div className="rl-action-distribution">
                 {(rlPolicyInference?.actionDistribution ?? []).map((action) => (
                   <span className={action.id === rlPolicyInference?.selectedAction.id ? 'is-selected' : ''} key={action.id}>
@@ -9621,12 +9702,21 @@ export function App() {
               <div className="rl-decision-actions">
                 <button
                   className="control-button control-button--primary"
-                  disabled={!rlPolicyInference || rlInferenceStatus !== 'completed' || rlPolicyApplied}
+                  disabled={
+                    !rlPolicyInference
+                    || rlInferenceStatus !== 'completed'
+                    || rlPolicyApplied
+                    || rlPolicyInference.admission.status !== 'admitted'
+                  }
                   onClick={() => setIsRlPolicyApplyConfirmationOpen(true)}
                   type="button"
                 >
                   <Play size={14} />
-                  {rlPolicyApplied ? '已训练策略已采用' : '采用已训练策略'}
+                  {rlPolicyApplied
+                    ? '已训练策略已采用'
+                    : rlPolicyInference?.admission.status === 'abstain'
+                      ? '门禁拒绝采用'
+                      : '采用已训练策略'}
                 </button>
                 <button className="control-button" onClick={openRlTrainingWindow} type="button">
                   <Gauge size={14} />
@@ -9823,6 +9913,32 @@ export function App() {
                       </span>
                     ))}
                   </div>
+                  <section className="port-business-champion-strip" aria-label="港口全业务强化学习冠军证据">
+                    <div>
+                      <small>PORT BUSINESS RL V3 · OFFLINE CHAMPION</small>
+                      <strong>
+                        {portBusinessEvidence.champion
+                          ? `${portBusinessEvidence.champion.champion.algorithmId} / ${portBusinessEvidence.champion.champion.attemptId}`
+                          : '冠军证据读取中'}
+                      </strong>
+                      <span>
+                        {portBusinessEvidence.champion
+                          ? `${portBusinessEvidence.champion.contract.observationCount}维观测 · ${portBusinessEvidence.champion.contract.actionCount}个动作 · ${portBusinessEvidence.champion.contract.rewardComponentCount}项奖励 · ${portBusinessEvidence.champion.champion.seedPolicyCount}种子集成`
+                          : '等待后端验证数据指纹、训练结果和准入门禁'}
+                      </span>
+                    </div>
+                    <span className={portBusinessEvidence.champion?.champion.admitted ? 'is-admitted' : 'is-blocked'}>
+                      {portBusinessEvidence.champion?.champion.admitted ? 'OFFLINE ADMITTED' : 'BLOCKED'}
+                      <small>production_authority=false</small>
+                    </span>
+                    <button
+                      onClick={() => {
+                        setActiveModule('evidence');
+                        setRlTrainingWindowState((current) => ({ ...current, isMinimized: true }));
+                      }}
+                      type="button"
+                    >进入策略闭环</button>
+                  </section>
                   <section
                     aria-label="真实训练任务常驻控制台"
                     className={`rl-training-command-center rl-training-command-center--${rlTraining.status}`}
@@ -11096,7 +11212,10 @@ export function App() {
         <section className={`module-panel module-panel--${activeModule}`} aria-live="polite">
           {activeModule === 'evidence' && (
             <Suspense fallback={<section className="operational-evidence-center operational-evidence-center--loading"><strong>正在加载证据与闭环中心</strong></section>}>
-              <OperationalEvidenceCenter authToken={portDataConfig.apiKey} />
+              <OperationalEvidenceCenter
+                authToken={portDataConfig.apiKey}
+                onBusinessEvidenceChange={handleBusinessEvidenceChange}
+              />
             </Suspense>
           )}
           {activeModule === 'overview' && (
@@ -11204,7 +11323,7 @@ export function App() {
                     type="button"
                   >
                     <Activity size={16} />
-                    <BilingualText text="RL策略推理" />
+                    <BilingualText text="策略推理" />
                   </button>
                   <button
                     aria-expanded={rlTrainingWindowState.isOpen}
@@ -11385,7 +11504,7 @@ export function App() {
                         onClick={handleEnterMicroValidation}
                         title={
                           injectedEvents.length > 0 && !rlPolicyApplied
-                            ? '请先在 RL 策略推理舱完成推理并采用策略'
+                            ? '请先在策略推理舱完成推理并采用策略'
                             : '生成单船验证信息流'
                         }
                         type="button"

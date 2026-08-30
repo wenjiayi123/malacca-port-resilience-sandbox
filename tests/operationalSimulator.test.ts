@@ -51,6 +51,16 @@ test('deterministic simulator emits complete field lineage and obeys physical en
   assert.equal(firstSnapshot.scenario.carbon.todayUnit, 'tCO₂e/模拟日');
   assert.ok(firstSnapshot.scenario.carbon.todayEmission > 0);
   assert.ok(firstSnapshot.scenario.carbon.hourlyTrend.length > 0);
+  assert.ok(firstSnapshot.scenario.congestionHeatmap.hotspots.every((item) => item.intensity >= 0 && item.intensity <= 1));
+  assert.equal(firstSnapshot.telemetry.ports.length, 8);
+  assert.equal(
+    firstSnapshot.scenario.vesselTypeStats.reduce((sum, item) => sum + item.count, 0),
+    firstSnapshot.telemetry.overview.monitoredVesselCount,
+  );
+  assert.equal(
+    firstSnapshot.telemetry.ports.reduce((sum, item) => sum + item.vesselCount, 0),
+    firstSnapshot.telemetry.overview.monitoredVesselCount,
+  );
 });
 
 test('simulator changes continuously without unconstrained randomness', () => {

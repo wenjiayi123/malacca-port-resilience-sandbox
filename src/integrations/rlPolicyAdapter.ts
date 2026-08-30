@@ -64,6 +64,24 @@ export interface RlPolicyInferenceResponse {
     confidencePercent: number;
     safetyShield: string;
   };
+  admission: {
+    status: 'admitted' | 'abstain';
+    normalizedEntropy: number;
+    thresholds: {
+      minimumConfidencePercent: number;
+      maximumNormalizedEntropy: number;
+      requireBusinessNonRegression: true;
+    };
+    checks: {
+      confidence: boolean;
+      entropy: boolean;
+      congestionNonRegression: boolean;
+      delayNonRegression: boolean;
+      carbonNonRegression: boolean;
+      resilienceNonRegression: boolean;
+    };
+    blockers: string[];
+  };
   actionDistribution: Array<{
     id: string;
     label: string;
@@ -115,7 +133,12 @@ export const submitRlPolicyInference = async (
   });
   if (!response.ok) throw new Error(`RL inference HTTP ${response.status}`);
   const result = (await response.json()) as Partial<RlPolicyInferenceResponse>;
-  if (result.protocolVersion !== 'rl-policy-inference.v2' || !Array.isArray(result.actionDistribution)) {
+  if (
+    result.protocolVersion !== 'rl-policy-inference.v2'
+    || !Array.isArray(result.actionDistribution)
+    || (result.admission?.status !== 'admitted' && result.admission?.status !== 'abstain')
+    || !Array.isArray(result.admission?.blockers)
+  ) {
     throw new Error('RL inference 返回协议无效');
   }
   return result as RlPolicyInferenceResponse;

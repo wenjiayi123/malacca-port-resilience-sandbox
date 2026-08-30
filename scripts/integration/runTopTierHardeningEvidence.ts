@@ -32,7 +32,7 @@ const areas = [
   {
     id: 'identity-ot-safety',
     name: '身份、审批与运行技术安全',
-    sources: ['server/productionAuthorityGate.ts', 'server/productionAuthorityPlugin.ts'],
+    sources: ['server/productionAuthorityGate.ts', 'server/productionAuthorityPlugin.ts', 'server/publicEvidencePlugin.ts'],
     tests: ['tests/productionAuthorityGate.test.ts'],
     documentation: 'docs/PRODUCTION_IDENTITY_AND_OT_SAFETY.md',
     softwareStatus: 'PASS',
@@ -59,7 +59,7 @@ const areas = [
   {
     id: 'reliability-dr',
     name: '24×7 可靠性与灾难恢复',
-    sources: ['server/reliableStateStore.ts'],
+    sources: ['server/reliableStateStore.ts', 'src/integrations/operationsControlAdapter.ts', 'src/components/OperationalEvidenceCenter.tsx'],
     tests: ['tests/reliableStateStore.test.ts'],
     documentation: 'docs/RELIABILITY_AND_DISASTER_RECOVERY.md',
     softwareStatus: 'PASS',
@@ -68,7 +68,7 @@ const areas = [
   {
     id: 'field-acceptance',
     name: '现场 KPI、影子运行与验收',
-    sources: ['server/siteAcceptanceGate.ts'],
+    sources: ['server/siteAcceptanceGate.ts', 'server/publicEvidencePlugin.ts', 'src/integrations/operationsControlAdapter.ts', 'src/components/OperationalEvidenceCenter.tsx'],
     tests: ['tests/siteAcceptanceGate.test.ts'],
     documentation: 'docs/FIELD_ACCEPTANCE.md',
     softwareStatus: 'PASS',

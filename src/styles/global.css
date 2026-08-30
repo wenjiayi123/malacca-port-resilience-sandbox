@@ -10,6 +10,311 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Port-business RL v3 is a first-class runtime chain, while production authority stays fail-closed. */
+.port-business-runtime {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(102, 229, 184, 0.24);
+  border-top: 3px solid rgba(102, 229, 184, 0.72);
+  background:
+    linear-gradient(105deg, rgba(22, 141, 112, 0.09), transparent 58%),
+    rgba(3, 17, 29, 0.88);
+}
+
+.port-business-runtime > header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.port-business-runtime > header > div,
+.port-business-runtime__decision,
+.port-business-runtime__approval > span {
+  display: grid;
+  gap: 3px;
+}
+
+.port-business-runtime > header small,
+.port-business-runtime__decision small,
+.port-business-runtime__approval small {
+  color: rgba(177, 225, 239, 0.56);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+}
+
+.port-business-runtime > header strong,
+.port-business-runtime__decision > strong {
+  color: #d9fff2;
+  font-size: 11px;
+}
+
+.port-business-runtime > header > span,
+.port-business-champion-strip > span {
+  display: grid;
+  gap: 2px;
+  color: #ff928e;
+  font-size: 8px;
+  font-style: normal;
+  text-align: right;
+}
+
+.port-business-runtime > header > span.is-admitted,
+.port-business-champion-strip > span.is-admitted {
+  color: #66e5b8;
+}
+
+.port-business-runtime button,
+.port-business-champion-strip button {
+  min-height: 28px;
+  padding: 5px 9px;
+  border: 1px solid rgba(102, 229, 184, 0.36);
+  border-radius: 2px;
+  color: #d9fff2;
+  background: rgba(22, 141, 112, 0.13);
+  font-size: 8px;
+  cursor: pointer;
+}
+
+.port-business-runtime button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.port-business-runtime__body {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.8fr) minmax(360px, 1.6fr) minmax(220px, 1fr);
+  gap: 8px;
+}
+
+.port-business-runtime__decision,
+.port-business-runtime__approval,
+.port-business-runtime__metrics {
+  padding: 8px;
+  border: 1px solid rgba(82, 205, 255, 0.14);
+  background: rgba(0, 8, 18, 0.46);
+}
+
+.port-business-runtime__decision > span,
+.port-business-runtime__decision > em,
+.port-business-runtime__decision li,
+.port-business-runtime__approval em,
+.port-business-runtime__approval p {
+  color: rgba(205, 237, 247, 0.64);
+  font-size: 8px;
+  font-style: normal;
+  line-height: 1.45;
+}
+
+.port-business-runtime__decision > em {
+  color: #ffd079;
+}
+
+.port-business-runtime__decision ul {
+  max-height: 64px;
+  margin: 2px 0 0;
+  padding-left: 14px;
+  overflow: auto;
+}
+
+.port-business-runtime__metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.port-business-runtime__metrics > span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 5px;
+  border-left: 2px solid rgba(82, 205, 255, 0.4);
+}
+
+.port-business-runtime__metrics small {
+  color: rgba(177, 225, 239, 0.52);
+  font-size: 7px;
+}
+
+.port-business-runtime__metrics strong,
+.port-business-runtime__approval strong {
+  overflow: hidden;
+  color: #c8f4ff;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.port-business-runtime__approval {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.port-business-runtime__approval p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #ffd079;
+}
+
+.port-business-champion-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 9px;
+  border: 1px solid rgba(102, 229, 184, 0.24);
+  background: linear-gradient(90deg, rgba(22, 141, 112, 0.11), rgba(3, 20, 31, 0.84));
+}
+
+.port-business-champion-strip > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.port-business-champion-strip > div small,
+.port-business-champion-strip > div span,
+.port-business-champion-strip > span small {
+  color: rgba(181, 228, 240, 0.58);
+  font-size: 7px;
+}
+
+.port-business-champion-strip > div strong {
+  overflow: hidden;
+  color: #d9fff2;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.production-readiness-gates {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid rgba(255, 208, 121, 0.22);
+  border-top: 3px solid rgba(255, 208, 121, 0.62);
+  background: rgba(29, 18, 4, 0.26);
+}
+
+.production-readiness-gates > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.production-readiness-gates > header > div {
+  display: grid;
+  gap: 2px;
+}
+
+.production-readiness-gates > header strong {
+  color: #fff1ce;
+  font-size: 10px;
+}
+
+.production-readiness-gates > header em,
+.production-readiness-gates > footer {
+  color: #ffd079;
+  font-size: 8px;
+  font-style: normal;
+}
+
+.production-readiness-gates > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.production-readiness-gates article {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+  max-height: 150px;
+  padding: 7px;
+  overflow: auto;
+  border: 1px solid rgba(255, 113, 108, 0.18);
+  border-left: 3px solid #ff716c;
+  background: rgba(27, 7, 9, 0.28);
+}
+
+.production-readiness-gates article.is-ready {
+  border-color: rgba(102, 229, 184, 0.2);
+  border-left-color: #66e5b8;
+  background: rgba(13, 66, 52, 0.18);
+}
+
+.production-readiness-gates article small,
+.production-readiness-gates article span,
+.production-readiness-gates article li {
+  color: rgba(204, 235, 245, 0.62);
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.production-readiness-gates article strong {
+  color: #ffaaa6;
+  font-size: 10px;
+}
+
+.production-readiness-gates article.is-ready strong {
+  color: #66e5b8;
+}
+
+.production-readiness-gates article ul {
+  margin: 0;
+  padding-left: 14px;
+}
+
+.production-readiness-gates button {
+  min-height: 28px;
+  padding: 5px 9px;
+  border: 1px solid rgba(255, 208, 121, 0.32);
+  color: #fff1ce;
+  background: rgba(133, 86, 8, 0.15);
+  font-size: 8px;
+}
+
+@media (max-width: 900px) {
+  .port-business-runtime__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .port-business-runtime__metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .production-readiness-gates > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .port-business-runtime > header,
+  .port-business-champion-strip {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .port-business-runtime > header > button,
+  .port-business-champion-strip > button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .port-business-runtime__approval {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .port-business-runtime__approval p {
+    grid-column: auto;
+  }
+}
+
 /* Compact command presentation: keep the map readable and make the full business loop explicit. */
 .simulation-render-layer {
   z-index: 8;
@@ -2972,6 +3277,13 @@ button.alert-pill {
   grid-template-columns: minmax(0, 1fr) 74px;
   gap: 6px;
   align-items: center;
+}
+
+.ship-status__evidence {
+  margin: 5px 0 0;
+  color: rgba(194, 233, 255, 0.5);
+  font-size: 8px;
+  line-height: 1.35;
 }
 
 .metric-list,
@@ -10342,7 +10654,7 @@ button.alert-pill {
 }
 
 .context-inspector {
-  z-index: 34;
+  z-index: 115;
   left: var(--inspector-x);
   top: var(--inspector-y);
   display: grid;
@@ -12337,7 +12649,7 @@ button.alert-pill {
 /* RL online decision cockpit: inference, uncertainty and what-if results stay visible in one surface. */
 .rl-decision-cockpit {
   position: fixed;
-  z-index: 31;
+  z-index: 118;
   top: 142px;
   right: 58px;
   bottom: 86px;
@@ -12620,6 +12932,48 @@ button.alert-pill {
   padding: 7px;
   border: 1px solid rgba(82, 205, 255, 0.16);
   background: rgba(82, 205, 255, 0.035);
+}
+
+.rl-policy-admission {
+  display: grid;
+  gap: 4px;
+  padding: 7px 8px;
+  border: 1px solid rgba(35, 230, 168, 0.42);
+  background: rgba(19, 112, 85, 0.16);
+}
+
+.rl-policy-admission strong {
+  color: #73edc7;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+}
+
+.rl-policy-admission span,
+.rl-policy-admission li {
+  color: rgba(205, 239, 230, 0.7);
+  font-size: 7px;
+  line-height: 1.35;
+}
+
+.rl-policy-admission ul {
+  display: grid;
+  gap: 2px;
+  padding: 0 0 0 14px;
+  margin: 0;
+}
+
+.rl-policy-admission--abstain {
+  border-color: rgba(255, 127, 92, 0.56);
+  background: rgba(126, 46, 31, 0.2);
+}
+
+.rl-policy-admission--abstain strong {
+  color: #ffad97;
+}
+
+.rl-policy-admission--abstain span,
+.rl-policy-admission--abstain li {
+  color: rgba(255, 215, 204, 0.76);
 }
 
 .rl-model-metadata small,
@@ -12945,7 +13299,7 @@ button.alert-pill {
 /* Explicit event injection: choose a scenario first, then expose its map and vessel effects. */
 .event-injection-cockpit {
   position: fixed;
-  z-index: 32;
+  z-index: 118;
   top: 142px;
   right: 58px;
   left: 58px;
@@ -14361,10 +14715,10 @@ button.alert-pill {
 @keyframes xiaoyi-system-dialog-enter { from { opacity: 0; transform: translateY(14px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
 @media (max-width: 760px) {
-  .xiaoyi-system-assistant { right: 10px; bottom: 10px; }
-  .xiaoyi-system-avatar { width: 88px; height: 120px; }
-  .xiaoyi-system-speech { right: 64px; bottom: 92px; width: 205px; }
-  .xiaoyi-system-panel { right: 0; bottom: 106px; width: min(410px, calc(100vw - 20px)); max-height: calc(100vh - 132px); }
+  .xiaoyi-system-assistant { right: 8px; bottom: 205px; }
+  .xiaoyi-system-avatar { width: 58px; height: 78px; }
+  .xiaoyi-system-speech { right: 46px; bottom: 62px; width: 205px; }
+  .xiaoyi-system-panel { right: 0; bottom: 70px; width: min(410px, calc(100vw - 20px)); max-height: calc(100vh - 292px); }
   .xiaoyi-system-execution-hud { top: 12px; }
   .xiaoyi-system-task__intent { grid-template-columns: minmax(0, 1fr) 86px; }
   .xiaoyi-system-task__intent > span:last-child { display: none; }
@@ -14386,8 +14740,8 @@ button.alert-pill {
   .xiaoyi-system-report-dialog > footer { padding: 11px 14px 13px; }
   .xiaoyi-system-review-record { grid-template-columns: 28px minmax(0, 1fr); }
   .xiaoyi-system-review-record button { grid-column: 1 / -1; }
-  .xiaoyi-system-assistant.is-left-side .xiaoyi-system-speech { left: 64px; }
-  .xiaoyi-system-assistant.is-left-side .xiaoyi-system-panel { right: auto; bottom: 106px; left: 0; }
+  .xiaoyi-system-assistant.is-left-side .xiaoyi-system-speech { left: 46px; }
+  .xiaoyi-system-assistant.is-left-side .xiaoyi-system-panel { right: auto; bottom: 70px; left: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -14407,5 +14761,271 @@ button.alert-pill {
   .xiaoyi-system-avatar__figure {
     animation: none;
     transform: translateZ(0);
+  }
+}
+
+/* Compact operations viewport: contain the desktop command surface and keep primary controls reachable. */
+@media (max-width: 760px) {
+  html,
+  body,
+  #root {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .dashboard-shell,
+  .dashboard-shell--module-evidence {
+    width: 100%;
+    height: 100dvh;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .top-bar {
+    height: 64px;
+    grid-template-columns: 64px minmax(0, 1fr) 104px;
+  }
+
+  .top-bar__left,
+  .top-bar__right {
+    gap: 2px;
+    padding: 0 4px;
+  }
+
+  .top-bar__left > span,
+  .top-bar__right button:nth-child(n + 4),
+  .top-bar__right .bilingual-label {
+    display: none;
+  }
+
+  .top-bar .port-data-indicator {
+    width: 56px;
+    padding: 0 4px;
+    overflow: hidden;
+    justify-content: center;
+    font-size: 0;
+  }
+
+  .top-bar .port-data-indicator svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .top-bar__right button {
+    width: 30px;
+    flex: 0 0 30px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .system-title {
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: 0;
+    padding: 0 4px;
+    border: 0;
+    clip-path: none;
+  }
+
+  .system-title__main {
+    width: 100%;
+    padding: 2px 0 0;
+  }
+
+  .system-title h1 {
+    overflow: hidden;
+    max-width: 100%;
+    font-size: 12px;
+    text-overflow: ellipsis;
+  }
+
+  .system-title p {
+    overflow: hidden;
+    max-width: 100%;
+    font-size: 6px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .system-title__developer,
+  .kpi-bar,
+  .side-rail {
+    display: none;
+  }
+
+  .map-stage {
+    top: 64px;
+    right: 0;
+    bottom: 198px;
+    left: 0;
+  }
+
+  .simulation-render-layer {
+    top: 72px;
+    width: calc(100% - 16px);
+  }
+
+  .bottom-console,
+  .bottom-console.bottom-console--evidence {
+    height: 198px;
+    grid-template-rows: minmax(0, 1fr) 36px;
+    gap: 5px;
+    padding: 5px 6px;
+    overflow: hidden;
+  }
+
+  .bottom-console.bottom-console--evidence {
+    height: calc(100dvh - 64px);
+  }
+
+  .module-panel {
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+
+  .module-panel--overview {
+    min-width: 690px;
+    grid-template-columns: 180px minmax(500px, 1fr);
+  }
+
+  .module-panel--sandbox {
+    min-width: 1080px;
+    grid-template-columns: 430px 300px 350px;
+  }
+
+  .module-panel--resilience {
+    min-width: 780px;
+    grid-template-columns: 190px 240px 340px;
+  }
+
+  .module-panel--dispatch {
+    min-width: 680px;
+    grid-template-columns: 440px 230px;
+  }
+
+  .module-panel--emergency {
+    min-width: 520px;
+  }
+
+  .module-switcher {
+    display: flex;
+    min-width: 0;
+    gap: 4px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+
+  .module-button {
+    flex: 0 0 92px;
+    gap: 3px;
+    padding: 0 5px;
+  }
+
+  .module-button .bilingual-label__zh {
+    font-size: 9px;
+  }
+
+  .module-button .bilingual-label__en {
+    display: none;
+  }
+
+  .event-injection-cockpit,
+  .rl-decision-cockpit {
+    top: 70px;
+    right: 8px;
+    bottom: 8px;
+    left: 8px;
+    max-height: none;
+  }
+
+  .event-injection-cockpit {
+    overflow-y: auto;
+  }
+
+  .event-injection-cockpit__header,
+  .event-injection-cockpit__footer {
+    grid-template-columns: minmax(0, 1fr) 32px;
+  }
+
+  .event-injection-cockpit__header > em,
+  .event-injection-cockpit__footer > div:nth-child(2) {
+    display: none;
+  }
+
+  .event-injection-options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .event-injection-cockpit__footer > button {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    width: 100%;
+  }
+
+  .rl-decision-cockpit {
+    grid-template-rows: auto 64px minmax(0, 1fr);
+  }
+
+  .rl-decision-cockpit__header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px;
+    padding: 6px 8px;
+  }
+
+  .rl-decision-cockpit__model {
+    display: none;
+  }
+
+  .rl-inference-pipeline {
+    display: flex;
+    overflow-x: auto;
+  }
+
+  .rl-inference-pipeline > span {
+    min-width: 150px;
+    flex: 0 0 150px;
+  }
+
+  .rl-decision-cockpit__body {
+    grid-template-columns: minmax(0, 1fr);
+    overflow-y: auto;
+  }
+
+  .rl-decision-card {
+    overflow: visible;
+  }
+
+  .rl-training-window,
+  .rl-training-window--collapsed,
+  .rl-training-window--minimized {
+    position: fixed;
+    top: calc(50% + 24px);
+    width: calc(100vw - 16px);
+    min-width: 0;
+    height: calc(100dvh - 92px);
+    min-height: 0;
+  }
+
+  .context-inspector {
+    top: 72px !important;
+    right: 8px;
+    left: 8px !important;
+    width: auto !important;
+    max-width: calc(100vw - 16px);
+    height: min(430px, calc(100dvh - 88px)) !important;
+  }
+
+  .settings-popover,
+  .godot-simulator-dock {
+    top: 70px;
+    right: 8px;
+    left: 8px;
+    width: auto;
+    min-width: 0;
+    max-height: calc(100dvh - 78px);
   }
 }

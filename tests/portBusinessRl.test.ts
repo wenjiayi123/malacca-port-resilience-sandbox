@@ -28,6 +28,7 @@ import {
 } from '../server/portBusinessRlEngine.ts';
 import {
   assessPortBusinessProposal,
+  inferPortBusinessChampion,
   loadPortBusinessChampionStatus,
 } from '../server/portBusinessRlService.ts';
 
@@ -200,4 +201,35 @@ test('runtime proposal assessment returns an auditable safety projection and non
   assert.equal(result.execution.dispatchAllowed, false);
   assert.equal(result.execution.receiptIssued, false);
   assert.ok(result.deterministicFallback.candidates.length > 0);
+});
+
+test('champion runtime consumes all observations, exposes ensemble uncertainty and always fails closed to production', async () => {
+  const dataset = await loadPortBusinessDataset();
+  const record = { ...dataset.testRecords[12], dataQualityScore: 0.94, forecastUncertainty: 0.18 };
+  const result = await inferPortBusinessChampion({
+    record,
+    state: baseState,
+    previousRecord: dataset.testRecords[11],
+    provenance: {
+      sourceProtocolVersion: 'port-snapshot.v1',
+      snapshotHash: 'verified-runtime-snapshot-hash',
+      source: 'operational-simulator-public-calibrated',
+      liveDataVerified: false,
+      operatorMeasuredFieldCount: 0,
+    },
+  });
+  assert.equal(result.protocolVersion, 'port-business-runtime-decision.v1');
+  assert.equal(result.inference.observationTensor.length, PORT_BUSINESS_OBSERVATIONS.length);
+  assert.equal(result.inference.actionDistribution.length, PORT_BUSINESS_ACTIONS.length);
+  assert.equal(result.inference.uncertainty.ensemblePolicyCount, 5);
+  assert.ok(result.inference.actionDistribution.every((action) => Number.isFinite(action.probability)));
+  assert.ok(['reinforcement-learning-advisory', 'deterministic-optimizer']
+    .includes(result.admission.recommendationSource));
+  assert.equal(result.inputEvidence.snapshotHash, 'verified-runtime-snapshot-hash');
+  assert.equal(result.inputEvidence.liveDataVerified, false);
+  assert.equal(result.projected.dispatchAllowed, false);
+  assert.equal(result.deterministicFallback.dispatchAllowed, false);
+  assert.equal(result.execution.dispatchAllowed, false);
+  assert.equal(result.execution.receiptIssued, false);
+  assert.equal(result.authority.production_authority, false);
 });

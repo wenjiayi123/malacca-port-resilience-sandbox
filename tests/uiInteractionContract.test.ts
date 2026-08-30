@@ -139,11 +139,17 @@ test('policy inference labels remain algorithm-neutral and render signed busines
   const source = await readFile('src/App.tsx', 'utf8');
   assert.match(source, /已部署策略模型与观测状态/);
   assert.doesNotMatch(source, /已部署神经网络与状态张量/);
+  assert.match(source, /aria-label="在线策略推理舱"/);
+  assert.doesNotMatch(source, /RL 在线策略推理舱|RL推理流水线进度/);
   assert.match(source, /rlTrainingJob\?\.completedEpisodes\s*\?\?\s*rlBenchmark\?\.episodes/);
   assert.match(source, /rlPolicyEvaluation\?\.trace\.length/);
   assert.doesNotMatch(source, /Episode 3,000|500 Episodes/);
   assert.match(source, /formatPolicyReduction\(rlPolicyInference\.comparison\.improvement\.carbonTons/);
   assert.match(source, /<small>碳排变化<\/small>/);
+  assert.match(source, /rlPolicyInference\.admission\.status !== 'admitted'/);
+  assert.match(source, /门禁拒绝采用/);
+  assert.match(source, /forecast\.probability \* 100/);
+  assert.doesNotMatch(source, /role="listitem"/);
 });
 
 test('compact interview viewport keeps map-view and fullscreen controls operable', async () => {
@@ -156,4 +162,38 @@ test('compact interview viewport keeps map-view and fullscreen controls operable
   assert.doesNotMatch(styles, /\.top-bar__right button:nth-child\(2\),\s*\n\s*\.top-bar__right button:nth-child\(3\)\s*\{\s*display:\s*none/);
   assert.match(styles, /button:nth-child\(2\) \.bilingual-label/);
   assert.match(styles, /button:nth-child\(3\) \.bilingual-label/);
+  assert.match(styles, /@media \(max-width: 760px\)[\s\S]*?\.dashboard-shell,[\s\S]*?min-width: 0/);
+  assert.match(styles, /\.top-bar__right button:nth-child\(n \+ 4\)/);
+  assert.match(styles, /\.xiaoyi-system-assistant \{ right: 8px; bottom: 205px; \}/);
+});
+
+test('closure exports disclose incomplete workflows and simulated approval identity', async () => {
+  const [source, evidenceCenter] = await Promise.all([
+    readFile('src/App.tsx', 'utf8'),
+    readFile('src/components/OperationalEvidenceCenter.tsx', 'utf8'),
+  ]);
+  assert.match(source, /completionStatus: closureComplete \? 'COMPLETE' : 'DRAFT_INCOMPLETE'/);
+  assert.match(source, /missingSteps: missingClosureSteps/);
+  assert.match(source, /draft-incomplete/);
+  assert.match(evidenceCenter, /模拟双人审批（2个测试角色）/);
+  assert.match(evidenceCenter, /不代表现场实名审批/);
+});
+
+test('business champion and production-readiness gates are connected to the primary UI and report pipeline', async () => {
+  const [app, evidenceCenter, adapter, server] = await Promise.all([
+    readFile('src/App.tsx', 'utf8'),
+    readFile('src/components/OperationalEvidenceCenter.tsx', 'utf8'),
+    readFile('src/integrations/operationsControlAdapter.ts', 'utf8'),
+    readFile('server/publicEvidencePlugin.ts', 'utf8'),
+  ]);
+  assert.match(app, /portBusinessRuntime: portBusinessEvidence/);
+  assert.match(app, /PORT BUSINESS RL V3 · OFFLINE CHAMPION/);
+  assert.match(evidenceCenter, /33维观测 · 11个有界动作 · 10项奖励 · 5随机种子冠军集成/);
+  assert.match(evidenceCenter, /生产就绪三重门禁/);
+  assert.match(evidenceCenter, /重新核查门禁/);
+  assert.match(adapter, /fetchProductionReadiness/);
+  assert.match(server, /\/api\/operations\/production-readiness/);
+  assert.match(server, /\/api\/operations\/site-acceptance\/evaluate/);
+  assert.match(server, /\/api\/operations\/reliability\/evaluate/);
+  assert.match(server, /physical_dispatch_adapter_not_installed/);
 });

@@ -1,6 +1,8 @@
 import type { Plugin } from 'vite';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { randomUUID, timingSafeEqual } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import {
   runRlPolicyInference,
   type RlPolicyInferenceRequest,
@@ -55,6 +57,11 @@ import {
   RealtimeAisGateway,
   getSatelliteMapConfiguration,
 } from './realtimeAisGateway.ts';
+import {
+  evaluateSiteAcceptance,
+  type SiteAcceptanceEvidence,
+} from './siteAcceptanceGate.ts';
+import { assessReliabilityReadiness } from './reliableStateStore.ts';
 
 const MPA_TOTAL_DATASET = 'd_d48c5a038904f6da3c603cd854b6c191';
 const MPA_BREAKDOWN_DATASET = 'd_8f264219109e61fffa87ac64dd5a9a65';
@@ -95,6 +102,62 @@ const configuredCorsOrigins = new Set(
     .map((origin) => origin.trim())
     .filter(Boolean),
 );
+
+const parsePublicKeyTrustBundle = (name: string) => {
+  const raw = process.env[name] ?? '{}';
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error(`${name} 必须是有效 JSON`);
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error(`${name} 必须是 keyID 到 PEM 公钥的对象`);
+  return Object.fromEntries(Object.entries(parsed).map(([key, value]) => {
+    if (typeof value !== 'string' || !value.includes('BEGIN PUBLIC KEY')) throw new Error(`${name}.${key} 不是 PEM 公钥`);
+    return [key, value];
+  }));
+};
+
+const booleanEnvironment = (name: string, fallback = false) => {
+  const raw = process.env[name];
+  if (raw === undefined || raw === '') return fallback;
+  if (raw !== 'true' && raw !== 'false') throw new Error(`${name} 必须是 true 或 false`);
+  return raw === 'true';
+};
+
+const boundedNumberEnvironment = (name: string, fallback: number, minimum: number, maximum: number) => {
+  const raw = process.env[name];
+  if (raw === undefined || raw === '') return fallback;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < minimum || value > maximum) throw new Error(`${name} 必须介于 ${minimum} 和 ${maximum}`);
+  return value;
+};
+
+const configuredReliabilityEvidence = () => ({
+  replicaCount: readBoundedIntegerEnvironment('PORT_REPLICA_COUNT', 1, 1, 100),
+  backupAgeMinutes: boundedNumberEnvironment('PORT_BACKUP_AGE_MINUTES', 1_000_000, 0, 1_000_000),
+  restoreDrillAgeDays: boundedNumberEnvironment('PORT_RESTORE_DRILL_AGE_DAYS', 1_000_000, 0, 1_000_000),
+  restoreDrillPassed: booleanEnvironment('PORT_RESTORE_DRILL_PASSED'),
+  journalVerified: booleanEnvironment('PORT_STATE_JOURNAL_VERIFIED'),
+  alertRouteTested: booleanEnvironment('PORT_ALERT_ROUTE_TESTED'),
+  runbookReviewed: booleanEnvironment('PORT_RUNBOOK_REVIEWED'),
+  observedAvailabilityDays: boundedNumberEnvironment('PORT_OBSERVED_AVAILABILITY_DAYS', 0, 0, 100_000),
+  observedAvailabilityPercent: boundedNumberEnvironment('PORT_OBSERVED_AVAILABILITY_PERCENT', 0, 0, 100),
+});
+
+const siteAcceptanceTrustBundle = () => parsePublicKeyTrustBundle('PORT_SITE_ACCEPTANCE_TRUST_BUNDLE_JSON');
+
+const loadConfiguredSiteAcceptance = async () => {
+  const evidencePath = path.resolve(
+    process.env.PORT_SITE_ACCEPTANCE_EVIDENCE_PATH || 'config/port-profiles/site-acceptance.example.json',
+  );
+  const evidence = JSON.parse(await readFile(evidencePath, 'utf8')) as SiteAcceptanceEvidence;
+  return {
+    evidencePath: path.relative(process.cwd(), evidencePath) || path.basename(evidencePath),
+    evidenceLevel: evidence.evidenceLevel,
+    decision: evaluateSiteAcceptance(evidence, { trustBundle: siteAcceptanceTrustBundle() }),
+  };
+};
 
 interface CacheEntry {
   expiresAt: number;
@@ -800,6 +863,15 @@ export const createPublicEvidenceMiddleware = () => {
             evidence_scope: 'predeclared maritime/customs inspection stress scenario; authority signals remain exogenous',
           },
           {
+            id: 'port-business-rl-v3-linear-dyna-q',
+            version: 'port-business-rl.v3',
+            run_id: 'curriculum-520',
+            status: 'champion',
+            family: '33-observation linear Dyna-Q ensemble with 11 bounded advisory actions and deterministic fallback',
+            evidence_artifact: 'reports/port-business-rl-champion-v3.json',
+            evidence_scope: 'public aggregate anchored, engineering augmented, five-seed offline final test; not field KPI and not production authority',
+          },
+          {
             id: 'legacy-rl-benchmark-balanced-resilience',
             version: 'legacy-v1',
             run_id: 'historical-preserved',
@@ -810,6 +882,83 @@ export const createPublicEvidenceMiddleware = () => {
           },
         ],
       });
+      return;
+    }
+    if (request.method === 'GET' && url.pathname === '/api/operations/production-readiness') {
+      const siteAcceptance = await loadConfiguredSiteAcceptance();
+      const reliability = assessReliabilityReadiness(configuredReliabilityEvidence());
+      const identityTrustKeyCount = Object.keys(parsePublicKeyTrustBundle('PORT_IDENTITY_TRUST_BUNDLE_JSON')).length;
+      const interlockTrustKeyCount = Object.keys(parsePublicKeyTrustBundle('PORT_INTERLOCK_TRUST_BUNDLE_JSON')).length;
+      const acceptedSiteID = process.env.PORT_ACCEPTED_SITE_ID || 'pending.site';
+      const acceptedSiteReference = process.env.PORT_ACCEPTANCE_REFERENCE || 'PENDING-SITE-ACCEPTANCE';
+      const identityAndOtBlockers = [
+        ...(identityTrustKeyCount > 0 ? [] : ['identity_trust_bundle_not_configured']),
+        ...(interlockTrustKeyCount > 0 ? [] : ['interlock_trust_bundle_not_configured']),
+        ...(!/pending|example|replace|tbd/i.test(acceptedSiteID) ? [] : ['accepted_site_not_configured']),
+        ...(!/pending|example|replace|tbd/i.test(acceptedSiteReference) ? [] : ['site_acceptance_reference_not_configured']),
+        'physical_dispatch_adapter_not_installed',
+      ];
+      jsonResponse(response, {
+        protocolVersion: 'production-readiness-status.v1',
+        generatedAt: new Date().toISOString(),
+        gates: {
+          identityAndOtSafety: {
+            policyDecisionPointAvailable: true,
+            identityTrustKeyCount,
+            interlockTrustKeyCount,
+            acceptedSiteID,
+            acceptedSiteReference,
+            readyForPolicyEvaluation: identityAndOtBlockers.length === 1,
+            blockers: identityAndOtBlockers,
+          },
+          siteAcceptance,
+          reliability,
+        },
+        externalBlockers: [...new Set([
+          ...identityAndOtBlockers,
+          ...siteAcceptance.decision.blockers,
+          ...reliability.blockers,
+        ])],
+        siteDeliveryReady: siteAcceptance.decision.siteDeliveryReady && reliability.siteReliabilityAccepted,
+        authority: {
+          simulationMode: true,
+          liveDataVerified: false,
+          productionAuthority: false,
+          dispatchAllowed: false,
+        },
+      });
+      return;
+    }
+    if (request.method === 'POST' && url.pathname === '/api/operations/site-acceptance/evaluate') {
+      const evidence = await readJsonBody<SiteAcceptanceEvidence>(request);
+      if (evidence.protocolVersion !== 'site-acceptance-evidence.v1' ||
+          !evidence.observationWindow || !evidence.shadow || !Array.isArray(evidence.kpis) ||
+          !Array.isArray(evidence.acceptanceTests) || !evidence.operationsReadiness ||
+          !evidence.artifacts || !Array.isArray(evidence.signoffs)) {
+        throw new HttpError(422, 'site-acceptance-evidence.v1 结构不完整');
+      }
+      jsonResponse(response, evaluateSiteAcceptance(evidence, { trustBundle: siteAcceptanceTrustBundle() }));
+      return;
+    }
+    if (request.method === 'POST' && url.pathname === '/api/operations/reliability/evaluate') {
+      const evidence = await readJsonBody<ReturnType<typeof configuredReliabilityEvidence>>(request);
+      const numericFields = [
+        evidence.replicaCount,
+        evidence.backupAgeMinutes,
+        evidence.restoreDrillAgeDays,
+        evidence.observedAvailabilityDays,
+        evidence.observedAvailabilityPercent,
+      ];
+      const booleanFields = [
+        evidence.restoreDrillPassed,
+        evidence.journalVerified,
+        evidence.alertRouteTested,
+        evidence.runbookReviewed,
+      ];
+      if (!numericFields.every(Number.isFinite) || !booleanFields.every((value) => typeof value === 'boolean')) {
+        throw new HttpError(422, 'reliability-readiness.v1 证据字段无效');
+      }
+      jsonResponse(response, assessReliabilityReadiness(evidence));
       return;
     }
     if (request.method === 'GET' && url.pathname === '/api/operations/decisions') {

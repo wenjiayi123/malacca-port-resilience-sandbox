@@ -166,6 +166,38 @@ export interface PortBusinessChampionResult {
   notes: string[];
 }
 
+export interface PortBusinessRuntimeInference {
+  protocolVersion: 'port-business-runtime-inference.v1';
+  observationTensor: Array<{
+    id: BusinessObservationId;
+    raw: number;
+    normalized: number;
+    inRange: boolean;
+  }>;
+  applicableActionIds: BusinessActionId[];
+  actionDistribution: Array<{
+    actionId: BusinessActionId;
+    label: string;
+    meanValue: number;
+    ensembleStd: number;
+    probability: number;
+    voteShare: number;
+    applicable: boolean;
+  }>;
+  selectedAction: {
+    actionId: BusinessActionId;
+    label: string;
+    probability: number;
+    voteShare: number;
+    requiresHumanApproval: boolean;
+  };
+  uncertainty: {
+    normalizedEntropy: number;
+    outOfRangeObservationCount: number;
+    ensemblePolicyCount: number;
+  };
+}
+
 interface SimulatorState extends PortBusinessDynamicState {
   meanWaitingHours: number;
   p95WaitingHours: number;
@@ -304,6 +336,13 @@ const dot = (left: number[], right: number[]) =>
 
 const qValues = (weights: number[][], features: number[]) => weights.map((row) => dot(row, features));
 
+const softmax = (values: number[]) => {
+  const maximum = Math.max(...values);
+  const exponentials = values.map((value) => Math.exp(clamp(value - maximum, -30, 30)));
+  const total = exponentials.reduce((sum, value) => sum + value, 0) || 1;
+  return exponentials.map((value) => value / total);
+};
+
 const feasibleIndexes = (record: PortBusinessRecord, state: SimulatorState) =>
   applicableBusinessActionIds(record, state).map((id) => ACTION_INDEX.get(id)!).filter(Number.isInteger);
 
@@ -312,6 +351,101 @@ const bestIndex = (values: number[], available: number[], random?: () => number)
   const best = Math.max(...candidates.map((index) => values[index]));
   const tied = candidates.filter((index) => Math.abs(values[index] - best) < 1e-9);
   return tied[Math.floor((random?.() ?? 0) * tied.length)] ?? tied[0] ?? 0;
+};
+
+export const inferPortBusinessPolicyEnsemble = (
+  policies: LinearBusinessPolicy[],
+  record: PortBusinessRecord,
+  state: PortBusinessDynamicState,
+  previous?: PortBusinessRecord,
+): PortBusinessRuntimeInference => {
+  if (policies.length === 0) throw new Error('港口全业务冠军不含可用的种子策略');
+  const expectedObservations = PORT_BUSINESS_OBSERVATIONS.map((item) => item.id);
+  const expectedActions = [...ACTION_IDS];
+  for (const policy of policies) {
+    if (
+      policy.protocolVersion !== 'linear-port-business-policy.v1'
+      || policy.observationIds.join('|') !== expectedObservations.join('|')
+      || policy.actionIds.join('|') !== expectedActions.join('|')
+      || policy.weights.length !== expectedActions.length
+      || policy.weights.some((row) => row.length !== expectedObservations.length + 1)
+    ) throw new Error('港口全业务冠军策略与当前观测动作合同不兼容');
+  }
+  const enrichedState: SimulatorState = {
+    ...state,
+    meanWaitingHours: state.queueVessels / Math.max(1, record.effectiveCapacity) * 24,
+    p95WaitingHours: state.queueVessels / Math.max(1, record.effectiveCapacity) * 36,
+    carbonIntensity: record.carbonIntensity,
+    energyCostIndex: record.carbonIntensity * record.energyPriceIndex,
+  };
+  const rawObservation = buildPortBusinessObservation(enrichedState, record, previous);
+  const observationTensor = PORT_BUSINESS_OBSERVATIONS.map((definition) => {
+    const raw = rawObservation[definition.id];
+    const bounded = clamp(raw, definition.range[0], definition.range[1]);
+    return {
+      id: definition.id,
+      raw: round(raw),
+      normalized: round(((bounded - definition.range[0]) /
+        Math.max(1e-9, definition.range[1] - definition.range[0])) * 2 - 1),
+      inRange: raw >= definition.range[0] && raw <= definition.range[1],
+    };
+  });
+  const features = [1, ...observationTensor.map((item) => item.normalized)];
+  const applicableActionIds = applicableBusinessActionIds(record, state);
+  const applicableIndexes = applicableActionIds
+    .map((id) => ACTION_INDEX.get(id)!)
+    .filter(Number.isInteger);
+  const valuesByPolicy = policies.map((policy) => qValues(policy.weights, features));
+  const winningIndexes = valuesByPolicy.map((values) => bestIndex(values, applicableIndexes));
+  const meanValues = ACTION_IDS.map((_, actionIndex) =>
+    valuesByPolicy.reduce((sum, values) => sum + values[actionIndex], 0) / policies.length);
+  const applicableMeanValues = applicableIndexes.map((index) => meanValues[index]);
+  const meanCenter = applicableMeanValues.reduce((sum, value) => sum + value, 0) /
+    Math.max(1, applicableMeanValues.length);
+  const valueScale = Math.max(0.25, Math.sqrt(
+    applicableMeanValues.reduce((sum, value) => sum + (value - meanCenter) ** 2, 0) /
+    Math.max(1, applicableMeanValues.length),
+  ));
+  const applicableProbabilities = softmax(applicableMeanValues.map((value) => value / valueScale));
+  const probabilityByIndex = new Map(applicableIndexes.map((index, position) => [index, applicableProbabilities[position]]));
+  const selectedIndex = bestIndex(meanValues, applicableIndexes);
+  const actionDistribution = ACTION_IDS.map((actionId, actionIndex) => {
+    const values = valuesByPolicy.map((row) => row[actionIndex]);
+    const meanValue = meanValues[actionIndex];
+    const ensembleStd = Math.sqrt(values.reduce((sum, value) => sum + (value - meanValue) ** 2, 0) /
+      Math.max(1, values.length));
+    const action = PORT_BUSINESS_ACTIONS[actionIndex];
+    return {
+      actionId,
+      label: action.label,
+      meanValue: round(meanValue),
+      ensembleStd: round(ensembleStd),
+      probability: round(probabilityByIndex.get(actionIndex) ?? 0),
+      voteShare: round(winningIndexes.filter((winner) => winner === actionIndex).length / policies.length),
+      applicable: applicableIndexes.includes(actionIndex),
+    };
+  });
+  const selected = actionDistribution[selectedIndex];
+  const entropy = -applicableProbabilities.reduce((sum, probability) =>
+    sum + (probability > 0 ? probability * Math.log(probability) : 0), 0);
+  return {
+    protocolVersion: 'port-business-runtime-inference.v1',
+    observationTensor,
+    applicableActionIds,
+    actionDistribution,
+    selectedAction: {
+      actionId: selected.actionId,
+      label: selected.label,
+      probability: selected.probability,
+      voteShare: selected.voteShare,
+      requiresHumanApproval: PORT_BUSINESS_ACTIONS[selectedIndex].requiresHumanApproval,
+    },
+    uncertainty: {
+      normalizedEntropy: round(entropy / Math.log(Math.max(2, applicableProbabilities.length))),
+      outOfRangeObservationCount: observationTensor.filter((item) => !item.inRange).length,
+      ensemblePolicyCount: policies.length,
+    },
+  };
 };
 
 const epsilonIndex = (

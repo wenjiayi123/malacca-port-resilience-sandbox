@@ -215,6 +215,52 @@ export interface ModelRegistry {
   }>;
 }
 
+export interface ProductionReadinessStatus {
+  protocolVersion: 'production-readiness-status.v1';
+  generatedAt: string;
+  gates: {
+    identityAndOtSafety: {
+      policyDecisionPointAvailable: boolean;
+      identityTrustKeyCount: number;
+      interlockTrustKeyCount: number;
+      acceptedSiteID: string;
+      acceptedSiteReference: string;
+      readyForPolicyEvaluation: boolean;
+      blockers: string[];
+    };
+    siteAcceptance: {
+      evidencePath: string;
+      evidenceLevel: string;
+      decision: {
+        softwareEvidenceComplete: boolean;
+        siteDeliveryReady: boolean;
+        blockers: string[];
+        validSignoffCount: number;
+        requiredSignoffCount: number;
+      };
+    };
+    reliability: {
+      softwareControlsReady: boolean;
+      siteReliabilityAccepted: boolean;
+      blockers: string[];
+      targets: {
+        rpoMinutes: number;
+        rtoMinutes: number;
+        availabilityPercent: number;
+        observationDays: number;
+      };
+    };
+  };
+  externalBlockers: string[];
+  siteDeliveryReady: boolean;
+  authority: {
+    simulationMode: true;
+    liveDataVerified: false;
+    productionAuthority: false;
+    dispatchAllowed: false;
+  };
+}
+
 export interface XiaoyiOperationalHandoff {
   protocol_version: 'xiaoyi-operational-handoff.v1';
   generated_at: string;
@@ -345,6 +391,10 @@ export const fetchOperationalAudit = (authToken = '', signal?: AbortSignal) =>
 export const fetchOperationalModels = (authToken = '', signal?: AbortSignal) =>
   fetch('/api/operations/models', { cache: 'no-store', headers: headers(authToken), signal })
     .then((response) => parseResponse<ModelRegistry>(response));
+
+export const fetchProductionReadiness = (authToken = '', signal?: AbortSignal) =>
+  fetch('/api/operations/production-readiness', { cache: 'no-store', headers: headers(authToken), signal })
+    .then((response) => parseResponse<ProductionReadinessStatus>(response));
 
 export const fetchXiaoyiOperationalHandoff = (authToken = '') =>
   fetch('/api/operations/handoff', { cache: 'no-store', headers: headers(authToken) })

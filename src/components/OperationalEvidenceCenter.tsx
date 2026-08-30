@@ -7,6 +7,7 @@ import {
   fetchOperationalModels,
   fetchOperationalRecommendations,
   fetchOperationsSnapshot,
+  fetchProductionReadiness,
   fetchRegulatoryResilience,
   fetchXiaoyiOperationalHandoff,
   injectOperationalScenario,
@@ -20,14 +21,29 @@ import {
   type OperationalRecommendationResponse,
   type OperationalScenarioId,
   type PortOperationsSnapshot,
+  type ProductionReadinessStatus,
   type RegulatoryResilienceEvidence,
   type RegulatoryScenarioId,
   type XiaoyiOperationalHandoff,
 } from '../integrations/operationsControlAdapter';
 import type { TelemetryField } from '../../shared/portTelemetryContract';
+import {
+  approvePortBusinessProposal,
+  fetchPortBusinessChampionStatus,
+  fetchPortBusinessDecisionReport,
+  inferCurrentPortBusinessPolicy,
+  type PortBusinessChampionStatus,
+  type PortBusinessDecisionReport,
+  type PortBusinessRuntimeDecision,
+} from '../integrations/portBusinessRlAdapter';
 
 interface OperationalEvidenceCenterProps {
   authToken?: string;
+  onBusinessEvidenceChange?: (evidence: {
+    champion: PortBusinessChampionStatus | null;
+    decision: PortBusinessRuntimeDecision | null;
+    report: PortBusinessDecisionReport | null;
+  }) => void;
 }
 
 type EvidenceTabId = 'live' | 'twin' | 'forecast' | 'decision' | 'regulatory' | 'lineage' | 'governance' | 'models' | 'audit' | 'adapters';
@@ -95,7 +111,10 @@ const formatValue = (field?: TelemetryField) => {
 
 const shortHash = (value?: string) => value ? `${value.slice(0, 12)}…${value.slice(-6)}` : '--';
 
-export function OperationalEvidenceCenter({ authToken = '' }: OperationalEvidenceCenterProps) {
+export function OperationalEvidenceCenter({
+  authToken = '',
+  onBusinessEvidenceChange,
+}: OperationalEvidenceCenterProps) {
   const [activeTab, setActiveTab] = useState<EvidenceTabId>('live');
   const [snapshot, setSnapshot] = useState<PortOperationsSnapshot | null>(null);
   const [recommendations, setRecommendations] = useState<OperationalRecommendationResponse | null>(null);
@@ -103,18 +122,23 @@ export function OperationalEvidenceCenter({ authToken = '' }: OperationalEvidenc
   const [audit, setAudit] = useState<AuditTrail | null>(null);
   const [models, setModels] = useState<ModelRegistry | null>(null);
   const [regulatory, setRegulatory] = useState<RegulatoryResilienceEvidence | null>(null);
+  const [productionReadiness, setProductionReadiness] = useState<ProductionReadinessStatus | null>(null);
   const [handoff, setHandoff] = useState<XiaoyiOperationalHandoff | null>(null);
+  const [businessChampion, setBusinessChampion] = useState<PortBusinessChampionStatus | null>(null);
+  const [businessDecision, setBusinessDecision] = useState<PortBusinessRuntimeDecision | null>(null);
+  const [businessReport, setBusinessReport] = useState<PortBusinessDecisionReport | null>(null);
   const [statusMessage, setStatusMessage] = useState('正在读取后端权威运行状态');
   const [controlError, setControlError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(async (signal?: AbortSignal) => {
-    const [snapshotResult, recommendationResult, auditResult, modelResult, regulatoryResult] = await Promise.allSettled([
+    const [snapshotResult, recommendationResult, auditResult, modelResult, regulatoryResult, readinessResult] = await Promise.allSettled([
       fetchOperationsSnapshot(authToken, signal),
       fetchOperationalRecommendations(authToken, signal),
       fetchOperationalAudit(authToken, signal),
       fetchOperationalModels(authToken, signal),
       fetchRegulatoryResilience(authToken, signal),
+      fetchProductionReadiness(authToken, signal),
     ]);
     if (snapshotResult.status === 'fulfilled') {
       setSnapshot(snapshotResult.value);
@@ -130,6 +154,7 @@ export function OperationalEvidenceCenter({ authToken = '' }: OperationalEvidenc
     if (auditResult.status === 'fulfilled') setAudit(auditResult.value);
     if (modelResult.status === 'fulfilled') setModels(modelResult.value);
     if (regulatoryResult.status === 'fulfilled') setRegulatory(regulatoryResult.value);
+    if (readinessResult.status === 'fulfilled') setProductionReadiness(readinessResult.value);
   }, [authToken]);
 
   useEffect(() => {
@@ -142,6 +167,26 @@ export function OperationalEvidenceCenter({ authToken = '' }: OperationalEvidenc
       window.clearInterval(timer);
     };
   }, [refresh]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetchPortBusinessChampionStatus(authToken, controller.signal)
+      .then(setBusinessChampion)
+      .catch((error) => {
+        if (!(error instanceof DOMException && error.name === 'AbortError')) {
+          setControlError(error instanceof Error ? error.message : '全业务冠军证据读取失败');
+        }
+      });
+    return () => controller.abort();
+  }, [authToken]);
+
+  useEffect(() => {
+    onBusinessEvidenceChange?.({
+      champion: businessChampion,
+      decision: businessDecision,
+      report: businessReport,
+    });
+  }, [businessChampion, businessDecision, businessReport, onBusinessEvidenceChange]);
 
   const fields = useMemo(() => snapshot
     ? Object.entries(snapshot.operationalTelemetry).flatMap(([domain, domainFields]) =>
@@ -170,7 +215,7 @@ export function OperationalEvidenceCenter({ authToken = '' }: OperationalEvidenc
     setDecision(next);
   });
 
-  const approveDecision = () => decision && runAction('双人审批', async () => {
+  const approveDecision = () => decision && runAction('模拟双人审批', async () => {
     setDecision(await approveOperationalDecision(decision.decision_id, authToken));
   });
 
@@ -195,6 +240,29 @@ export function OperationalEvidenceCenter({ authToken = '' }: OperationalEvidenc
 
   const generateHandoff = () => runAction('生成小懿交班报告', async () => {
     setHandoff(await fetchXiaoyiOperationalHandoff(authToken));
+  });
+
+  const runBusinessInference = () => snapshot && runAction('33维全业务冠军推理', async () => {
+    setBusinessReport(null);
+    setBusinessDecision(await inferCurrentPortBusinessPolicy(snapshot, authToken));
+  });
+
+  const approveBusinessDecision = () => businessDecision && runAction('全业务模拟双岗审批', async () => {
+    setBusinessDecision(await approvePortBusinessProposal(businessDecision.proposalId, authToken));
+  });
+
+  const downloadBusinessDecisionReport = () => businessDecision && runAction('生成全业务决策报告', async () => {
+    const report = await fetchPortBusinessDecisionReport(businessDecision.proposalId, authToken);
+    setBusinessReport(report);
+    const url = URL.createObjectURL(new Blob(
+      [JSON.stringify(report, null, 2)],
+      { type: 'application/json;charset=utf-8' },
+    ));
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `port-business-decision-${report.completionStatus.toLowerCase()}-${businessDecision.proposalId}.json`;
+    anchor.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
   });
 
   if (!snapshot) {
@@ -383,7 +451,12 @@ export function OperationalEvidenceCenter({ authToken = '' }: OperationalEvidenc
                     <div><dt>审批</dt><dd>{decision.approvals.length}/2</dd></div>
                   </dl>
                   <div className="decision-actions">
-                    <button disabled={busy || decision.status !== 'pending_approval'} onClick={() => void approveDecision()} type="button">双人审批</button>
+                    <button
+                      disabled={busy || decision.status !== 'pending_approval'}
+                      onClick={() => void approveDecision()}
+                      title="仅使用本地操作员和安全员测试角色；不代表现场实名审批"
+                      type="button"
+                    >模拟双人审批（2个测试角色）</button>
                     <button disabled={busy || decision.status !== 'approved'} onClick={() => void executeDecision()} type="button">模拟执行并取回执</button>
                     <button disabled={busy || decision.status !== 'executed'} onClick={() => void rollbackDecision()} type="button">回滚</button>
                   </div>
@@ -399,7 +472,88 @@ export function OperationalEvidenceCenter({ authToken = '' }: OperationalEvidenc
                     </div>
                   )}
                 </>
-              ) : <p>从左侧任选一个已通过门禁的控制器，后端会先生成安全投影，再进入双人审批。</p>}
+              ) : <p>从左侧任选一个已通过门禁的控制器，后端会先生成安全投影，再进入本地测试角色模拟审批；现场实名双岗审批仍需接入身份系统。</p>}
+            </section>
+            <section className="port-business-runtime" aria-label="港口全业务强化学习运行链">
+              <header>
+                <div>
+                  <small>PORT BUSINESS RL V3 · MAIN RUNTIME CHAIN</small>
+                  <strong>33维观测 · 11个有界动作 · 10项奖励 · 5随机种子冠军集成</strong>
+                </div>
+                <span className={businessChampion?.champion.admitted ? 'is-admitted' : 'is-blocked'}>
+                  {businessChampion
+                    ? `${businessChampion.champion.algorithmId} / ${businessChampion.champion.attemptId}`
+                    : '正在读取冠军证据'}
+                </span>
+                <button
+                  disabled={busy || !businessChampion?.champion.admitted}
+                  onClick={() => void runBusinessInference()}
+                  type="button"
+                >基于当前权威快照推理</button>
+              </header>
+              {businessDecision ? (
+                <div className="port-business-runtime__body">
+                  <section className="port-business-runtime__decision">
+                    <small>{businessDecision.admission.recommendationSource}</small>
+                    <strong>
+                      {businessDecision.inference.actionDistribution.find(
+                        (action) => action.actionId === businessDecision.admission.recommendedActionId,
+                      )?.label ?? businessDecision.admission.recommendedActionId}
+                    </strong>
+                    <span>
+                      RL首选 {businessDecision.inference.selectedAction.label} · 概率{' '}
+                      {(businessDecision.inference.selectedAction.probability * 100).toFixed(1)}% · 种子一致{' '}
+                      {(businessDecision.inference.selectedAction.voteShare * 100).toFixed(0)}%
+                    </span>
+                    <em>
+                      {businessDecision.admission.status === 'admitted_for_simulation_review'
+                        ? 'ADMITTED_FOR_SIMULATION_REVIEW'
+                        : 'ABSTAIN_USE_DETERMINISTIC_FALLBACK'}
+                    </em>
+                    {businessDecision.admission.blockers.length > 0 && (
+                      <ul>
+                        {businessDecision.admission.blockers.map((blocker) => <li key={blocker}>{blocker}</li>)}
+                      </ul>
+                    )}
+                  </section>
+                  <section className="port-business-runtime__metrics" aria-label="全业务动作价值投影">
+                    <span><small>队列</small><strong>{businessDecision.businessProjection.queueVessels.before.toFixed(1)}→{businessDecision.businessProjection.queueVessels.after.toFixed(1)}</strong></span>
+                    <span><small>等待</small><strong>{businessDecision.businessProjection.meanWaitingHours.before.toFixed(2)}→{businessDecision.businessProjection.meanWaitingHours.after.toFixed(2)}h</strong></span>
+                    <span><small>堆场</small><strong>{(businessDecision.businessProjection.yardOccupancy.before * 100).toFixed(1)}→{(businessDecision.businessProjection.yardOccupancy.after * 100).toFixed(1)}%</strong></span>
+                    <span><small>闸口压力</small><strong>{businessDecision.businessProjection.gateQueuePressure.before.toFixed(2)}→{businessDecision.businessProjection.gateQueuePressure.after.toFixed(2)}</strong></span>
+                    <span><small>碳强度</small><strong>{businessDecision.businessProjection.carbonIntensity.before.toFixed(3)}→{businessDecision.businessProjection.carbonIntensity.after.toFixed(3)}</strong></span>
+                    <span><small>公平差距</small><strong>{businessDecision.businessProjection.fairnessGap.before.toFixed(3)}→{businessDecision.businessProjection.fairnessGap.after.toFixed(3)}</strong></span>
+                    <span><small>吞吐保持</small><strong>{businessDecision.businessProjection.throughputRetentionPercent.toFixed(2)}%</strong></span>
+                    <span><small>策略熵</small><strong>{businessDecision.inference.uncertainty.normalizedEntropy.toFixed(3)}</strong></span>
+                  </section>
+                  <section className="port-business-runtime__approval">
+                    <span>
+                      <small>proposal_id</small>
+                      <strong>{businessDecision.proposalId}</strong>
+                      <em>{businessDecision.approval.status}</em>
+                    </span>
+                    <span>
+                      <small>输入快照</small>
+                      <strong>{shortHash(businessDecision.inputEvidence.snapshotHash)}</strong>
+                      <em>现场测量字段 {businessDecision.inputEvidence.operatorMeasuredFieldCount}</em>
+                    </span>
+                    <button
+                      disabled={busy || businessDecision.approval.status !== 'pending_simulation_review'}
+                      onClick={() => void approveBusinessDecision()}
+                      title="使用两个本地测试身份，不代表现场实名审批"
+                      type="button"
+                    >模拟双岗审批（测试身份）</button>
+                    <button
+                      disabled={busy}
+                      onClick={() => void downloadBusinessDecisionReport()}
+                      type="button"
+                    >导出全业务决策报告</button>
+                    <p>dispatch_allowed=false · production_authority=false · 只进入沙盘审批和证据报告，不产生生产执行回执。</p>
+                  </section>
+                </div>
+              ) : (
+                <p>冠军策略和确定性后备共享当前后端快照；推理结果必须经过合同、观测范围、种子一致性、熵、数据质量、吞吐、堆场和碳门禁。</p>
+              )}
             </section>
           </div>
         )}
@@ -550,6 +704,44 @@ export function OperationalEvidenceCenter({ authToken = '' }: OperationalEvidenc
                   'simulation only; production dispatch disabled',
                 ]).map((constraint) => <li key={constraint}>{constraint}</li>)}
               </ul>
+            </section>
+            <section className="production-readiness-gates" aria-label="生产就绪三重门禁">
+              <header>
+                <div>
+                  <strong>生产就绪三重门禁</strong>
+                  <em>{productionReadiness?.siteDeliveryReady ? 'SITE DELIVERY READY' : 'EXTERNAL EVIDENCE OPEN'}</em>
+                </div>
+                <button
+                  disabled={busy}
+                  onClick={() => void runAction('重新核查生产就绪门禁', async () => {
+                    setProductionReadiness(await fetchProductionReadiness(authToken));
+                  })}
+                  type="button"
+                >重新核查门禁</button>
+              </header>
+              {productionReadiness ? (
+                <div>
+                  <article className={productionReadiness.gates.identityAndOtSafety.readyForPolicyEvaluation ? 'is-ready' : 'is-blocked'}>
+                    <small>身份与运行技术联锁</small>
+                    <strong>{productionReadiness.gates.identityAndOtSafety.readyForPolicyEvaluation ? '策略评估已配置' : '待现场配置'}</strong>
+                    <span>身份公钥 {productionReadiness.gates.identityAndOtSafety.identityTrustKeyCount} · 联锁公钥 {productionReadiness.gates.identityAndOtSafety.interlockTrustKeyCount}</span>
+                    <ul>{productionReadiness.gates.identityAndOtSafety.blockers.map((item) => <li key={item}>{item}</li>)}</ul>
+                  </article>
+                  <article className={productionReadiness.gates.reliability.siteReliabilityAccepted ? 'is-ready' : 'is-blocked'}>
+                    <small>24×7 可靠性与灾难恢复</small>
+                    <strong>{productionReadiness.gates.reliability.siteReliabilityAccepted ? '现场 SLO 已验收' : '现场 SLO 未验收'}</strong>
+                    <span>RPO {productionReadiness.gates.reliability.targets.rpoMinutes}min · RTO {productionReadiness.gates.reliability.targets.rtoMinutes}min · 可用性 {productionReadiness.gates.reliability.targets.availabilityPercent}%</span>
+                    <ul>{productionReadiness.gates.reliability.blockers.map((item) => <li key={item}>{item}</li>)}</ul>
+                  </article>
+                  <article className={productionReadiness.gates.siteAcceptance.decision.siteDeliveryReady ? 'is-ready' : 'is-blocked'}>
+                    <small>现场 KPI 与五方验收</small>
+                    <strong>{productionReadiness.gates.siteAcceptance.decision.siteDeliveryReady ? '站点交付通过' : '站点交付阻断'}</strong>
+                    <span>{productionReadiness.gates.siteAcceptance.evidenceLevel} · 签字 {productionReadiness.gates.siteAcceptance.decision.validSignoffCount}/{productionReadiness.gates.siteAcceptance.decision.requiredSignoffCount}</span>
+                    <ul>{productionReadiness.gates.siteAcceptance.decision.blockers.map((item) => <li key={item}>{item}</li>)}</ul>
+                  </article>
+                </div>
+              ) : <p>正在读取身份联锁、可靠性与现场验收证据。</p>}
+              <footer>production_authority=false · dispatch_allowed=false；即使站点验收通过，仍须独立生产授权决策和经现场验收的物理执行适配器。</footer>
             </section>
             <section className="xiaoyi-operational-handoff">
               <header>

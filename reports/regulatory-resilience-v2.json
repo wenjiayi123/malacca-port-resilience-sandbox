@@ -1,6 +1,6 @@
 {
   "schemaVersion": "malacca-regulatory-resilience.v2",
-  "generatedAt": "2026-08-21T09:39:32.128Z",
+  "generatedAt": "2026-08-30T03:09:26.624Z",
   "evidenceLabel": "PREDECLARED_MALACCA_REGULATORY_SCENARIO_NOT_FIELD_KPI",
   "status": "qualified_offline",
   "strategy": {
@@ -1124,8 +1124,8 @@
     "protectedFileCount": 11,
     "changedFiles": [],
     "before": {
-      "reports/operational-closure-acceptance-v1.json": "fb932b448ef2084fe72a3be701af933c38425b8f814ce76326bbfb765978c621",
-      "reports/operational-closure-acceptance-v1.md": "621e02d86db98df5c988507a3f05b42b682f8edb37f5cba0a1b42c46d86c1bd1",
+      "reports/operational-closure-acceptance-v1.json": "55db255283526b6673a691b5cfed12533f7109d1088115bbc130b90681e3d27b",
+      "reports/operational-closure-acceptance-v1.md": "bc03b382d95ba6094017987316ae7cce015aef669b43bb5fc0afe1c7509db20d",
       "reports/public-dataset-credibility-comparison.json": "27095ad12acbfeceb500c23d5ecd7066a8098d80407385f58ee15ca800322e17",
       "reports/public-dataset-credibility-comparison.md": "cb0dfff7a630685944ebcae7f551eefc18d2161e7ebc7e4a6412946c14e9b604",
       "reports/rl-benchmark-balanced-resilience-calibrated-v2.json": "80090ea355e829921eb10b25c241a096d0d905f741f352f33416331f9e95b322",
@@ -1137,8 +1137,8 @@
       "shared/rlOperationalCalibration.ts": "b6963e043d268f1155ebd897fbfae3cf7e1b2a1fd31f5a1c359ec725cffb0798"
     },
     "after": {
-      "reports/operational-closure-acceptance-v1.json": "fb932b448ef2084fe72a3be701af933c38425b8f814ce76326bbfb765978c621",
-      "reports/operational-closure-acceptance-v1.md": "621e02d86db98df5c988507a3f05b42b682f8edb37f5cba0a1b42c46d86c1bd1",
+      "reports/operational-closure-acceptance-v1.json": "55db255283526b6673a691b5cfed12533f7109d1088115bbc130b90681e3d27b",
+      "reports/operational-closure-acceptance-v1.md": "bc03b382d95ba6094017987316ae7cce015aef669b43bb5fc0afe1c7509db20d",
       "reports/public-dataset-credibility-comparison.json": "27095ad12acbfeceb500c23d5ecd7066a8098d80407385f58ee15ca800322e17",
       "reports/public-dataset-credibility-comparison.md": "cb0dfff7a630685944ebcae7f551eefc18d2161e7ebc7e4a6412946c14e9b604",
       "reports/rl-benchmark-balanced-resilience-calibrated-v2.json": "80090ea355e829921eb10b25c241a096d0d905f741f352f33416331f9e95b322",
@@ -1164,5 +1164,5 @@
     "MPA monthly aggregate data are not terminal-level Malacca observations.",
     "Qualified offline does not authorize production dispatch or predict authority decisions."
   ],
-  "evidenceSha256": "79e5805adacc0265e36625b6ec90914ee4a3822ecebb5a5bdc7091e998436e9c"
+  "evidenceSha256": "bc70e0ebf68273a06243a275dabcd4efea5de685519c58d8bf82964052459759"
 }
