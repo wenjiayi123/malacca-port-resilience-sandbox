@@ -107,8 +107,27 @@ export const createOperatorIntegrationMiddleware = () => {
       }
       if (request.method === 'POST' && url.pathname === '/api/operator-integration/snapshots') {
         const result = gateway.ingest(await readJsonBody(request));
-        prepareJsonResponse(response, result.accepted ? 202 : 422);
-        response.end(JSON.stringify(result));
+        if (!result.accepted) {
+          prepareJsonResponse(response, 422);
+          response.end(JSON.stringify({
+            accepted: false,
+            idempotent_replay: false,
+            errors: ['operator_snapshot_validation_failed'],
+            dispatch_allowed: false,
+            production_authority: false,
+          }));
+          return;
+        }
+        prepareJsonResponse(response, 202);
+        response.end(JSON.stringify({
+          accepted: true,
+          idempotent_replay: result.idempotent_replay,
+          snapshot_id: 'snapshot_id' in result ? result.snapshot_id : null,
+          adapter_id: 'adapter_id' in result ? result.adapter_id : null,
+          payload_sha256: 'payload_sha256' in result ? result.payload_sha256 : null,
+          dispatch_allowed: false,
+          production_authority: false,
+        }));
         return;
       }
       if (request.method === 'GET' && url.pathname === '/api/operator-integration/openapi.json') {

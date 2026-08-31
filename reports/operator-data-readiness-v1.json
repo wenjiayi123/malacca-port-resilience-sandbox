@@ -26,11 +26,11 @@
   },
   "integrity": {
     "compositeSnapshotSha256": "257e216e323f6399ffd0c90d8a4f566e2b63d1e673373975df3bc674436f1af5",
-    "evidenceSha256": "34f5d99cde45fb16ec756ac2d83de09a7be2a8ce7eccbd36958f2a1d2f58693b",
+    "evidenceSha256": "5f9c089f7be4b988d5d2341124059037eca7a442209e8f37b4340a40b41ccb10",
     "sourceSha256": {
       "server/operatorSourceManifest.ts": "354684e7df9bdd9656445bcece17be73597a4c5f44bcc1379b0b8ac7d0cd9850",
       "server/operatorIntegrationGateway.ts": "6bd3935978604b2b1c8b4535981362a3088bee540f8fe955c2500f1a4d59d059",
-      "server/operatorIntegrationPlugin.ts": "0d57af7d2e15b9bbffd1f75b028625e6e13b649f76e13418f17cff71f03a1ff7",
+      "server/operatorIntegrationPlugin.ts": "b6576d938b1832109872384f17514395394fb8d0ee8e63c3bf7a7ee02f19ae49",
       "config/port-profiles/operator-data-source.example.json": "e4a27b04dd87650d6e26ca1c6be8c7929693409bd75715905ec2d5543a2688fa",
       "docs/schemas/operator-data-source-manifest.schema.json": "c2efc108df8929dd97c00ec8b18658b77158fb3d053be8c7b135e07c69d6ed4f",
       "docs/schemas/operator-snapshot.schema.json": "6ee1bb36cbdfd21c14bb9c5201a5b6efb816f721c224cc229bb43b6a6fef0f6b"

@@ -95,8 +95,27 @@ export const createPortCommunityMiddleware = () => {
       }
       if (request.method === 'POST' && url.pathname === '/api/port-community/messages') {
         const result = gateway.ingest(await body(request));
-        prepareJsonResponse(response, result.accepted ? 202 : 422);
-        response.end(JSON.stringify(result));
+        if (!result.accepted) {
+          prepareJsonResponse(response, 422);
+          response.end(JSON.stringify({
+            accepted: false,
+            idempotentReplay: false,
+            errors: ['port_community_message_validation_failed'],
+            dispatchAllowed: false,
+            productionAuthority: false,
+          }));
+          return;
+        }
+        prepareJsonResponse(response, 202);
+        response.end(JSON.stringify({
+          accepted: true,
+          idempotentReplay: result.idempotentReplay,
+          messageID: 'messageID' in result ? result.messageID : null,
+          normalizedPayload: 'normalizedPayload' in result ? result.normalizedPayload : null,
+          auditHead: 'auditHead' in result ? result.auditHead : null,
+          dispatchAllowed: false,
+          productionAuthority: false,
+        }));
         return;
       }
       prepareJsonResponse(response, 404);
