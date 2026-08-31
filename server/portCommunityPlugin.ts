@@ -103,7 +103,10 @@ export const createPortCommunityMiddleware = () => {
       const code = typeof (error as { statusCode?: unknown }).statusCode === 'number'
         ? Number((error as { statusCode: number }).statusCode)
         : 500;
-      json(response, { status: 'error', message: error instanceof Error ? error.message : String(error) }, code);
+      json(response, {
+        status: 'error',
+        message: code >= 500 ? '港口社区内部处理失败' : '港口社区请求未通过校验',
+      }, code);
     }
   };
 };

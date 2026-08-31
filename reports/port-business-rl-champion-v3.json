@@ -1,19 +1,19 @@
 {
   "schemaVersion": "port-business-rl-evidence.v3",
   "evidenceLabel": "OFFLINE_PUBLIC_ANCHORED_ENGINEERING_AUGMENTED_NOT_FIELD_KPI",
-  "generatedAt": "2026-08-30T03:02:43.101Z",
+  "generatedAt": "2026-08-31T05:38:31.511Z",
   "sourceFingerprint": {
     "algorithm": "sha256",
-    "digest": "e2fb4df0f0911b7dbd471cd49d3531a1a720040b23308b1733e558b7db6728bf",
+    "digest": "f8ee19a82103499955293f6873c857c4ce34813f06a340f859f02300b501c519",
     "files": {
       "shared/portBusinessRlContract.ts": "4ed1fa5906d04332fa540d067533f6473dde5d635d3035f4fed5f2d7dd7d7ecb",
       "server/portBusinessDataset.ts": "39dd860378cb08b8fc37b8817dff768690bbf5641f937db841436d570d294043",
       "server/portBusinessControlPlane.ts": "1fa2c83087ffa073a6326c3d96dd8b4471614f7ab8f76143b62eaadb4802ff90",
       "server/portBusinessRlEngine.ts": "b926020bfd61a91cbaa5add54fb1bca4911bbc944398412e3bf014e2a149e7f8",
       "server/portBusinessRlService.ts": "74bcaade93b121fe3b98deac28b0c314762fc8d5cdf102b9f0946ce60b2d25de",
-      "server/portBusinessRlPlugin.ts": "66aaf0ac8cf19e05eff1e52f9f23183ec780dcf0fd4037fbd86ff3d0551605e2",
+      "server/portBusinessRlPlugin.ts": "bd4ecbebcb69dc7dff5874ffbdc64b5fa3825e395a948842b6e817c47aa07cf9",
       "scripts/rl/runPortBusinessChampion.ts": "c7c4d5be3fa8f242d1fcb7546ac9def783453ca07ce6b44f0056cb30c2e90d03",
-      "scripts/rl/verifyPortBusinessChampion.ts": "9a458579f16601b95d6188f2387ce10cf0cfbfa6b91d001f741bd33d01018133",
+      "scripts/rl/verifyPortBusinessChampion.ts": "238e435d90a17b09d990bc2732269601bd9296acb165cfd90847f4bfa518ee66",
       "tests/portBusinessRl.test.ts": "13db044b08bb58ba44c1880d4c90c0463efd775ac3098095a5706a977847db03",
       "docs/PORT_BUSINESS_RL_V3.md": "6a4bdf9b39fc595a4fa26e88a0fa4d287018804b91f9a1ec921ab69fdacaea71",
       "docs/schemas/port-business-dataset-v3.schema.json": "71635691eed3ee5517ffcdb8a7765fda1ae4d6d93bb908a5a62461132ab1fbb8",
@@ -880,7 +880,7 @@
     ],
     "retainedArtifact": {
       "path": ".runtime/port-business-rl-v3/training-dataset.json",
-      "integrityDigest": "90c87a27e7c4c3543ac81011bf3ceb143fc4becd9097304ffc641518255b7799"
+      "integrityDigest": "3d70e73af98b76b751a203945fac9ebfc720084bba8720f94cba6e811c817eb4"
     }
   },
   "nonReinforcementLearning": {
@@ -1111,7 +1111,7 @@
   },
   "training": {
     "protocolVersion": "port-business-champion.v3",
-    "generatedAt": "2026-08-30T03:02:43.028Z",
+    "generatedAt": "2026-08-31T05:38:31.431Z",
     "dataset": {
       "id": "mpa-public-anchor-port-business-v3",
       "fingerprint": "35330af45d170e2f45d21c32dcd98a2c2f98ac53bcb80ae72f17fa3761d0abce",

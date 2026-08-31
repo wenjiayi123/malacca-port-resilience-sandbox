@@ -57,8 +57,8 @@ export const createVesselTrafficSafetyMiddleware = () => {
         return;
       }
       json(response, assessVesselTraffic(input.observations));
-    } catch (error) {
-      json(response, { status: 'error', message: error instanceof Error ? error.message : String(error) }, 422);
+    } catch {
+      json(response, { status: 'error', message: '船舶交通态势输入未通过校验' }, 422);
     }
   };
 };

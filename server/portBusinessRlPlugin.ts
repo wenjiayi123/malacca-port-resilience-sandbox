@@ -222,8 +222,8 @@ export const createPortBusinessRlMiddleware = () => {
         return;
       }
       json(response, assessPortBusinessProposal(validateProposal(body)));
-    } catch (error) {
-      json(response, { status: 'error', message: error instanceof Error ? error.message : String(error) }, 422);
+    } catch {
+      json(response, { status: 'error', message: '港口业务强化学习请求未通过校验' }, 422);
     }
   };
 };

@@ -128,9 +128,12 @@ export const createOperatorIntegrationMiddleware = () => {
       const statusCode = typeof (error as { statusCode?: unknown })?.statusCode === 'number'
         ? Number((error as { statusCode: number }).statusCode)
         : 500;
+      if (statusCode >= 500) {
+        console.error(JSON.stringify({ event: 'operator_integration_error', requestId, errorType: error instanceof Error ? error.name : 'unknown' }));
+      }
       jsonResponse(response, {
         status: 'error',
-        message: error instanceof Error ? error.message : String(error),
+        message: statusCode >= 500 ? '现场接入内部处理失败' : '现场接入请求未通过校验',
         requestId,
       }, statusCode);
     }

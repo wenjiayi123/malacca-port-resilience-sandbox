@@ -78,8 +78,8 @@ export const createProductionAuthorityMiddleware = () => {
         }
       }
       json(response, evaluateProductionRelease(await readBody(request), options));
-    } catch (error) {
-      json(response, { status: 'error', message: error instanceof Error ? error.message : String(error) }, 422);
+    } catch {
+      json(response, { status: 'error', message: '生产授权证据包未通过校验' }, 422);
     }
   };
 };

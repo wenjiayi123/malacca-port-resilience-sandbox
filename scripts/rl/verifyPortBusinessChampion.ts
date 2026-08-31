@@ -129,6 +129,14 @@ const report = JSON.parse(await readFile(reportPath, 'utf8')) as EvidenceReport;
 const errors: string[] = [];
 const warnings: string[] = [];
 const sha256 = (content: string | Buffer) => createHash('sha256').update(content).digest('hex');
+const usesTrustedHttpsHost = (value: string, trustedHost: string) => {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && (url.hostname === trustedHost || url.hostname.endsWith(`.${trustedHost}`));
+  } catch {
+    return false;
+  }
+};
 
 if (report.schemaVersion !== 'port-business-rl-evidence.v3') errors.push('unsupported evidence schema');
 if (report.evidenceLabel !== 'OFFLINE_PUBLIC_ANCHORED_ENGINEERING_AUGMENTED_NOT_FIELD_KPI') {
@@ -145,8 +153,8 @@ const combined = sha256(fileEntries.map(([file, digest]) => `${file}:${digest}`)
 if (combined !== report.sourceFingerprint.digest) errors.push('combined source fingerprint mismatch');
 
 if (report.publicEvidence.filter((item) => item.role === 'training-anchor').length < 2 ||
-    !report.publicEvidence.some((item) => item.url.includes('data.gov.sg')) ||
-    !report.publicEvidence.some((item) => item.url.includes('worldbank.org'))) {
+    !report.publicEvidence.some((item) => usesTrustedHttpsHost(item.url, 'data.gov.sg')) ||
+    !report.publicEvidence.some((item) => usesTrustedHttpsHost(item.url, 'worldbank.org'))) {
   errors.push('public data and business metric provenance are incomplete');
 }
 if (report.coverageAudit.length < 9 || !report.coverageAudit.some((item) => item.owner.includes('external-authority'))) {
