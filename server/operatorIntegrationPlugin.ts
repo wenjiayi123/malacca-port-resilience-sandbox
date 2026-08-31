@@ -6,16 +6,12 @@ import { validateRuntimeSecurityConfiguration } from './runtimeSecurity.ts';
 
 const MAX_BODY_BYTES = 4 * 1_048_576;
 const RATE_WINDOW_MS = 60_000;
-const redactInternalErrors = (key: string, value: unknown) => {
-  if (key === 'stack') return undefined;
-  return value instanceof Error ? { status: 'error', message: 'internal_error_redacted' } : value;
-};
 
 const jsonResponse = (response: ServerResponse, value: unknown, status = 200) => {
   response.statusCode = status;
   response.setHeader('Content-Type', 'application/json; charset=utf-8');
   response.setHeader('Cache-Control', 'no-store');
-  response.end(JSON.stringify(value, redactInternalErrors));
+  response.end(JSON.stringify(value));
 };
 
 const safeEqual = (left: string, right: string) => {
@@ -133,13 +129,16 @@ export const createOperatorIntegrationMiddleware = () => {
         ? Number((error as { statusCode: number }).statusCode)
         : 500;
       if (statusCode >= 500) {
-        console.error(JSON.stringify({ event: 'operator_integration_error', requestId, errorType: error instanceof Error ? error.name : 'unknown' }));
+        console.error(JSON.stringify({ event: 'operator_integration_error', requestId, statusCode }));
       }
-      jsonResponse(response, {
+      response.statusCode = statusCode;
+      response.setHeader('Content-Type', 'application/json; charset=utf-8');
+      response.setHeader('Cache-Control', 'no-store');
+      response.end(JSON.stringify({
         status: 'error',
         message: statusCode >= 500 ? '现场接入内部处理失败' : '现场接入请求未通过校验',
         requestId,
-      }, statusCode);
+      }));
     }
   };
 };

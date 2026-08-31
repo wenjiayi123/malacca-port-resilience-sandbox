@@ -20,16 +20,12 @@ const safeEqual = (left: string, right: string) => {
   const b = Buffer.from(right);
   return a.length === b.length && timingSafeEqual(a, b);
 };
-const redactInternalErrors = (key: string, value: unknown) => {
-  if (key === 'stack') return undefined;
-  return value instanceof Error ? { status: 'error', message: 'internal_error_redacted' } : value;
-};
 
 const json = (response: ServerResponse, value: unknown, status = 200) => {
   response.statusCode = status;
   response.setHeader('Content-Type', 'application/json; charset=utf-8');
   response.setHeader('Cache-Control', 'no-store');
-  response.end(JSON.stringify(value, redactInternalErrors));
+  response.end(JSON.stringify(value));
 };
 
 const body = async (request: IncomingMessage) => {
@@ -107,10 +103,13 @@ export const createPortCommunityMiddleware = () => {
       const code = typeof (error as { statusCode?: unknown }).statusCode === 'number'
         ? Number((error as { statusCode: number }).statusCode)
         : 500;
-      json(response, {
+      response.statusCode = code;
+      response.setHeader('Content-Type', 'application/json; charset=utf-8');
+      response.setHeader('Cache-Control', 'no-store');
+      response.end(JSON.stringify({
         status: 'error',
         message: code >= 500 ? '港口社区内部处理失败' : '港口社区请求未通过校验',
-      }, code);
+      }));
     }
   };
 };
