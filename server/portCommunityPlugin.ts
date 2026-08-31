@@ -21,11 +21,10 @@ const safeEqual = (left: string, right: string) => {
   return a.length === b.length && timingSafeEqual(a, b);
 };
 
-const json = (response: ServerResponse, value: unknown, status = 200) => {
+const prepareJsonResponse = (response: ServerResponse, status = 200) => {
   response.statusCode = status;
   response.setHeader('Content-Type', 'application/json; charset=utf-8');
   response.setHeader('Cache-Control', 'no-store');
-  response.end(JSON.stringify(value));
 };
 
 const body = async (request: IncomingMessage) => {
@@ -90,15 +89,18 @@ export const createPortCommunityMiddleware = () => {
         }
       }
       if (request.method === 'GET' && url.pathname === '/api/port-community/status') {
-        json(response, gateway.status());
+        prepareJsonResponse(response);
+        response.end(JSON.stringify(gateway.status()));
         return;
       }
       if (request.method === 'POST' && url.pathname === '/api/port-community/messages') {
         const result = gateway.ingest(await body(request));
-        json(response, result, result.accepted ? 202 : 422);
+        prepareJsonResponse(response, result.accepted ? 202 : 422);
+        response.end(JSON.stringify(result));
         return;
       }
-      json(response, { status: 'error', message: 'Port community route not found' }, 404);
+      prepareJsonResponse(response, 404);
+      response.end(JSON.stringify({ status: 'error', message: 'Port community route not found' }));
     } catch (error) {
       const code = typeof (error as { statusCode?: unknown }).statusCode === 'number'
         ? Number((error as { statusCode: number }).statusCode)

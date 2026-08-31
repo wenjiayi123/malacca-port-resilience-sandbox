@@ -7,11 +7,10 @@ import { validateRuntimeSecurityConfiguration } from './runtimeSecurity.ts';
 const MAX_BODY_BYTES = 4 * 1_048_576;
 const RATE_WINDOW_MS = 60_000;
 
-const jsonResponse = (response: ServerResponse, value: unknown, status = 200) => {
+const prepareJsonResponse = (response: ServerResponse, status = 200) => {
   response.statusCode = status;
   response.setHeader('Content-Type', 'application/json; charset=utf-8');
   response.setHeader('Cache-Control', 'no-store');
-  response.end(JSON.stringify(value));
 };
 
 const safeEqual = (left: string, right: string) => {
@@ -91,25 +90,30 @@ export const createOperatorIntegrationMiddleware = () => {
         }
       }
       if (request.method === 'GET' && url.pathname === '/api/operator-integration/contract') {
-        jsonResponse(response, OperatorIntegrationGateway.contract());
+        prepareJsonResponse(response);
+        response.end(JSON.stringify(OperatorIntegrationGateway.contract()));
         return;
       }
       if (request.method === 'GET' && url.pathname === '/api/operator-integration/status') {
-        jsonResponse(response, gateway.status());
+        prepareJsonResponse(response);
+        response.end(JSON.stringify(gateway.status()));
         return;
       }
       if (request.method === 'GET' && url.pathname === '/api/operator-integration/shadow-snapshot') {
         const snapshot = gateway.shadowSnapshot();
-        jsonResponse(response, snapshot, snapshot.protocolVersion === 'operator-shadow-blocked.v1' ? 409 : 200);
+        prepareJsonResponse(response, snapshot.protocolVersion === 'operator-shadow-blocked.v1' ? 409 : 200);
+        response.end(JSON.stringify(snapshot));
         return;
       }
       if (request.method === 'POST' && url.pathname === '/api/operator-integration/snapshots') {
         const result = gateway.ingest(await readJsonBody(request));
-        jsonResponse(response, result, result.accepted ? 202 : 422);
+        prepareJsonResponse(response, result.accepted ? 202 : 422);
+        response.end(JSON.stringify(result));
         return;
       }
       if (request.method === 'GET' && url.pathname === '/api/operator-integration/openapi.json') {
-        jsonResponse(response, {
+        prepareJsonResponse(response);
+        response.end(JSON.stringify({
           openapi: '3.1.0',
           info: { title: 'Read-only Operator Data Integration API', version: '1.0.0' },
           paths: {
@@ -120,10 +124,11 @@ export const createOperatorIntegrationMiddleware = () => {
           },
           components: { securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer' } } },
           security: [{ bearerAuth: [] }],
-        });
+        }));
         return;
       }
-      jsonResponse(response, { status: 'error', message: 'Operator integration route not found', requestId }, 404);
+      prepareJsonResponse(response, 404);
+      response.end(JSON.stringify({ status: 'error', message: 'Operator integration route not found', requestId }));
     } catch (error) {
       const statusCode = typeof (error as { statusCode?: unknown })?.statusCode === 'number'
         ? Number((error as { statusCode: number }).statusCode)

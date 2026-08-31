@@ -1,6 +1,6 @@
 {
   "schemaVersion": "top-tier-hardening-evidence.v2",
-  "generatedAt": "2026-08-31T06:12:36.004Z",
+  "generatedAt": "2026-08-31T06:19:03.542Z",
   "result": "PASS_SOFTWARE_PREREQUISITES_EXTERNAL_GATES_OPEN",
   "areas": [
     {
@@ -179,10 +179,10 @@
       "server/highFidelityPortTwin.ts": "1d77691afa91cc2eaaeb404ed82a3c85ce279ad367db3d792edbfa717093beba",
       "server/operationalSimulator.ts": "b0ace880877ec8e1cd5b341781d01760a6da7609f8a8fc68462300b1026d5118",
       "server/operatorIntegrationGateway.ts": "6bd3935978604b2b1c8b4535981362a3088bee540f8fe955c2500f1a4d59d059",
-      "server/operatorIntegrationPlugin.ts": "841b2ab8dfe03b5279e1baf11534762092e25d3489ebdb1bbc044f34275bc626",
+      "server/operatorIntegrationPlugin.ts": "0d57af7d2e15b9bbffd1f75b028625e6e13b649f76e13418f17cff71f03a1ff7",
       "server/operatorSourceManifest.ts": "354684e7df9bdd9656445bcece17be73597a4c5f44bcc1379b0b8ac7d0cd9850",
       "server/portCommunityGateway.ts": "84f4afe239e86e50e4f943c26e418d92d3199c62bebfe56016003dc935c15671",
-      "server/portCommunityPlugin.ts": "7c749f2884851d35ef08930f860f68ced7eb3350bf2eaccfa43cd4f98fa4738e",
+      "server/portCommunityPlugin.ts": "f6d59daabf3377829cabb260a93a9b7289ded2f3dcde88716d02f7d4d59b73d4",
       "server/productionAuthorityGate.ts": "cb9902bbd145f979a74a44bc1e986065606c54668734f439c7076c7ef0b0627f",
       "server/productionAuthorityPlugin.ts": "76aacdfb8e7f679fb9760b17ad5fa990e8300b48eccd12b8858d8f9a6442f252",
       "server/publicEvidencePlugin.ts": "86db2827baa60b7102c1f72c606116214a722e548137d80a7472cac14c020675",
