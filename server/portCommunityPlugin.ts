@@ -20,12 +20,16 @@ const safeEqual = (left: string, right: string) => {
   const b = Buffer.from(right);
   return a.length === b.length && timingSafeEqual(a, b);
 };
+const redactInternalErrors = (key: string, value: unknown) => {
+  if (key === 'stack') return undefined;
+  return value instanceof Error ? { status: 'error', message: 'internal_error_redacted' } : value;
+};
 
 const json = (response: ServerResponse, value: unknown, status = 200) => {
   response.statusCode = status;
   response.setHeader('Content-Type', 'application/json; charset=utf-8');
   response.setHeader('Cache-Control', 'no-store');
-  response.end(JSON.stringify(value));
+  response.end(JSON.stringify(value, redactInternalErrors));
 };
 
 const body = async (request: IncomingMessage) => {
