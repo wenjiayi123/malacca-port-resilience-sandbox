@@ -1,6 +1,6 @@
 # 项目指标与适用范围
 
-更新日期：2026-07-26
+更新日期：2026-08-31
 
 ## 项目摘要
 
@@ -34,6 +34,14 @@ Dyna-Q 与三步 MPC，完成 **21,600 个 RL episodes**（4 算法 × 3 参数�
 ▸ **技术栈**：React 19 + TypeScript + Vite + Node.js Job API + 表格型 RL/MPC + Godot Web +
 SHA-256 检查点与 JSON 数据合同。
 
+▸ **当前全核心强化学习增量**：新增 47 维共享观测、10 个并行动作头、30 个有界选项、14 项奖励和
+13 项硬约束的因子化线性强化学习闭环。五随机种子 `factorized-linear-dyna-q / curriculum-360`
+通过验证与封存测试：综合奖励改善 95% 置信下界 0.02377，等待减少下界 0.081238 小时，能源成本
+指数降低下界 0.600716%，峰值负载降低下界 1.326549 个百分点，碳强度降低下界 1.684997%，
+十个动作域均实际参与且硬约束违规为 0。后端已实现联合推理、逐域弃权、安全投影、模拟双岗审批、
+独立沙盘执行、幂等回执、回滚与审计哈希；上述数据是公开数据锚定的工程仿真配对反事实，不是现场
+关键绩效指标或财务节省。
+
 ## 指标边界
 
 - 上述前后值来自真实执行的仓库训练/评估代码，但证据等级是**公开月度数据上的离线压力诊断**，
@@ -62,6 +70,9 @@ SHA-256 检查点与 JSON 数据合同。
 ## 复现资料
 
 - `server/rlTrainingEngine.ts`：环境、奖励、四种 RL、MPC、调参、验证选优与最终测试。
+- `server/coreOperationsRlEngine.ts`：十域因子化 Q / Dyna-Q、逐域动作屏蔽、训练和封存价值门禁。
+- `server/coreOperationsRlService.ts`：权威运行快照到 47 维张量、五种子集成、逐域弃权和业务投影。
+- `reports/core-operations-rl-champion-v1.json`：十域冠军、全部候选、权重、指纹和配对反事实证据。
 - `server/portTrainingDataset.ts`：CSV/JSON 数据合同、训练段容量代理和时间隔离。
 - `shared/rlOperationalCalibration.ts`：P90 容量代理、温和压力边界和保守动作上限。
 - `reports/rl-benchmark-balanced-resilience-calibrated-v2.json`：机器可读多随机种子与三时间块指标。

@@ -36,6 +36,17 @@ import {
   type PortBusinessDecisionReport,
   type PortBusinessRuntimeDecision,
 } from '../integrations/portBusinessRlAdapter';
+import {
+  approveCoreOperationsProposal,
+  executeCoreOperationsProposal,
+  fetchCoreOperationsChampionStatus,
+  fetchCoreOperationsDecisionReport,
+  inferCoreOperationsPolicy,
+  rollbackCoreOperationsProposal,
+  type CoreOperationsChampionStatus,
+  type CoreOperationsDecisionReport,
+  type CoreOperationsRuntimeDecision,
+} from '../integrations/coreOperationsRlAdapter';
 
 interface OperationalEvidenceCenterProps {
   authToken?: string;
@@ -43,6 +54,9 @@ interface OperationalEvidenceCenterProps {
     champion: PortBusinessChampionStatus | null;
     decision: PortBusinessRuntimeDecision | null;
     report: PortBusinessDecisionReport | null;
+    coreChampion: CoreOperationsChampionStatus | null;
+    coreDecision: CoreOperationsRuntimeDecision | null;
+    coreReport: CoreOperationsDecisionReport | null;
   }) => void;
 }
 
@@ -127,6 +141,9 @@ export function OperationalEvidenceCenter({
   const [businessChampion, setBusinessChampion] = useState<PortBusinessChampionStatus | null>(null);
   const [businessDecision, setBusinessDecision] = useState<PortBusinessRuntimeDecision | null>(null);
   const [businessReport, setBusinessReport] = useState<PortBusinessDecisionReport | null>(null);
+  const [coreChampion, setCoreChampion] = useState<CoreOperationsChampionStatus | null>(null);
+  const [coreDecision, setCoreDecision] = useState<CoreOperationsRuntimeDecision | null>(null);
+  const [coreReport, setCoreReport] = useState<CoreOperationsDecisionReport | null>(null);
   const [statusMessage, setStatusMessage] = useState('正在读取后端权威运行状态');
   const [controlError, setControlError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -181,12 +198,27 @@ export function OperationalEvidenceCenter({
   }, [authToken]);
 
   useEffect(() => {
+    const controller = new AbortController();
+    void fetchCoreOperationsChampionStatus(authToken, controller.signal)
+      .then(setCoreChampion)
+      .catch((error) => {
+        if (!(error instanceof DOMException && error.name === 'AbortError')) {
+          setControlError(error instanceof Error ? error.message : '全核心联合冠军证据读取失败');
+        }
+      });
+    return () => controller.abort();
+  }, [authToken]);
+
+  useEffect(() => {
     onBusinessEvidenceChange?.({
       champion: businessChampion,
       decision: businessDecision,
       report: businessReport,
+      coreChampion,
+      coreDecision,
+      coreReport,
     });
-  }, [businessChampion, businessDecision, businessReport, onBusinessEvidenceChange]);
+  }, [businessChampion, businessDecision, businessReport, coreChampion, coreDecision, coreReport, onBusinessEvidenceChange]);
 
   const fields = useMemo(() => snapshot
     ? Object.entries(snapshot.operationalTelemetry).flatMap(([domain, domainFields]) =>
@@ -265,6 +297,37 @@ export function OperationalEvidenceCenter({
     window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
   });
 
+  const runCoreInference = () => runAction('全核心十域联合推理', async () => {
+    setCoreReport(null);
+    setCoreDecision(await inferCoreOperationsPolicy(authToken));
+  });
+
+  const approveCoreDecision = () => coreDecision && runAction('全核心联合计划模拟双岗审批', async () => {
+    setCoreDecision(await approveCoreOperationsProposal(coreDecision.proposalId, authToken));
+  });
+
+  const executeCoreDecision = () => coreDecision && runAction('执行全核心联合沙盘计划', async () => {
+    setCoreDecision(await executeCoreOperationsProposal(coreDecision.proposalId, authToken));
+  });
+
+  const rollbackCoreDecision = () => coreDecision && runAction('回滚全核心联合沙盘计划', async () => {
+    setCoreDecision(await rollbackCoreOperationsProposal(coreDecision.proposalId, authToken));
+  });
+
+  const downloadCoreDecisionReport = () => coreDecision && runAction('生成全核心联合决策报告', async () => {
+    const report = await fetchCoreOperationsDecisionReport(coreDecision.proposalId, authToken);
+    setCoreReport(report);
+    const url = URL.createObjectURL(new Blob(
+      [JSON.stringify(report, null, 2)],
+      { type: 'application/json;charset=utf-8' },
+    ));
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `core-operations-decision-${report.completionStatus.toLowerCase()}-${coreDecision.proposalId}.json`;
+    anchor.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+  });
+
   if (!snapshot) {
     return (
       <section className="operational-evidence-center operational-evidence-center--loading">
@@ -273,6 +336,13 @@ export function OperationalEvidenceCenter({
       </section>
     );
   }
+
+  const coreProjectionPair = (key: string) => {
+    const value = coreDecision?.projectedBusinessValue[key];
+    return value && typeof value === 'object' && 'before' in value && 'after' in value
+      ? value as { before: number; after: number }
+      : { before: 0, after: 0 };
+  };
 
   return (
     <section className="operational-evidence-center" data-sequence={snapshot.sequence}>
@@ -474,11 +544,107 @@ export function OperationalEvidenceCenter({
                 </>
               ) : <p>从左侧任选一个已通过门禁的控制器，后端会先生成安全投影，再进入本地测试角色模拟审批；现场实名双岗审批仍需接入身份系统。</p>}
             </section>
-            <section className="port-business-runtime" aria-label="港口全业务强化学习运行链">
+            <section className="port-business-runtime" aria-label="全核心十域联合强化学习运行执行链">
               <header>
                 <div>
-                  <small>PORT BUSINESS RL V3 · MAIN RUNTIME CHAIN</small>
-                  <strong>33维观测 · 11个有界动作 · 10项奖励 · 5随机种子冠军集成</strong>
+                  <small>CORE OPERATIONS RL V1 · ACTIVE RUNTIME CHAIN</small>
+                  <strong>
+                    {coreChampion
+                      ? `${coreChampion.contract.observationCount}维观测 · ${coreChampion.contract.actionHeadCount}个并行动作头 · ${coreChampion.contract.actionChoiceCount}个有界选项 · ${coreChampion.contract.rewardComponentCount}项奖励`
+                      : '正在读取全核心联合冠军证据'}
+                  </strong>
+                </div>
+                <span className={coreChampion?.champion.admitted ? 'is-admitted' : 'is-blocked'}>
+                  {coreChampion
+                    ? `${coreChampion.champion.algorithmId} / ${coreChampion.champion.attemptId}`
+                    : 'EVIDENCE PENDING'}
+                </span>
+                <button
+                  disabled={busy || !coreChampion?.champion.admitted}
+                  onClick={() => void runCoreInference()}
+                  type="button"
+                >生成十域联合计划</button>
+              </header>
+              {coreDecision ? (
+                <div className="port-business-runtime__body">
+                  <section className="port-business-runtime__decision">
+                    <small>{coreDecision.admission.recommendationSource}</small>
+                    <strong>{coreDecision.activeDomains.length}/10 个核心域本周期参与</strong>
+                    <span>
+                      {coreDecision.inference.heads.map((head) =>
+                        `${head.domain}:${head.selectedChoiceId}(${(head.voteShare * 100).toFixed(0)}%)`).join(' · ')}
+                    </span>
+                    <em>{coreDecision.admission.status.toUpperCase()}</em>
+                    {coreDecision.domainAbstentions.length > 0 && (
+                      <p>低一致性动作头已各自回退保持计划：{coreDecision.domainAbstentions.join('、')}</p>
+                    )}
+                    {coreDecision.admission.blockers.length > 0 && (
+                      <ul>{coreDecision.admission.blockers.map((blocker) => <li key={blocker}>{blocker}</li>)}</ul>
+                    )}
+                  </section>
+                  <section className="port-business-runtime__metrics" aria-label="全核心联合计划价值投影">
+                    <span><small>队列</small><strong>{coreProjectionPair('queueVessels').before.toFixed(2)}→{coreProjectionPair('queueVessels').after.toFixed(2)}</strong></span>
+                    <span><small>延误</small><strong>{coreProjectionPair('delayMinutes').before.toFixed(2)}→{coreProjectionPair('delayMinutes').after.toFixed(2)}min</strong></span>
+                    <span><small>吞吐</small><strong>{coreProjectionPair('throughputTeu').before.toFixed(1)}→{coreProjectionPair('throughputTeu').after.toFixed(1)}TEU</strong></span>
+                    <span><small>堆场</small><strong>{coreProjectionPair('yardOccupancyPercent').before.toFixed(2)}→{coreProjectionPair('yardOccupancyPercent').after.toFixed(2)}%</strong></span>
+                    <span><small>集卡周转</small><strong>{coreProjectionPair('truckTurnMinutes').before.toFixed(2)}→{coreProjectionPair('truckTurnMinutes').after.toFixed(2)}min</strong></span>
+                    <span><small>能耗</small><strong>{coreProjectionPair('energyKwh').before.toFixed(2)}→{coreProjectionPair('energyKwh').after.toFixed(2)}kWh</strong></span>
+                    <span><small>峰值</small><strong>{coreProjectionPair('peakGridKw').before.toFixed(1)}→{coreProjectionPair('peakGridKw').after.toFixed(1)}kW</strong></span>
+                    <span><small>碳排</small><strong>{coreProjectionPair('carbonTons').before.toFixed(3)}→{coreProjectionPair('carbonTons').after.toFixed(3)}t</strong></span>
+                    <span><small>维护到期</small><strong>{coreProjectionPair('maintenanceDueCount').before.toFixed(1)}→{coreProjectionPair('maintenanceDueCount').after.toFixed(1)}</strong></span>
+                  </section>
+                  <section className="port-business-runtime__approval">
+                    <span>
+                      <small>proposal_id</small><strong>{coreDecision.proposalId}</strong><em>{coreDecision.approval.status}</em>
+                    </span>
+                    <span>
+                      <small>输入快照</small><strong>{shortHash(coreDecision.inputEvidence.snapshotHash)}</strong>
+                      <em>实测字段 {coreDecision.inputEvidence.measuredFieldCount} · 仿真字段 {coreDecision.inputEvidence.simulatedFieldCount}</em>
+                    </span>
+                    <button
+                      disabled={busy || coreDecision.approval.status !== 'pending_simulation_review'}
+                      onClick={() => void approveCoreDecision()}
+                      type="button"
+                    >模拟双岗审批（测试身份）</button>
+                    <button
+                      disabled={busy || coreDecision.approval.status !== 'approved_for_sandbox'}
+                      onClick={() => void executeCoreDecision()}
+                      type="button"
+                    >执行联合沙盘计划并取回执</button>
+                    <button
+                      disabled={busy || coreDecision.execution.status !== 'executed'}
+                      onClick={() => void rollbackCoreDecision()}
+                      type="button"
+                    >回滚联合计划</button>
+                    <button disabled={busy} onClick={() => void downloadCoreDecisionReport()} type="button">导出联合决策报告</button>
+                    {coreDecision.execution.receipt && (
+                      <div className="execution-receipt">
+                        <strong>{coreDecision.execution.receipt.receipt_id}</strong>
+                        <span>{coreDecision.execution.receipt.attribution}</span>
+                        <small>同状态、同随机种子、同一时刻：新强化学习计划相对继续当前计划的沙盘差值</small>
+                        <ul>
+                          {Object.entries(
+                            coreDecision.execution.receipt.counterfactual?.rl_vs_baseline_kpi_delta
+                              ?? coreDecision.execution.receipt.kpi_delta
+                              ?? {},
+                          ).slice(0, 8).map(([key, value]) => (
+                            <li key={key}><span>{kpiLabels[key] ?? key}</span><b>{value > 0 ? '+' : ''}{value}</b></li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    <p>simulation_mode=true · dispatch_allowed=false · production_authority=false；配对反事实回执隔离同一步自然演化，证明沙盘差值来自新强化学习计划，不是现场因果绩效。</p>
+                  </section>
+                </div>
+              ) : (
+                <p>当前主链会从同一后端权威快照生成十域联合计划；低一致性动作头单独回退，安全投影、模拟审批和执行回执均可审计。</p>
+              )}
+            </section>
+            <section className="port-business-runtime" aria-label="保留的港口全业务强化学习第三版证据链">
+              <header>
+                <div>
+                  <small>PORT BUSINESS RL V3 · RETAINED SINGLE-ACTION EVIDENCE</small>
+                  <strong>保留：33维观测 · 11个有界动作 · 10项奖励 · 5随机种子冠军集成 · 单动作证据链</strong>
                 </div>
                 <span className={businessChampion?.champion.admitted ? 'is-admitted' : 'is-blocked'}>
                   {businessChampion

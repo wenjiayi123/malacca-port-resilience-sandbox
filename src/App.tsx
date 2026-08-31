@@ -82,6 +82,11 @@ import {
   type PortBusinessDecisionReport,
   type PortBusinessRuntimeDecision,
 } from './integrations/portBusinessRlAdapter';
+import type {
+  CoreOperationsChampionStatus,
+  CoreOperationsDecisionReport,
+  CoreOperationsRuntimeDecision,
+} from './integrations/coreOperationsRlAdapter';
 import {
   requestXiaoyiRlAdvice,
   type XiaoyiRlAdvisorResponse,
@@ -2728,7 +2733,10 @@ export function App() {
     champion: PortBusinessChampionStatus | null;
     decision: PortBusinessRuntimeDecision | null;
     report: PortBusinessDecisionReport | null;
-  }>({ champion: null, decision: null, report: null });
+    coreChampion: CoreOperationsChampionStatus | null;
+    coreDecision: CoreOperationsRuntimeDecision | null;
+    coreReport: CoreOperationsDecisionReport | null;
+  }>({ champion: null, decision: null, report: null, coreChampion: null, coreDecision: null, coreReport: null });
   const [rlBenchmarkMessage, setRlBenchmarkMessage] = useState(
     () => restoreRlBenchmark()
       ? '已恢复上次训练摘要；正在通过任务编号校验服务器检查点'
@@ -3563,6 +3571,9 @@ export function App() {
     champion: PortBusinessChampionStatus | null;
     decision: PortBusinessRuntimeDecision | null;
     report: PortBusinessDecisionReport | null;
+    coreChampion: CoreOperationsChampionStatus | null;
+    coreDecision: CoreOperationsRuntimeDecision | null;
+    coreReport: CoreOperationsDecisionReport | null;
   }) => {
     setPortBusinessEvidence(evidence);
   }, []);
@@ -9913,22 +9924,22 @@ export function App() {
                       </span>
                     ))}
                   </div>
-                  <section className="port-business-champion-strip" aria-label="港口全业务强化学习冠军证据">
+                  <section className="port-business-champion-strip" aria-label="全核心联合强化学习冠军证据">
                     <div>
-                      <small>PORT BUSINESS RL V3 · OFFLINE CHAMPION</small>
+                      <small>CORE OPERATIONS RL V1 · ACTIVE OFFLINE CHAMPION · PORT BUSINESS RL V3 · OFFLINE CHAMPION RETAINED</small>
                       <strong>
-                        {portBusinessEvidence.champion
-                          ? `${portBusinessEvidence.champion.champion.algorithmId} / ${portBusinessEvidence.champion.champion.attemptId}`
+                        {portBusinessEvidence.coreChampion
+                          ? `${portBusinessEvidence.coreChampion.champion.algorithmId} / ${portBusinessEvidence.coreChampion.champion.attemptId}`
                           : '冠军证据读取中'}
                       </strong>
                       <span>
-                        {portBusinessEvidence.champion
-                          ? `${portBusinessEvidence.champion.contract.observationCount}维观测 · ${portBusinessEvidence.champion.contract.actionCount}个动作 · ${portBusinessEvidence.champion.contract.rewardComponentCount}项奖励 · ${portBusinessEvidence.champion.champion.seedPolicyCount}种子集成`
+                        {portBusinessEvidence.coreChampion
+                          ? `${portBusinessEvidence.coreChampion.contract.observationCount}维观测 · ${portBusinessEvidence.coreChampion.contract.actionHeadCount}个并行动作头 · ${portBusinessEvidence.coreChampion.contract.actionChoiceCount}个选项 · ${portBusinessEvidence.coreChampion.contract.rewardComponentCount}项奖励 · ${portBusinessEvidence.coreChampion.champion.seedPolicyCount}种子集成`
                           : '等待后端验证数据指纹、训练结果和准入门禁'}
                       </span>
                     </div>
-                    <span className={portBusinessEvidence.champion?.champion.admitted ? 'is-admitted' : 'is-blocked'}>
-                      {portBusinessEvidence.champion?.champion.admitted ? 'OFFLINE ADMITTED' : 'BLOCKED'}
+                    <span className={portBusinessEvidence.coreChampion?.champion.admitted ? 'is-admitted' : 'is-blocked'}>
+                      {portBusinessEvidence.coreChampion?.champion.admitted ? 'OFFLINE ADMITTED' : 'BLOCKED'}
                       <small>production_authority=false</small>
                     </span>
                     <button

@@ -1,6 +1,6 @@
 import type { Plugin } from 'vite';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { randomUUID, timingSafeEqual } from 'node:crypto';
+import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
@@ -62,6 +62,11 @@ import {
   type SiteAcceptanceEvidence,
 } from './siteAcceptanceGate.ts';
 import { assessReliabilityReadiness } from './reliableStateStore.ts';
+import {
+  inferCoreOperationsChampion,
+  loadCoreOperationsChampionStatus,
+} from './coreOperationsRlService.ts';
+import { corePlanEffect } from './coreOperationsRlEngine.ts';
 
 const MPA_TOTAL_DATASET = 'd_d48c5a038904f6da3c603cd854b6c191';
 const MPA_BREAKDOWN_DATASET = 'd_8f264219109e61fffa87ac64dd5a9a65';
@@ -658,6 +663,8 @@ export const createPublicEvidenceMiddleware = () => {
   const operations = new OperationalControlService();
   const regulatoryResilience = new RegulatoryResilienceRuntime();
   const realtimeAis = new RealtimeAisGateway();
+  type CoreProposal = Awaited<ReturnType<typeof inferCoreOperationsChampion>>;
+  const coreProposals = new Map<string, CoreProposal>();
   return async (
     request: IncomingMessage,
     response: ServerResponse,
@@ -723,6 +730,12 @@ export const createPublicEvidenceMiddleware = () => {
             get: { summary: '下载带 SHA-256 完整性信息的检查点', security: [{ bearerAuth: [] }], responses: { '200': { description: '检查点 JSON' }, '404': { description: '检查点不存在' } } },
           },
           '/api/rl/inference': { post: { summary: '使用已完成检查点执行策略推理', security: [{ bearerAuth: [] }], responses: { '200': { description: '策略决策' }, '409': { description: '检查点未就绪' } } } },
+          '/api/rl/core/status': { get: { summary: '读取十域并行动作头冠军、封存测试价值和权威边界', responses: { '200': { description: 'core-operations-runtime-status.v1' } } } },
+          '/api/rl/core/infer': { post: { summary: '从当前后端权威快照生成全核心联合强化学习计划', security: [{ bearerAuth: [] }], responses: { '201': { description: '待模拟审批联合计划' }, '409': { description: '冠军或运行门禁阻断' } } } },
+          '/api/rl/core/proposals/{proposalId}/approve': { post: { summary: '使用两个本地测试角色模拟审批联合计划', security: [{ bearerAuth: [] }], responses: { '200': { description: '已批准模拟计划' } } } },
+          '/api/rl/core/proposals/{proposalId}/execute': { post: { summary: '执行十域联合沙盘控制并返回同状态配对反事实回执', security: [{ bearerAuth: [] }], responses: { '200': { description: 'simulation-executor.v2-core-plan 回执' }, '409': { description: '审批、快照或安全门禁阻断' } } } },
+          '/api/rl/core/proposals/{proposalId}/rollback': { post: { summary: '回滚已执行的联合沙盘控制', security: [{ bearerAuth: [] }], responses: { '200': { description: '已回滚回执' } } } },
+          '/api/rl/core/proposals/{proposalId}/report': { get: { summary: '读取带完整计划、回执和审计哈希的决策报告', security: [{ bearerAuth: [] }], responses: { '200': { description: 'core-operations-decision-report.v1' } } } },
           '/api/rl/contracts/terminal-operations': {
             get: {
               summary: '读取真实码头数据、观测、动作、目标与门禁状态',
@@ -819,9 +832,139 @@ export const createPublicEvidenceMiddleware = () => {
       });
       return;
     }
+    if (request.method === 'GET' && url.pathname === '/api/rl/core/status') {
+      jsonResponse(response, await loadCoreOperationsChampionStatus());
+      return;
+    }
+    if (request.method === 'POST' && url.pathname === '/api/rl/core/infer') {
+      const proposal = await inferCoreOperationsChampion(operations.snapshot());
+      coreProposals.set(proposal.proposalId, proposal);
+      jsonResponse(response, proposal, 201);
+      return;
+    }
+    const coreApprovalMatch = url.pathname.match(/^\/api\/rl\/core\/proposals\/([^/]+)\/approve$/);
+    if (request.method === 'POST' && coreApprovalMatch) {
+      const proposalId = decodeURIComponent(coreApprovalMatch[1]);
+      const proposal = coreProposals.get(proposalId);
+      if (!proposal) throw new HttpError(404, 'CORE_OPERATIONS_PROPOSAL_NOT_FOUND');
+      if (proposal.approval.status === 'not_required') {
+        jsonResponse(response, proposal);
+        return;
+      }
+      const body = await readJsonBody<{ approvers?: Array<{ approverId?: string; role?: string }> }>(request);
+      const approvers = (body.approvers ?? []).map((item) => ({
+        approverId: String(item.approverId ?? ''),
+        role: String(item.role ?? ''),
+      }));
+      const ids = new Set(approvers.map((item) => item.approverId).filter(Boolean));
+      const roles = new Set(approvers.map((item) => item.role));
+      if (ids.size < 2 || !roles.has('operator') || !roles.has('safety_officer')) {
+        throw new HttpError(409, 'CORE_OPERATIONS_DUAL_TEST_ROLE_APPROVAL_REQUIRED');
+      }
+      const approvedAt = new Date().toISOString();
+      proposal.approval = {
+        status: 'approved_for_sandbox',
+        requiredRoles: ['operator', 'safety_officer'],
+        approvals: approvers.map((item) => ({ ...item, approvedAt })),
+      };
+      coreProposals.set(proposalId, proposal);
+      jsonResponse(response, proposal);
+      return;
+    }
+    const coreExecuteMatch = url.pathname.match(/^\/api\/rl\/core\/proposals\/([^/]+)\/execute$/);
+    if (request.method === 'POST' && coreExecuteMatch) {
+      const proposalId = decodeURIComponent(coreExecuteMatch[1]);
+      const proposal = coreProposals.get(proposalId);
+      if (!proposal) throw new HttpError(404, 'CORE_OPERATIONS_PROPOSAL_NOT_FOUND');
+      if (proposal.approval.status !== 'approved_for_sandbox') throw new HttpError(409, 'CORE_OPERATIONS_PROPOSAL_NOT_APPROVED');
+      const idempotencyHeader = request.headers['idempotency-key'];
+      const idempotencyKey = typeof idempotencyHeader === 'string' ? idempotencyHeader : '';
+      const planEffect = corePlanEffect(proposal.executedPlan);
+      const choices = new Set(Object.values(proposal.executedPlan.choices));
+      const effect = {
+        remainingTicks: 8,
+        queueRelief: Math.min(0.8, planEffect.queueRelief * 5),
+        capacityMultiplier: planEffect.capacity,
+        carbonMultiplier: planEffect.carbon,
+        diversionFraction: planEffect.divert,
+        yardOutflowMultiplier: Math.min(1.4, 1 + planEffect.yardRelief * 5),
+        gateOutflowMultiplier: Math.min(1.3, 1 + planEffect.gateRelief * 3),
+        intermodalOutflowMultiplier: choices.has('rail-barge-rebalance') ? 1.18 : choices.has('neighbor-port-advisory') ? 1.08 : 1,
+        energyLoadMultiplier: planEffect.energy,
+        peakGridMultiplier: planEffect.peak,
+        reeferPowerMultiplier: choices.has('reefer-load-coordinate') ? 0.97 : choices.has('building-demand-response') ? 0.99 : 1,
+        equipmentAvailabilityBonus: choices.has('fault-recovery-priority') ? 2 : choices.has('preventive-maintenance-window') ? 1 : 0,
+        batteryPowerAdjustmentKw: choices.has('battery-peak-shave') ? 1_200 : 0,
+        maintenanceReliefCount: choices.has('fault-recovery-priority') ? 3 : choices.has('preventive-maintenance-window') ? 2 : 0,
+      };
+      const planHash = createHash('sha256').update(JSON.stringify(proposal.executedPlan)).digest('hex');
+      const result = operations.executeCorePlan({
+        proposalId,
+        inputSnapshotHash: proposal.inputEvidence.snapshotHash,
+        inputSequence: proposal.inputEvidence.sequence,
+        planHash,
+        activeDomains: proposal.activeDomains,
+        effect,
+      }, idempotencyKey);
+      proposal.execution = {
+        ...proposal.execution,
+        status: 'executed',
+        receipt: result.receipt as unknown as Record<string, unknown>,
+        reason: '十域联合计划已进入独立沙盘执行器；现场生产下发仍禁用',
+      };
+      coreProposals.set(proposalId, proposal);
+      jsonResponse(response, { proposal, ...result });
+      return;
+    }
+    const coreRollbackMatch = url.pathname.match(/^\/api\/rl\/core\/proposals\/([^/]+)\/rollback$/);
+    if (request.method === 'POST' && coreRollbackMatch) {
+      const proposalId = decodeURIComponent(coreRollbackMatch[1]);
+      const proposal = coreProposals.get(proposalId);
+      if (!proposal) throw new HttpError(404, 'CORE_OPERATIONS_PROPOSAL_NOT_FOUND');
+      const body = await readJsonBody<{ reason?: string }>(request);
+      const receipt = operations.rollbackCorePlan(proposalId, body.reason ?? 'local_core_plan_acceptance_rollback');
+      proposal.execution = {
+        ...proposal.execution,
+        status: 'rolled_back',
+        receipt: receipt as unknown as Record<string, unknown>,
+        reason: '联合沙盘控制已回滚；生产下发始终禁用',
+      };
+      coreProposals.set(proposalId, proposal);
+      jsonResponse(response, proposal);
+      return;
+    }
+    const coreReportMatch = url.pathname.match(/^\/api\/rl\/core\/proposals\/([^/]+)\/report$/);
+    if (request.method === 'GET' && coreReportMatch) {
+      const proposalId = decodeURIComponent(coreReportMatch[1]);
+      const proposal = coreProposals.get(proposalId);
+      if (!proposal) throw new HttpError(404, 'CORE_OPERATIONS_PROPOSAL_NOT_FOUND');
+      const payload = {
+        protocolVersion: 'core-operations-decision-report.v1',
+        generatedAt: new Date().toISOString(),
+        completionStatus: proposal.execution.status === 'executed'
+          ? 'EXECUTED_SIMULATION_ONLY'
+          : proposal.execution.status === 'rolled_back'
+            ? 'ROLLED_BACK_SIMULATION_ONLY'
+            : proposal.approval.status === 'approved_for_sandbox'
+              ? 'APPROVED_NOT_EXECUTED'
+              : 'PENDING_SIMULATION_REVIEW',
+        proposal,
+      };
+      jsonResponse(response, {
+        ...payload,
+        auditHash: createHash('sha256').update(JSON.stringify(payload)).digest('hex'),
+      });
+      return;
+    }
     if (request.method === 'GET' && url.pathname === '/api/operations/recommendations') {
-      const trainedAction = url.searchParams.get('trainedActionId') as OperationalActionId | null;
-      jsonResponse(response, operationalCall(() => operations.recommendations(trainedAction ?? undefined)));
+      const explicitAction = url.searchParams.get('trainedActionId') as OperationalActionId | null;
+      const core = explicitAction ? null : await inferCoreOperationsChampion(operations.snapshot());
+      const trainedAction = explicitAction ?? (
+        core?.admission.status === 'admitted_for_simulation_approval'
+          ? core.primaryOperationalActionId
+          : undefined
+      );
+      jsonResponse(response, operationalCall(() => operations.recommendations(trainedAction)));
       return;
     }
     if (request.method === 'GET' && url.pathname === '/api/operations/handoff') {
@@ -870,6 +1013,15 @@ export const createPublicEvidenceMiddleware = () => {
             family: '33-observation linear Dyna-Q ensemble with 11 bounded advisory actions and deterministic fallback',
             evidence_artifact: 'reports/port-business-rl-champion-v3.json',
             evidence_scope: 'public aggregate anchored, engineering augmented, five-seed offline final test; not field KPI and not production authority',
+          },
+          {
+            id: 'core-operations-rl-v1-factorized',
+            version: 'core-operations-rl.v1',
+            run_id: 'validation-selected-sealed-test',
+            status: 'champion',
+            family: 'factorized linear value-function ensemble with ten simultaneous bounded advisory heads',
+            evidence_artifact: 'reports/core-operations-rl-champion-v1.json',
+            evidence_scope: 'paired offline counterfactual versus conservative SOP with simulation execution receipts; not field KPI and not production authority',
           },
           {
             id: 'legacy-rl-benchmark-balanced-resilience',
@@ -968,7 +1120,12 @@ export const createPublicEvidenceMiddleware = () => {
     if (request.method === 'POST' && url.pathname === '/api/operations/decisions') {
       const body = await readJsonBody<{ controller_id?: OperationalControllerId; trained_action_id?: OperationalActionId }>(request);
       if (!body.controller_id) throw new HttpError(422, 'controller_id 必填');
-      jsonResponse(response, operationalCall(() => operations.createDecision(body.controller_id!, body.trained_action_id)), 201);
+      let trainedAction = body.trained_action_id;
+      if (body.controller_id === 'rl-checkpoint' && !trainedAction) {
+        const core = await inferCoreOperationsChampion(operations.snapshot());
+        if (core.admission.status === 'admitted_for_simulation_approval') trainedAction = core.primaryOperationalActionId;
+      }
+      jsonResponse(response, operationalCall(() => operations.createDecision(body.controller_id!, trainedAction)), 201);
       return;
     }
     const operationalDecisionMatch = url.pathname.match(/^\/api\/operations\/decisions\/([^/]+)$/);

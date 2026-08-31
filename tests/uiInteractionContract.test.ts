@@ -180,18 +180,33 @@ test('closure exports disclose incomplete workflows and simulated approval ident
 });
 
 test('business champion and production-readiness gates are connected to the primary UI and report pipeline', async () => {
-  const [app, evidenceCenter, adapter, server] = await Promise.all([
+  const [app, evidenceCenter, adapter, coreAdapter, server] = await Promise.all([
     readFile('src/App.tsx', 'utf8'),
     readFile('src/components/OperationalEvidenceCenter.tsx', 'utf8'),
     readFile('src/integrations/operationsControlAdapter.ts', 'utf8'),
+    readFile('src/integrations/coreOperationsRlAdapter.ts', 'utf8'),
     readFile('server/publicEvidencePlugin.ts', 'utf8'),
   ]);
   assert.match(app, /portBusinessRuntime: portBusinessEvidence/);
   assert.match(app, /PORT BUSINESS RL V3 · OFFLINE CHAMPION/);
+  assert.match(app, /CORE OPERATIONS RL V1 · ACTIVE OFFLINE CHAMPION/);
   assert.match(evidenceCenter, /33维观测 · 11个有界动作 · 10项奖励 · 5随机种子冠军集成/);
+  assert.match(evidenceCenter, /全核心十域联合强化学习运行执行链/);
+  assert.match(evidenceCenter, /coreChampion\.contract\.observationCount/);
+  assert.match(evidenceCenter, /coreChampion\.contract\.actionHeadCount/);
+  assert.match(evidenceCenter, /coreChampion\.contract\.actionChoiceCount/);
+  assert.match(evidenceCenter, /执行联合沙盘计划/);
+  assert.match(evidenceCenter, /rl_vs_baseline_kpi_delta/);
+  assert.match(evidenceCenter, /同状态、同随机种子、同一时刻/);
   assert.match(evidenceCenter, /生产就绪三重门禁/);
   assert.match(evidenceCenter, /重新核查门禁/);
   assert.match(adapter, /fetchProductionReadiness/);
+  assert.match(coreAdapter, /inferCoreOperationsPolicy/);
+  assert.match(coreAdapter, /executeCoreOperationsProposal/);
+  assert.match(coreAdapter, /rollbackCoreOperationsProposal/);
+  assert.match(server, /\/api\/rl\/core\/infer/);
+  assert.match(server, /coreExecuteMatch/);
+  assert.match(server, /operations\.executeCorePlan/);
   assert.match(server, /\/api\/operations\/production-readiness/);
   assert.match(server, /\/api\/operations\/site-acceptance\/evaluate/);
   assert.match(server, /\/api\/operations\/reliability\/evaluate/);

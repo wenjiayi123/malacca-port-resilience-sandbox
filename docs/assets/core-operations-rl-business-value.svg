@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
+  <title id="title">全核心业务强化学习闭环与业务价值证据</title>
+  <desc id="description">47维权威快照经过五随机种子Dyna-Q、十个动作头、安全弃权、双岗审批和配对反事实沙盘回执形成可审计闭环。</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#06172c"/>
+      <stop offset="0.55" stop-color="#08233b"/>
+      <stop offset="1" stop-color="#071826"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#36d6ff"/>
+      <stop offset="1" stop-color="#55f0b0"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#39cfee"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="630" rx="28" fill="url(#bg)"/>
+  <path d="M0 84H1200" stroke="#174866"/>
+  <path d="M0 590H1200" stroke="#174866"/>
+  <circle cx="1090" cy="70" r="170" fill="#0a6f83" opacity="0.12"/>
+  <circle cx="80" cy="600" r="180" fill="#29c884" opacity="0.08"/>
+
+  <text x="48" y="48" fill="#eafaff" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif" font-size="26" font-weight="700">RL 真正进入港口十个核心业务域</text>
+  <text x="48" y="74" fill="#79a9c2" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="13" letter-spacing="2">CORE OPERATIONS RL V1 · EVIDENCE-BASED CLOSED LOOP</text>
+  <rect x="932" y="30" width="220" height="38" rx="19" fill="#102f42" stroke="#42e6ad"/>
+  <circle cx="956" cy="49" r="6" fill="#42e6ad" filter="url(#glow)"/>
+  <text x="972" y="54" fill="#c8ffe9" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif" font-size="14" font-weight="600">离线冠军 + 沙盘准入</text>
+
+  <g font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif">
+    <g transform="translate(42 116)">
+      <rect width="164" height="112" rx="16" fill="#0b2940" stroke="#1e6682"/>
+      <text x="18" y="31" fill="#74dfff" font-size="12">权威状态输入</text>
+      <text x="18" y="65" fill="#ffffff" font-size="27" font-weight="700">47D</text>
+      <text x="18" y="91" fill="#9ebdd0" font-size="13">逐字段血缘与质量</text>
+    </g>
+    <path d="M213 172H244" stroke="#39cfee" stroke-width="2" marker-end="url(#arrow)"/>
+    <g transform="translate(252 116)">
+      <rect width="164" height="112" rx="16" fill="#0b2940" stroke="#1e6682"/>
+      <text x="18" y="31" fill="#74dfff" font-size="12">真实策略训练</text>
+      <text x="18" y="65" fill="#ffffff" font-size="24" font-weight="700">Dyna-Q</text>
+      <text x="18" y="91" fill="#9ebdd0" font-size="13">5 seeds · 360课程</text>
+    </g>
+    <path d="M423 172H454" stroke="#39cfee" stroke-width="2" marker-end="url(#arrow)"/>
+    <g transform="translate(462 116)">
+      <rect width="164" height="112" rx="16" fill="#0b2940" stroke="#1e6682"/>
+      <text x="18" y="31" fill="#74dfff" font-size="12">因子化联合动作</text>
+      <text x="18" y="65" fill="#ffffff" font-size="25" font-weight="700">10 × 3</text>
+      <text x="18" y="91" fill="#9ebdd0" font-size="13">十域 · 30有界选项</text>
+    </g>
+    <path d="M633 172H664" stroke="#39cfee" stroke-width="2" marker-end="url(#arrow)"/>
+    <g transform="translate(672 116)">
+      <rect width="164" height="112" rx="16" fill="#0b2940" stroke="#1e6682"/>
+      <text x="18" y="31" fill="#74dfff" font-size="12">逐域安全弃权</text>
+      <text x="18" y="65" fill="#ffffff" font-size="23" font-weight="700">SAFE HOLD</text>
+      <text x="18" y="91" fill="#9ebdd0" font-size="13">低一致性独立回退</text>
+    </g>
+    <path d="M843 172H874" stroke="#39cfee" stroke-width="2" marker-end="url(#arrow)"/>
+    <g transform="translate(882 116)">
+      <rect width="276" height="112" rx="16" fill="#0b2940" stroke="#42e6ad"/>
+      <text x="18" y="31" fill="#78f3c1" font-size="12">可审计执行闭环</text>
+      <text x="18" y="64" fill="#ffffff" font-size="21" font-weight="700">双岗审批 → 沙盘回执</text>
+      <text x="18" y="91" fill="#9ebdd0" font-size="13">同状态配对反事实 · 可回滚</text>
+    </g>
+  </g>
+
+  <text x="48" y="276" fill="#dff8ff" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif" font-size="18" font-weight="700">封存测试的保守价值下界</text>
+  <text x="326" y="276" fill="#6f9bb1" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif" font-size="12">95% CI lower bound · 相对同记录标准作业程序</text>
+
+  <g font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif">
+    <g transform="translate(42 296)"><rect width="210" height="108" rx="15" fill="#0a2438" stroke="#1c536b"/><text x="18" y="28" fill="#83aabd" font-size="12">综合奖励改善</text><text x="18" y="65" fill="#53eeb2" font-size="28" font-weight="700">+0.02377</text><text x="18" y="88" fill="#a5c0cf" font-size="11">FINAL HOLDOUT LOWER95</text></g>
+    <g transform="translate(268 296)"><rect width="210" height="108" rx="15" fill="#0a2438" stroke="#1c536b"/><text x="18" y="28" fill="#83aabd" font-size="12">等待时间减少</text><text x="18" y="65" fill="#53eeb2" font-size="28" font-weight="700">−0.081h</text><text x="18" y="88" fill="#a5c0cf" font-size="11">LOWER95</text></g>
+    <g transform="translate(494 296)"><rect width="210" height="108" rx="15" fill="#0a2438" stroke="#1c536b"/><text x="18" y="28" fill="#83aabd" font-size="12">碳强度降低</text><text x="18" y="65" fill="#53eeb2" font-size="28" font-weight="700">−1.685%</text><text x="18" y="88" fill="#a5c0cf" font-size="11">LOWER95</text></g>
+    <g transform="translate(720 296)"><rect width="210" height="108" rx="15" fill="#0a2438" stroke="#1c536b"/><text x="18" y="28" fill="#83aabd" font-size="12">最低吞吐保持率</text><text x="18" y="65" fill="#ffffff" font-size="28" font-weight="700">98.827%</text><text x="18" y="88" fill="#a5c0cf" font-size="11">MINIMUM</text></g>
+    <g transform="translate(946 296)"><rect width="212" height="108" rx="15" fill="#0a2438" stroke="#42e6ad"/><text x="18" y="28" fill="#83aabd" font-size="12">硬约束违规</text><text x="18" y="65" fill="#53eeb2" font-size="28" font-weight="700">0</text><text x="18" y="88" fill="#a5c0cf" font-size="11">10/10 域实际参与</text></g>
+  </g>
+
+  <rect x="42" y="438" width="1116" height="112" rx="17" fill="#081f31" stroke="url(#accent)" stroke-width="1.4"/>
+  <text x="64" y="466" fill="#78f3c1" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif" font-size="13" font-weight="700">真实运行回执示例 · 同状态 / 同随机种子 / 同一时刻 · 不是现场因果绩效</text>
+  <g font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif">
+    <text x="64" y="510" fill="#ffffff" font-size="22" font-weight="700">排队 −0.57</text>
+    <text x="248" y="510" fill="#ffffff" font-size="22" font-weight="700">延误 −3 min</text>
+    <text x="446" y="510" fill="#ffffff" font-size="22" font-weight="700">能耗 −126.75 kWh</text>
+    <text x="718" y="510" fill="#ffffff" font-size="22" font-weight="700">碳排 −0.074 t</text>
+    <text x="932" y="510" fill="#53eeb2" font-size="22" font-weight="700">履约 +0.9</text>
+  </g>
+
+  <text x="48" y="608" fill="#83aabd" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="12">simulation_mode=true  ·  live_data_verified=false  ·  dispatch_allowed=false  ·  production_authority=false</text>
+  <text x="1152" y="608" fill="#53eeb2" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="11" text-anchor="end">AUDITABLE · FAIL-CLOSED · REVERSIBLE</text>
+</svg>

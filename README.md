@@ -7,6 +7,7 @@
   <a href="docs/SHANGHAI_PORT_LANDING.md">上海港接入 / Shanghai landing</a> ·
   <a href="docs/DATASET_CONTRACT.md">数据契约 / Data contract</a> ·
   <a href="docs/RL_ARCHITECTURE.md">算法架构 / RL architecture</a> ·
+  <a href="docs/CORE_OPERATIONS_RL_V1.md">十域RL / Core RL v1</a> ·
   <a href="docs/PORT_BUSINESS_RL_V3.md">全业务RL / Business RL v3</a> ·
   <a href="docs/MODEL_CARD.md">模型卡 / Model card</a> ·
   <a href="SECURITY.md">安全策略 / Security</a>
@@ -135,11 +136,38 @@ simulation_mode=true · live_data_verified=false · dispatch_allowed=false · pr
 | 24×7 可靠性 | 原子状态、上一代恢复、哈希日志、并发代数、fencing token、RPO/RTO/SLO 门禁 | 多副本/多故障域、隔离恢复演练、30 天可用性实测 |
 | 现场验收 | 30 天基线 + 720 小时影子、五类独立 KPI、FAT/SAT/UAT/灾备/网络安全/安全、五方签字 | 实际 KPI 抽取、见证测试、培训/值班/演练与运营方签字 |
 
-统一证据见 [`top-tier-hardening-evidence-v1.md`](reports/top-tier-hardening-evidence-v1.md)；分领域合同、限制和验证命令从 [`REAL_PORT_DATA_INTEGRATION.md`](docs/REAL_PORT_DATA_INTEGRATION.md) 开始。在现场证据未提供前，项目仍是可复现研究/工程验证系统，不是真实港口生产系统。
+第一版统一证据保持不变；纳入十域强化学习冠军与配对反事实运行验收的追加证据见 [`top-tier-hardening-evidence-v2.md`](reports/top-tier-hardening-evidence-v2.md)。分领域合同、限制和验证命令从 [`REAL_PORT_DATA_INTEGRATION.md`](docs/REAL_PORT_DATA_INTEGRATION.md) 开始。在现场证据未提供前，项目仍是可复现研究/工程验证系统，不是真实港口生产系统。
+
+### 全核心业务强化学习闭环 v1 / Core-operations RL v1
+
+`core-operations-rl.v1` 是当前主强化学习运行链，原有算法、检查点、报告和失败实验全部保留。它使用同一个 47 维权威快照张量，同时输出十个独立且可安全回退的动作头：到港节奏、泊位岸桥、堆场闸口、水平运输、航道引拖、岸电储能、冷藏箱与楼宇柔性负荷、设备维护、海铁水水联运、扰动恢复。十个动作头共有 30 个有界选项；主管机关放行、避碰、紧急停止、身份审批和物理下发继续由外部权威与确定性联锁掌控，不交给强化学习。
+
+正式训练比较因子化线性 Q 与因子化线性 Dyna-Q、两组超参数、五个随机种子和 180/360 两级课程。验证集选出的 `factorized-linear-dyna-q / curriculum-360` 通过未参与调参的时序封存测试：综合奖励改善百分之九十五置信下界 0.02377，平均等待减少下界 0.081238 小时，能源成本指数降低下界 0.600716%，峰值负载降低下界 1.326549 个百分点，碳强度降低下界 1.684997%，维护积压降低下界 0.058512，恢复积压降低下界 34.830831 个工程船舶当量；最低吞吐保持率 98.827313%，最低冷藏箱服务保持率 99.6%，十个动作域均实际参与，安全替换率和硬约束违规均为 0。
+
+当前后端可从同一模拟器快照生成十域联合计划，经逐域低一致性弃权、确定性安全投影和两个本地测试角色模拟审批后，真实改变独立沙盘状态并返回幂等执行回执、回滚结果和审计哈希。运行回执还从同一状态、同一随机种子、同一时刻分别推进“继续当前计划”和“执行新强化学习计划”，单列可归因于新计划的沙盘差值；运行控制服务也会自动把准入的联合策略映射为强化学习候选。完整训练候选、五个冠军策略、源文件指纹和价值边界见 [`core-operations-rl-champion-v1.md`](reports/core-operations-rl-champion-v1.md)，设计与接口见 [`CORE_OPERATIONS_RL_V1.md`](docs/CORE_OPERATIONS_RL_V1.md)。这些差值是同记录、同扰动下相对保守标准作业程序的公开数据锚定工程仿真结果，不是马六甲现场关键绩效指标或财务节省。
+
+<p align="center">
+  <img src="docs/assets/core-operations-rl-business-value.svg" alt="47维状态、十个强化学习动作头、安全弃权、双岗审批和配对反事实业务价值证据" width="100%" />
+</p>
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/assets/core-operations-rl-value-projection.png" alt="十域强化学习联合计划与业务价值投影实机截图" width="100%" />
+      <br /><sub><strong>选择性参与：</strong>每个动作头独立给出置信度；低一致性域保持原计划，不为追求“全动作”牺牲安全。</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/assets/core-operations-rl-counterfactual-receipt.png" alt="十域强化学习执行与配对反事实回执实机截图" width="100%" />
+      <br /><sub><strong>可归因回执：</strong>同状态、同随机种子、同一时刻比较新计划与继续当前计划，并保留审批、回滚和审计入口。</sub>
+    </td>
+  </tr>
+</table>
+
+> **本次实机闭环 / Runtime receipt：** 在公开数据校准的 `channel-congestion` 沙盘状态中，冠军策略只让 3/10 个高置信动作域参与，其余域保持计划；配对回执记录排队船舶 −0.57、平均延误 −3 分钟、区间能耗 −126.75 kWh、峰值负荷 −23.4、区间成本 −43.09、区间碳排 −0.074 t、服务履约 +0.9。该回执证明强化学习计划在独立沙盘执行器中改变了业务状态，**不等同于现场因果收益**；生产权威仍关闭。
 
 ### 港口全业务强化学习 v3 / Port-business RL v3
 
-新增 `port-business-rl.v3`，在完全保留原四种强化学习、模型预测控制、检查点和监管韧性模型的基础上，将泊位—岸桥、堆场—闸口、航道潮窗与引拖、岸电能碳、海铁水水联运、邻港协同、扰动恢复和服务公平性纳入同一可训练闭环。策略实际读取 33 维观测、选择 11 个有界建议动作，并使用 10 项奖励分量；航道、潮窗、危险品、资源容量和一周期冷却由确定性动作屏蔽器控制。
+保留的 `port-business-rl.v3` 单动作证据链，在完全保留原四种强化学习、模型预测控制、检查点和监管韧性模型的基础上，将泊位—岸桥、堆场—闸口、航道潮窗与引拖、岸电能碳、海铁水水联运、邻港协同、扰动恢复和服务公平性纳入同一可训练闭环。策略实际读取 33 维观测、选择 11 个有界建议动作，并使用 10 项奖励分量；航道、潮窗、危险品、资源容量和一周期冷却由确定性动作屏蔽器控制。它继续作为历史对照，不再是覆盖所有核心功能的主运行策略。
 
 公开数据锚点仍是新加坡海事及港务管理局月度到港/总吨位与 ERA5 风场。缺失的泊位、岸桥、堆场、闸口、引拖、岸电和转运字段均逐字段标为 `engineering-derived`，不会冒充马六甲现场测量。生成的 1,508 条时间记录按 70% / 15% / 15% 时序隔离；四种线性时序差分算法、两组超参数、五个随机种子和 260/520 两级课程均执行真实参数更新。
 

@@ -99,6 +99,32 @@ interface ActiveControlEffect {
   capacityMultiplier: number;
   carbonMultiplier: number;
   diversionFraction: number;
+  yardOutflowMultiplier?: number;
+  gateOutflowMultiplier?: number;
+  intermodalOutflowMultiplier?: number;
+  energyLoadMultiplier?: number;
+  peakGridMultiplier?: number;
+  reeferPowerMultiplier?: number;
+  equipmentAvailabilityBonus?: number;
+  batteryPowerAdjustmentKw?: number;
+  maintenanceReliefCount?: number;
+}
+
+export interface CoreSimulationControlEffect {
+  remainingTicks: number;
+  queueRelief: number;
+  capacityMultiplier: number;
+  carbonMultiplier: number;
+  diversionFraction: number;
+  yardOutflowMultiplier: number;
+  gateOutflowMultiplier: number;
+  intermodalOutflowMultiplier: number;
+  energyLoadMultiplier: number;
+  peakGridMultiplier: number;
+  reeferPowerMultiplier: number;
+  equipmentAvailabilityBonus: number;
+  batteryPowerAdjustmentKw: number;
+  maintenanceReliefCount: number;
 }
 
 export interface OperationalCandidate {
@@ -152,6 +178,35 @@ export interface OperationalDecision {
     failure_reason: string | null;
     rollback_reason: string | null;
   };
+}
+
+export interface CoreOperationsExecutionReceipt {
+  protocol_version: 'core-operations-simulation-receipt.v1';
+  receipt_id: string;
+  proposal_id: string;
+  executor: 'simulation-executor.v2-core-plan';
+  status: 'acknowledged' | 'rolled_back';
+  executed_at: string;
+  input_snapshot_hash: string;
+  output_snapshot_hash: string;
+  plan_hash: string;
+  active_domains: string[];
+  applied_effect: CoreSimulationControlEffect;
+  before_kpis: Record<string, number>;
+  after_kpis: Record<string, number>;
+  kpi_delta: Record<string, number>;
+  domain_delta: Record<string, number>;
+  counterfactual: {
+    design: 'same_state_same_seed_same_tick_new_rl_plan_vs_continue_current_plan';
+    baseline_output_snapshot_hash: string;
+    baseline_kpis: Record<string, number>;
+    rl_vs_baseline_kpi_delta: Record<string, number>;
+    rl_vs_baseline_domain_delta: Record<string, number>;
+  };
+  attribution: 'paired_deterministic_simulation_counterfactual_not_field_causal_estimate';
+  dispatch_allowed: false;
+  production_authority: false;
+  rollback_reason: string | null;
 }
 
 export interface OperationalAuditRecord {
@@ -291,6 +346,12 @@ export class PortOperationsSimulator {
       yardCapacityTeu: 80_000,
       yardFlow: { importDwellShare: 0.18, targetInventoryTeu: 48_000, releaseGain: 0.025 },
       actionEnvelope: { defer: 0.02, divert: 0.01, capacityUplift: 0.02 },
+      coreActionEnvelope: {
+        capacity: [0.97, 1.09],
+        energyLoad: [0.93, 1.05],
+        peakGrid: [0.84, 1.04],
+        equipmentAvailabilityBonus: [0, 2],
+      },
     });
     this.runId = `ops-${this.datasetHash.slice(0, 8)}-${this.configHash.slice(0, 8)}`;
     this.state = {
@@ -348,7 +409,8 @@ export class PortOperationsSimulator {
     ), 1);
     const currentSpeedKnots = round(clamp(0.7 + Math.abs(tideHeightM - 1.85) * 0.5, 0.2, 2.2), 2);
     const channelAvailable = this.scenario !== 'channel-closure' && windSpeedMs < 22 && visibilityKm >= 2;
-    const equipmentFaults = this.scenario === 'equipment-failure' ? 3 : sequence % 113 === 0 && sequence > 0 ? 1 : 0;
+    const baseEquipmentFaults = this.scenario === 'equipment-failure' ? 3 : sequence % 113 === 0 && sequence > 0 ? 1 : 0;
+    const equipmentFaults = Math.max(0, baseEquipmentFaults - (this.activeControl?.equipmentAvailabilityBonus ?? 0));
     const availableQuayCranes = 10 - equipmentFaults;
     const yardCapacityTeu = 80_000;
     if (this.scenario === 'yard-saturation' && this.state.yardInventoryTeu < 74_000) this.state.yardInventoryTeu = 74_000;
@@ -368,15 +430,18 @@ export class PortOperationsSimulator {
     const averageTeuPerService = 680 + Math.round(90 * Math.sin(sequence / 17));
     const throughputTeu = Math.max(0, servicedVessels * averageTeuPerService);
     const quayCraneMovesPerHour = round(28 * equipmentFactor * (yardFactor * 0.9 + 0.1), 1);
-    const gateOutflowTeu = Math.max(600, 1_140 + 210 * Math.sin((localHour - 7) / 24 * Math.PI * 2));
-    const railTransferTeu = localHour >= 6 && localHour <= 22 ? 210 : 80;
-    const waterTransferTeu = 260 + 60 * Math.sin(sequence / 12);
+    const gateOutflowTeu = Math.max(600, 1_140 + 210 * Math.sin((localHour - 7) / 24 * Math.PI * 2)) *
+      (this.activeControl?.gateOutflowMultiplier ?? 1);
+    const intermodalMultiplier = this.activeControl?.intermodalOutflowMultiplier ?? 1;
+    const railTransferTeu = (localHour >= 6 && localHour <= 22 ? 210 : 80) * intermodalMultiplier;
+    const waterTransferTeu = (260 + 60 * Math.sin(sequence / 12)) * intermodalMultiplier;
     // Most Malacca/Singapore container moves are transshipment or direct relay moves;
     // only the dwell share enters terminal inventory. A bounded release controller
     // represents scheduled gate/rail/barge evacuation and prevents an always-on
     // simulator from accumulating an impossible yard backlog.
     const importYardInflow = throughputTeu * 0.18;
-    const scheduledYardOutflow = (gateOutflowTeu + railTransferTeu + waterTransferTeu) / 4;
+    const scheduledYardOutflow = (gateOutflowTeu + railTransferTeu + waterTransferTeu) / 4 *
+      (this.activeControl?.yardOutflowMultiplier ?? 1);
     const inventoryBalancingOutflow = Math.max(0, (this.state.yardInventoryTeu - 48_000) * 0.025);
     this.state.yardInventoryTeu = clamp(
       this.state.yardInventoryTeu + importYardInflow - scheduledYardOutflow - inventoryBalancingOutflow,
@@ -394,7 +459,10 @@ export class PortOperationsSimulator {
     const solarKw = round(Math.max(0, 3_800 * Math.sin((localHour - 6) / 12 * Math.PI)), 1);
     const equipmentPowerKw = 2_300 + throughputTeu * 0.72 + yardOccupancyPercent * 18;
     const buildingPowerKw = 1_650 + (localHour >= 8 && localHour <= 20 ? 420 : 0);
-    const rawLoadKw = shorePowerKw + equipmentPowerKw + buildingPowerKw;
+    const reeferReferencePowerKw = 1_120 + yardOccupancyPercent * 5.2;
+    const reeferPowerAdjustmentKw = reeferReferencePowerKw * ((this.activeControl?.reeferPowerMultiplier ?? 1) - 1);
+    const rawLoadKw = (shorePowerKw + equipmentPowerKw + buildingPowerKw + reeferPowerAdjustmentKw) *
+      (this.activeControl?.energyLoadMultiplier ?? 1);
     const pricePeak = localHour >= 14 && localHour < 22;
     const electricityPriceMyrKwh = pricePeak ? 0.62 : localHour < 7 ? 0.34 : 0.48;
     const batteryCapacityKwh = 12_000;
@@ -403,7 +471,7 @@ export class PortOperationsSimulator {
       : !pricePeak && this.state.batterySocPercent < 88
         ? -1_200
         : 0;
-    batteryPowerKw = clamp(batteryPowerKw, -3_000, 3_000);
+    batteryPowerKw = clamp(batteryPowerKw + (this.activeControl?.batteryPowerAdjustmentKw ?? 0), -3_000, 3_000);
     const efficiency = batteryPowerKw >= 0 ? 0.94 : 0.92;
     const socDelta = batteryPowerKw >= 0
       ? -(batteryPowerKw / efficiency) * 0.25 / batteryCapacityKwh * 100
@@ -414,7 +482,10 @@ export class PortOperationsSimulator {
       70,
       100,
     );
-    const gridLoadKw = round(Math.max(0, rawLoadKw - solarKw - Math.max(0, batteryPowerKw) + Math.max(0, -batteryPowerKw)), 1);
+    const gridLoadKw = round(Math.max(0,
+      (rawLoadKw - solarKw - Math.max(0, batteryPowerKw) + Math.max(0, -batteryPowerKw)) *
+      (this.activeControl?.peakGridMultiplier ?? 1),
+    ), 1);
     const transformerLoadingPercent = round(gridLoadKw / 18_000 * 100, 1);
     const carbonFactorKgKwh = round(0.58 - solarKw / Math.max(1, rawLoadKw) * 0.08, 3);
     const tickEnergyKwh = round(gridLoadKw * 0.25, 2);
@@ -517,6 +588,57 @@ export class PortOperationsSimulator {
     };
     this.activeControl = effectByAction[actionId];
     return this.forceAdvance(1);
+  }
+
+  applyCoreControl(effect: CoreSimulationControlEffect) {
+    const finite = Object.values(effect).every(Number.isFinite);
+    if (!finite || effect.remainingTicks < 1 || effect.remainingTicks > 12 ||
+        effect.queueRelief < 0 || effect.queueRelief > 0.8 ||
+        effect.capacityMultiplier < 0.97 || effect.capacityMultiplier > 1.09 ||
+        effect.carbonMultiplier < 0.9 || effect.carbonMultiplier > 1.05 ||
+        effect.diversionFraction < 0 || effect.diversionFraction > 0.01 ||
+        effect.yardOutflowMultiplier < 1 || effect.yardOutflowMultiplier > 1.4 ||
+        effect.gateOutflowMultiplier < 1 || effect.gateOutflowMultiplier > 1.3 ||
+        effect.intermodalOutflowMultiplier < 1 || effect.intermodalOutflowMultiplier > 1.35 ||
+        effect.energyLoadMultiplier < 0.93 || effect.energyLoadMultiplier > 1.05 ||
+        effect.peakGridMultiplier < 0.84 || effect.peakGridMultiplier > 1.04 ||
+        effect.reeferPowerMultiplier < 0.94 || effect.reeferPowerMultiplier > 1.02 ||
+        effect.equipmentAvailabilityBonus < 0 || effect.equipmentAvailabilityBonus > 2 ||
+        effect.batteryPowerAdjustmentKw < 0 || effect.batteryPowerAdjustmentKw > 1_500 ||
+        effect.maintenanceReliefCount < 0 || effect.maintenanceReliefCount > 4) {
+      throw new Error('CORE_CONTROL_EFFECT_OUTSIDE_ENVELOPE');
+    }
+    this.activeControl = {
+      actionId: 'capacity-control',
+      ...effect,
+    };
+    return this.forceAdvance(1);
+  }
+
+  applyCoreControlWithCounterfactual(effect: CoreSimulationControlEffect) {
+    const checkpoint = {
+      state: structuredClone(this.state),
+      latestTick: this.latestTick ? structuredClone(this.latestTick) : null,
+      recentTicks: structuredClone(this.recentTicks),
+      running: this.running,
+      scenario: this.scenario,
+      activeControl: this.activeControl ? structuredClone(this.activeControl) : null,
+    };
+    const restore = () => {
+      this.state = structuredClone(checkpoint.state);
+      this.latestTick = checkpoint.latestTick ? structuredClone(checkpoint.latestTick) : null;
+      this.recentTicks.length = 0;
+      this.recentTicks.push(...structuredClone(checkpoint.recentTicks));
+      this.running = checkpoint.running;
+      this.scenario = checkpoint.scenario;
+      this.activeControl = checkpoint.activeControl ? structuredClone(checkpoint.activeControl) : null;
+    };
+    const baselineTick = this.forceAdvance(1);
+    const baselineSnapshot = this.snapshot(this.startedAtMs + baselineTick.sequence * this.wallTickMs);
+    restore();
+    const controlledTick = this.applyCoreControl(effect);
+    const controlledSnapshot = this.snapshot(this.startedAtMs + controlledTick.sequence * this.wallTickMs);
+    return { baselineSnapshot, controlledSnapshot };
   }
 
   private makeField<T extends TelemetryValue>(
@@ -627,8 +749,18 @@ export class PortOperationsSimulator {
         reefer_container_count: field(Math.round(1_140 + tick.yardOccupancyPercent * 8), 'containers', 'reefer-zone', 'physics_simulation'),
         dangerous_goods_container_count: field(Math.round(110 + tick.yardOccupancyPercent * 1.2), 'containers', 'hazmat-zone', 'physics_simulation'),
         truck_turn_time_minutes: field(tick.truckTurnMinutes, 'min', 'gate-reference', 'engineering_derived', { derived: true }),
-        rail_transfer_teu: field(tick.eventTime.includes('T0') ? 80 : 210, 'TEU/h', 'rail-terminal', 'physics_simulation'),
-        water_transfer_teu: field(round(260 + 60 * Math.sin(tick.sequence / 12), 1), 'TEU/h', 'barge-terminal', 'physics_simulation'),
+        rail_transfer_teu: field(
+          round((tick.eventTime.includes('T0') ? 80 : 210) * (this.activeControl?.intermodalOutflowMultiplier ?? 1), 1),
+          'TEU/h',
+          'rail-terminal',
+          'physics_simulation',
+        ),
+        water_transfer_teu: field(
+          round((260 + 60 * Math.sin(tick.sequence / 12)) * (this.activeControl?.intermodalOutflowMultiplier ?? 1), 1),
+          'TEU/h',
+          'barge-terminal',
+          'physics_simulation',
+        ),
       },
       equipment: {
         quay_cranes_available: field(tick.availableQuayCranes, 'count', 'quay-crane-fleet', 'physics_simulation'),
@@ -637,7 +769,12 @@ export class PortOperationsSimulator {
         agv_available: field(Math.max(0, 54 - tick.equipmentFaults * 4), 'count', 'agv-fleet', 'physics_simulation'),
         terminal_trucks_available: field(Math.max(0, 76 - tick.equipmentFaults * 3), 'count', 'truck-fleet', 'physics_simulation'),
         active_faults: field(tick.equipmentFaults, 'events', 'equipment-fleet', 'physics_simulation', { quality: tick.equipmentFaults ? 'anomaly' : 'normal' }),
-        maintenance_due_count: field(3 + (tick.sequence % 4), 'count', 'equipment-fleet', 'physics_simulation'),
+        maintenance_due_count: field(
+          Math.max(0, 3 + (tick.sequence % 4) - (this.activeControl?.maintenanceReliefCount ?? 0)),
+          'count',
+          'equipment-fleet',
+          'physics_simulation',
+        ),
       },
       energy: {
         grid_load_kw: field(tick.gridLoadKw, 'kW', 'main-meter', 'engineering_derived', { derived: true }),
@@ -657,7 +794,12 @@ export class PortOperationsSimulator {
       building: {
         hvac_power_kw: field(round(780 + Math.max(0, tick.windSpeedMs - 5) * 8, 1), 'kW', 'ba-hvac', 'physics_simulation'),
         lighting_power_kw: field(tick.solarKw > 0 ? 210 : 510, 'kW', 'ba-lighting', 'physics_simulation'),
-        reefer_power_kw: field(round(1_120 + tick.yardOccupancyPercent * 5.2, 1), 'kW', 'reefer-bus', 'physics_simulation'),
+        reefer_power_kw: field(
+          round((1_120 + tick.yardOccupancyPercent * 5.2) * (this.activeControl?.reeferPowerMultiplier ?? 1), 1),
+          'kW',
+          'reefer-bus',
+          'physics_simulation',
+        ),
         pump_power_kw: field(180, 'kW', 'pump-system', 'physics_simulation'),
         fan_power_kw: field(145, 'kW', 'fan-system', 'physics_simulation'),
         indoor_temperature_c: field(round(24.1 + deterministicNoise(this.seed, tick.sequence, 'indoor-temp') * 0.4, 1), '°C', 'ba-zone-01', 'physics_simulation'),
@@ -987,6 +1129,8 @@ export class OperationalControlService {
   readonly simulator: PortOperationsSimulator;
   private readonly decisions = new Map<string, OperationalDecision>();
   private readonly idempotencyReceipts = new Map<string, OperationalDecision>();
+  private readonly coreIdempotencyReceipts = new Map<string, CoreOperationsExecutionReceipt>();
+  private readonly coreReceiptsByProposal = new Map<string, CoreOperationsExecutionReceipt>();
   private readonly audit: OperationalAuditRecord[] = [];
   private readonly auditFile: string | null;
 
@@ -1302,6 +1446,106 @@ export class OperationalControlService {
       output_snapshot_hash: afterSnapshot.snapshot_hash,
     });
     return { decision, idempotent_replay: false };
+  }
+
+  executeCorePlan(input: {
+    proposalId: string;
+    inputSnapshotHash: string;
+    inputSequence: number;
+    planHash: string;
+    activeDomains: string[];
+    effect: CoreSimulationControlEffect;
+  }, idempotencyKey: string) {
+    if (!/^[a-zA-Z0-9._-]{8,120}$/.test(idempotencyKey)) throw new Error('INVALID_IDEMPOTENCY_KEY');
+    const existing = this.coreIdempotencyReceipts.get(idempotencyKey);
+    if (existing) return { receipt: existing, idempotent_replay: true };
+    const beforeSnapshot = this.snapshot();
+    if (!beforeSnapshot.simulator.running) throw new Error('SIMULATOR_STOPPED');
+    if (beforeSnapshot.simulator.scenario === 'data-loss') throw new Error('DATA_QUALITY_GATE_BLOCKED');
+    if (beforeSnapshot.sequence !== input.inputSequence || beforeSnapshot.snapshot_hash !== input.inputSnapshotHash) {
+      throw new Error('CORE_PLAN_INPUT_SNAPSHOT_STALE');
+    }
+    const before = beforeSnapshot.kpis as Record<string, number>;
+    const paired = this.simulator.applyCoreControlWithCounterfactual(input.effect);
+    const baselineSnapshot = paired.baselineSnapshot;
+    const afterSnapshot = paired.controlledSnapshot;
+    const after = afterSnapshot.kpis as Record<string, number>;
+    const baseline = baselineSnapshot.kpis as Record<string, number>;
+    const numberValue = (snapshot: typeof afterSnapshot, domain: string, name: string) => Number(
+      (snapshot.operationalTelemetry as Record<string, Record<string, TelemetryField>>)[domain]?.[name]?.value ?? 0,
+    );
+    const domainDeltas = (left: typeof afterSnapshot, right: typeof afterSnapshot) => ({
+      yard_occupancy_percent: round(numberValue(left, 'terminal', 'yard_occupancy_percent') - numberValue(right, 'terminal', 'yard_occupancy_percent'), 3),
+      truck_turn_time_minutes: round(numberValue(left, 'terminal', 'truck_turn_time_minutes') - numberValue(right, 'terminal', 'truck_turn_time_minutes'), 3),
+      maintenance_due_count: round(numberValue(left, 'equipment', 'maintenance_due_count') - numberValue(right, 'equipment', 'maintenance_due_count'), 3),
+      active_faults: round(numberValue(left, 'equipment', 'active_faults') - numberValue(right, 'equipment', 'active_faults'), 3),
+      transformer_loading_percent: round(numberValue(left, 'energy', 'transformer_loading_percent') - numberValue(right, 'energy', 'transformer_loading_percent'), 3),
+      battery_soc_percent: round(numberValue(left, 'energy', 'battery_soc_percent') - numberValue(right, 'energy', 'battery_soc_percent'), 3),
+      reefer_power_kw: round(numberValue(left, 'building', 'reefer_power_kw') - numberValue(right, 'building', 'reefer_power_kw'), 3),
+      rail_transfer_teu: round(numberValue(left, 'terminal', 'rail_transfer_teu') - numberValue(right, 'terminal', 'rail_transfer_teu'), 3),
+      water_transfer_teu: round(numberValue(left, 'terminal', 'water_transfer_teu') - numberValue(right, 'terminal', 'water_transfer_teu'), 3),
+    });
+    const receipt: CoreOperationsExecutionReceipt = {
+      protocol_version: 'core-operations-simulation-receipt.v1',
+      receipt_id: `core-receipt-${hash(`${input.proposalId}:${idempotencyKey}`).slice(0, 16)}`,
+      proposal_id: input.proposalId,
+      executor: 'simulation-executor.v2-core-plan',
+      status: 'acknowledged',
+      executed_at: afterSnapshot.event_time,
+      input_snapshot_hash: input.inputSnapshotHash,
+      output_snapshot_hash: afterSnapshot.snapshot_hash,
+      plan_hash: input.planHash,
+      active_domains: [...input.activeDomains],
+      applied_effect: { ...input.effect },
+      before_kpis: { ...before },
+      after_kpis: { ...after },
+      kpi_delta: Object.fromEntries(Object.keys(before).map((key) => [
+        key,
+        round((after[key] ?? 0) - (before[key] ?? 0), 3),
+      ])),
+      domain_delta: domainDeltas(afterSnapshot, beforeSnapshot),
+      counterfactual: {
+        design: 'same_state_same_seed_same_tick_new_rl_plan_vs_continue_current_plan',
+        baseline_output_snapshot_hash: baselineSnapshot.snapshot_hash,
+        baseline_kpis: { ...baseline },
+        rl_vs_baseline_kpi_delta: Object.fromEntries(Object.keys(baseline).map((key) => [
+          key,
+          round((after[key] ?? 0) - (baseline[key] ?? 0), 3),
+        ])),
+        rl_vs_baseline_domain_delta: domainDeltas(afterSnapshot, baselineSnapshot),
+      },
+      attribution: 'paired_deterministic_simulation_counterfactual_not_field_causal_estimate',
+      dispatch_allowed: false,
+      production_authority: false,
+      rollback_reason: null,
+    };
+    this.coreIdempotencyReceipts.set(idempotencyKey, receipt);
+    this.coreReceiptsByProposal.set(input.proposalId, receipt);
+    this.appendAudit('core-plan.executed', `core-${input.proposalId}`, {
+      proposal_id: input.proposalId,
+      input_snapshot_hash: input.inputSnapshotHash,
+      output_snapshot_hash: receipt.output_snapshot_hash,
+      plan_hash: input.planHash,
+      active_domains: input.activeDomains,
+      applied_effect: input.effect,
+      receipt_id: receipt.receipt_id,
+      attribution: receipt.attribution,
+    });
+    return { receipt, idempotent_replay: false };
+  }
+
+  rollbackCorePlan(proposalId: string, reason: string) {
+    const receipt = this.coreReceiptsByProposal.get(proposalId);
+    if (!receipt || receipt.status !== 'acknowledged') throw new Error('EXECUTED_CORE_PLAN_NOT_FOUND');
+    this.simulator.applyAction('hold-plan');
+    receipt.status = 'rolled_back';
+    receipt.rollback_reason = reason || 'operator_requested_rollback';
+    this.appendAudit('core-plan.rolled_back', `core-${proposalId}`, {
+      proposal_id: proposalId,
+      receipt_id: receipt.receipt_id,
+      reason: receipt.rollback_reason,
+    });
+    return receipt;
   }
 
   rollbackDecision(decisionId: string, reason: string) {

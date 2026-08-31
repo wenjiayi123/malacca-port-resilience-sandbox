@@ -66,5 +66,6 @@ pnpm benchmark:regulatory:verify
 依赖漏洞审计、敏感信息扫描、资产来源检查和工作流检查。本地通过不等于真实港口或生产控制验证通过。
 
 可单独运行 `pnpm acceptance:operations && pnpm acceptance:operations:verify`，生成并校验
-`reports/operational-closure-acceptance-v1.json`；报告包含源码 SHA-256、预测训练/验证边界、
-五控制器候选、双人审批、幂等回执、回滚、失败关闭和审计链证据。
+`reports/operational-closure-acceptance-v2.json`；第一版及监管扩展保持原字节不变。新版报告包含源码
+SHA-256、预测训练/验证边界、五控制器候选，以及十域强化学习冠军、模拟双岗审批、同状态配对反事实、
+幂等回执、回滚、失败关闭和审计链证据。

@@ -50,16 +50,27 @@ const areas = [
   {
     id: 'algorithm-assurance',
     name: '算法有效性与安全保证',
-    sources: ['server/algorithmAssuranceGate.ts'],
-    tests: ['tests/algorithmAssuranceGate.test.ts'],
-    documentation: 'docs/ALGORITHM_ASSURANCE.md',
+    sources: [
+      'server/algorithmAssuranceGate.ts',
+      'shared/coreOperationsRlContract.ts',
+      'server/coreOperationsRlEngine.ts',
+      'server/coreOperationsRlService.ts',
+    ],
+    tests: ['tests/algorithmAssuranceGate.test.ts', 'tests/coreOperationsRl.test.ts'],
+    documentation: 'docs/CORE_OPERATIONS_RL_V1.md',
     softwareStatus: 'PASS',
     externalBlockers: ['authorized_shadow_run', 'operator_acceptance', 'production_canary'],
   },
   {
     id: 'reliability-dr',
     name: '24×7 可靠性与灾难恢复',
-    sources: ['server/reliableStateStore.ts', 'src/integrations/operationsControlAdapter.ts', 'src/components/OperationalEvidenceCenter.tsx'],
+    sources: [
+      'server/reliableStateStore.ts',
+      'server/operationalSimulator.ts',
+      'src/integrations/operationsControlAdapter.ts',
+      'src/integrations/coreOperationsRlAdapter.ts',
+      'src/components/OperationalEvidenceCenter.tsx',
+    ],
     tests: ['tests/reliableStateStore.test.ts'],
     documentation: 'docs/RELIABILITY_AND_DISASTER_RECOVERY.md',
     softwareStatus: 'PASS',
@@ -76,14 +87,18 @@ const areas = [
   },
 ];
 
-const files = [...new Set(areas.flatMap((area) => [...area.sources, ...area.tests, area.documentation]))].sort();
+const files = [...new Set([
+  ...areas.flatMap((area) => [...area.sources, ...area.tests, area.documentation]),
+  'scripts/integration/runTopTierHardeningEvidence.ts',
+  'scripts/integration/verifyTopTierHardeningEvidence.ts',
+])].sort();
 const sourceSha256 = Object.fromEntries(await Promise.all(files.map(async (file) => [
   file,
   createHash('sha256').update(await readFile(file)).digest('hex'),
 ])));
 const report = {
-  schemaVersion: 'top-tier-hardening-evidence.v1',
-  generatedAt: '2026-08-30T08:00:00.000Z',
+  schemaVersion: 'top-tier-hardening-evidence.v2',
+  generatedAt: new Date().toISOString(),
   result: 'PASS_SOFTWARE_PREREQUISITES_EXTERNAL_GATES_OPEN',
   areas,
   verification: {
@@ -100,9 +115,17 @@ const report = {
     productionAuthority: false,
     dispatchAllowed: false,
   },
+  evidenceReferences: Object.fromEntries(await Promise.all([
+    'reports/top-tier-hardening-evidence-v1.json',
+    'reports/core-operations-rl-champion-v1.json',
+    'reports/operational-closure-acceptance-v2.json',
+  ].map(async (file) => [
+    file,
+    createHash('sha256').update(await readFile(file)).digest('hex'),
+  ]))),
 };
-await writeFile('reports/top-tier-hardening-evidence-v1.json', `${JSON.stringify(report, null, 2)}\n`, 'utf8');
-await writeFile('reports/top-tier-hardening-evidence-v1.md', `# 顶级港口系统对标补齐证据 v1
+await writeFile('reports/top-tier-hardening-evidence-v2.json', `${JSON.stringify(report, null, 2)}\n`, 'utf8');
+await writeFile('reports/top-tier-hardening-evidence-v2.md', `# 顶级港口系统对标补齐证据 v2
 
 - 结果：\`${report.result}\`
 - 软件前置能力：\`${report.overall.softwarePrerequisitePassCount}/${report.overall.softwarePrerequisiteAreaCount}\`
@@ -115,6 +138,6 @@ await writeFile('reports/top-tier-hardening-evidence-v1.md', `# 顶级港口系�
 |---|---:|---|
 ${areas.map((area) => `| ${area.name} | ${area.softwareStatus} | ${area.externalBlockers.join(', ')} |`).join('\n')}
 
-本报告证明八类软件合同、失败关闭门禁、测试和文档已纳入源码指纹。它不是运营方授权、现场数据、独立计量、官方标准一致性、多故障域 SLO 或 FAT/SAT/UAT 证据。
+本报告在保持第一版字节不变的前提下，把十域强化学习冠军、配对反事实运行回执和第二版运行验收纳入八类软件前置门禁。它不是运营方授权、现场数据、独立计量、官方标准一致性、多故障域 SLO 或 FAT/SAT/UAT 证据。
 `, 'utf8');
-process.stdout.write('Top-tier hardening evidence written.\n');
+process.stdout.write('Top-tier hardening evidence v2 written without rewriting v1.\n');

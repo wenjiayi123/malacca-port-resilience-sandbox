@@ -1,0 +1,321 @@
+{
+  "schemaVersion": "operational-closure-acceptance.v2",
+  "generatedAt": "2026-08-31T05:02:56.569Z",
+  "evidenceLabel": "PUBLIC_DATA_CALIBRATED_SIMULATION_NOT_FIELD_KPI",
+  "authority": {
+    "simulation_mode": true,
+    "live_data_verified": false,
+    "dispatch_allowed": false,
+    "production_authority": false
+  },
+  "simulator": {
+    "seed": 240520,
+    "runId": "ops-1135cd3c-a52eac07",
+    "protocolVersion": "port-operations.telemetry.v1",
+    "firstSequence": 0,
+    "secondSequence": 2,
+    "firstSnapshotHash": "30620bfda304b607293859c730fc357f3b0606503e5592e1f17c0ad61e40f8e2",
+    "secondSnapshotHash": "155086bb14bad41f048cd402c746377ecdd145b040522ef3fbd4521b75503d64",
+    "changedContinuously": true,
+    "quality": {
+      "total_fields": 61,
+      "normal_fields": 61,
+      "degraded_fields": 0,
+      "measured_fields": 0,
+      "simulated_fields": 43,
+      "derived_fields": 18,
+      "completeness_percent": 100,
+      "consistency_checks": [
+        {
+          "id": "flow-conservation",
+          "passed": true,
+          "detail": "queue(t)=queue(t-1)+arrivals-diverted-serviced-control_relief"
+        },
+        {
+          "id": "yard-capacity",
+          "passed": true,
+          "detail": "0% ≤ yard occupancy ≤ 100%"
+        },
+        {
+          "id": "battery-envelope",
+          "passed": true,
+          "detail": "15% ≤ SOC ≤ 95%"
+        },
+        {
+          "id": "transformer-envelope",
+          "passed": true,
+          "detail": "grid load ≤ 18 MW transformer capacity"
+        },
+        {
+          "id": "causal-energy-link",
+          "passed": true,
+          "detail": "positive throughput requires positive equipment and grid energy"
+        }
+      ]
+    }
+  },
+  "forecast": {
+    "modelId": "mpa-train-only-exponential-smoothing-v1",
+    "modelHash": "02191efc030fa7050530066b83816c4046ca4d1df6010d62d29bed71c9fbb3fe",
+    "trainRows": 263,
+    "validationRows": 114,
+    "trainRmseVesselsPerMonth": 464,
+    "validationRmseVesselsPerMonth": 760.04,
+    "inputSnapshotHash": "30620bfda304b607293859c730fc357f3b0606503e5592e1f17c0ad61e40f8e2"
+  },
+  "groundedHandoff": {
+    "protocolVersion": "xiaoyi-operational-handoff.v1",
+    "generator": {
+      "id": "operations-grounded-explainer.v1",
+      "kind": "deterministic_state_grounding",
+      "model_used": false,
+      "disclosure": "这是后端状态规则生成的可审计底稿；只有 xiaoyi_model.status=connected 时才展示生成模型回答。"
+    },
+    "inputSnapshotHash": "155086bb14bad41f048cd402c746377ecdd145b040522ef3fbd4521b75503d64",
+    "traceCount": 4,
+    "productionAuthority": false
+  },
+  "control": {
+    "candidateCount": 5,
+    "controllers": [
+      {
+        "id": "fcfs",
+        "action": "hold-plan",
+        "eligible": true,
+        "rejectionReason": null
+      },
+      {
+        "id": "port-sop",
+        "action": "eco-speed",
+        "eligible": true,
+        "rejectionReason": null
+      },
+      {
+        "id": "operations-research",
+        "action": "capacity-control",
+        "eligible": true,
+        "rejectionReason": null
+      },
+      {
+        "id": "mpc",
+        "action": "capacity-control",
+        "eligible": true,
+        "rejectionReason": null
+      },
+      {
+        "id": "rl-checkpoint",
+        "action": "hold-plan",
+        "eligible": false,
+        "rejectionReason": "missing_completed_checkpoint_inference"
+      }
+    ],
+    "decisionStatusAfterExecution": "receipt-recorded",
+    "approvalCount": 2,
+    "receiptId": "receipt-b16601cb0f66d10f",
+    "kpiDelta": {
+      "queue_vessels": -1.2,
+      "delay_minutes": -4,
+      "throughput_teu": 25,
+      "energy_kwh": 5.85,
+      "peak_grid_kw": 23.4,
+      "cost_myr": 1.99,
+      "carbon_tons": 0.019,
+      "service_level_percent": 0.5,
+      "safety_risk_percent": -0.1,
+      "resilience_index": 1.3
+    },
+    "idempotentReplay": true,
+    "rollbackStatus": "rolled_back"
+  },
+  "coreOperationsControl": {
+    "champion": {
+      "admitted": true,
+      "algorithmId": "factorized-linear-dyna-q",
+      "attemptId": "curriculum-360",
+      "seedPolicyCount": 5,
+      "actionHeadCount": 10
+    },
+    "proposalId": "core-4c8ffc1887c91b4bcc9f",
+    "admissionStatus": "admitted_for_simulation_approval",
+    "activeDomains": [
+      "berth-crane",
+      "reefer-building-load",
+      "intermodal-network"
+    ],
+    "domainAbstentions": [],
+    "simulatedApprovals": [
+      {
+        "approverId": "acceptance-core-operator",
+        "role": "operator"
+      },
+      {
+        "approverId": "acceptance-core-safety",
+        "role": "safety_officer"
+      }
+    ],
+    "receipt": {
+      "protocol_version": "core-operations-simulation-receipt.v1",
+      "receipt_id": "core-receipt-86b1a9eccd808495",
+      "proposal_id": "core-4c8ffc1887c91b4bcc9f",
+      "executor": "simulation-executor.v2-core-plan",
+      "status": "acknowledged",
+      "executed_at": "2025-12-31T17:15:00.000Z",
+      "input_snapshot_hash": "ef735a2c3a992b95d35a9d15a727f28015af61ba1aa2cf76573ccd1c5e22738b",
+      "output_snapshot_hash": "a8987914c1a14a0e15daaef32feb87e666db5b962718992be91827b275b11896",
+      "plan_hash": "8e0f6298196b9af44938bd04c07a41a70808699a608b134bd62414f35c9b28f3",
+      "active_domains": [
+        "berth-crane",
+        "reefer-building-load",
+        "intermodal-network"
+      ],
+      "applied_effect": {
+        "remainingTicks": 8,
+        "queueRelief": 0.22499999999999998,
+        "capacityMultiplier": 1.035,
+        "carbonMultiplier": 0.995,
+        "diversionFraction": 0,
+        "yardOutflowMultiplier": 1.175,
+        "gateOutflowMultiplier": 1.054,
+        "intermodalOutflowMultiplier": 1.18,
+        "energyLoadMultiplier": 0.991952,
+        "peakGridMultiplier": 0.965,
+        "reeferPowerMultiplier": 0.97,
+        "equipmentAvailabilityBonus": 0,
+        "batteryPowerAdjustmentKw": 0,
+        "maintenanceReliefCount": 0
+      },
+      "before_kpis": {
+        "queue_vessels": 8.8,
+        "delay_minutes": 25.4,
+        "throughput_teu": 3505,
+        "energy_kwh": 2796.5,
+        "peak_grid_kw": 11186,
+        "cost_myr": 950.81,
+        "carbon_tons": 1.622,
+        "service_level_percent": 39.1,
+        "safety_risk_percent": 4.1,
+        "resilience_index": 90
+      },
+      "after_kpis": {
+        "queue_vessels": 7.58,
+        "delay_minutes": 21.1,
+        "throughput_teu": 3530,
+        "energy_kwh": 2674.05,
+        "peak_grid_kw": 11186,
+        "cost_myr": 909.18,
+        "carbon_tons": 1.543,
+        "service_level_percent": 43.2,
+        "safety_risk_percent": 3.8,
+        "resilience_index": 91.5
+      },
+      "kpi_delta": {
+        "queue_vessels": -1.22,
+        "delay_minutes": -4.3,
+        "throughput_teu": 25,
+        "energy_kwh": -122.45,
+        "peak_grid_kw": 0,
+        "cost_myr": -41.63,
+        "carbon_tons": -0.079,
+        "service_level_percent": 4.1,
+        "safety_risk_percent": -0.3,
+        "resilience_index": 1.5
+      },
+      "domain_delta": {
+        "yard_occupancy_percent": 0.2,
+        "truck_turn_time_minutes": -0.4,
+        "maintenance_due_count": 1,
+        "active_faults": 0,
+        "transformer_loading_percent": -2.7,
+        "battery_soc_percent": 2.3,
+        "reefer_power_kw": -42.3,
+        "rail_transfer_teu": 37.8,
+        "water_transfer_teu": 55.9
+      },
+      "counterfactual": {
+        "design": "same_state_same_seed_same_tick_new_rl_plan_vs_continue_current_plan",
+        "baseline_output_snapshot_hash": "b043ebf7f654162a341cafc0aa7b05f2890b8007b6757f415fc3ee6f479eadc0",
+        "baseline_kpis": {
+          "queue_vessels": 7.8,
+          "delay_minutes": 22.5,
+          "throughput_teu": 3530,
+          "energy_kwh": 2802.35,
+          "peak_grid_kw": 11209.4,
+          "cost_myr": 952.8,
+          "carbon_tons": 1.625,
+          "service_level_percent": 42.4,
+          "safety_risk_percent": 3.8,
+          "resilience_index": 91.1
+        },
+        "rl_vs_baseline_kpi_delta": {
+          "queue_vessels": -0.22,
+          "delay_minutes": -1.4,
+          "throughput_teu": 0,
+          "energy_kwh": -128.3,
+          "peak_grid_kw": -23.4,
+          "cost_myr": -43.62,
+          "carbon_tons": -0.082,
+          "service_level_percent": 0.8,
+          "safety_risk_percent": 0,
+          "resilience_index": 0.4
+        },
+        "rl_vs_baseline_domain_delta": {
+          "yard_occupancy_percent": -0.1,
+          "truck_turn_time_minutes": 0,
+          "maintenance_due_count": 0,
+          "active_faults": 0,
+          "transformer_loading_percent": -2.9,
+          "battery_soc_percent": 0,
+          "reefer_power_kw": -43.8,
+          "rail_transfer_teu": 37.8,
+          "water_transfer_teu": 51.2
+        }
+      },
+      "attribution": "paired_deterministic_simulation_counterfactual_not_field_causal_estimate",
+      "dispatch_allowed": false,
+      "production_authority": false,
+      "rollback_reason": null
+    },
+    "idempotentReplay": true,
+    "rollbackStatus": "rolled_back"
+  },
+  "failureClosure": {
+    "dataLossFailure": "DATA_QUALITY_GATE_BLOCKED",
+    "simulatorStoppedFailure": "SIMULATOR_STOPPED"
+  },
+  "audit": {
+    "verified": true,
+    "recordCount": 10,
+    "headHash": "31644cdda4bb614b49e0c2f74ddb4140b153fb291e4379dbff18f86bb9a595bd"
+  },
+  "sourceFingerprint": {
+    "algorithm": "sha256",
+    "digest": "4f203c886aff3771a34af7e084f71e2a04b7aa89eeabbd377bc8d2b11acedebe",
+    "files": {
+      "server/operationalSimulator.ts": "b0ace880877ec8e1cd5b341781d01760a6da7609f8a8fc68462300b1026d5118",
+      "server/publicEvidencePlugin.ts": "86db2827baa60b7102c1f72c606116214a722e548137d80a7472cac14c020675",
+      "server/coreOperationsRlEngine.ts": "35c4496da695e57458e8019601a1d186d53528737d8c321b719c83d3a5b87199",
+      "server/coreOperationsRlService.ts": "84040375b2ec71d6cd09d2d80bca8654d441f7f25c81b7a704098ab7e52322f7",
+      "shared/coreOperationsRlContract.ts": "e7df81ed5ffb5752abd976b14795e813080fc0d12886669fda740c1389a3deb6",
+      "shared/portTelemetryContract.ts": "cffd750e2ccea66021bf797509f3ac0c594e229202635cd0e47664cb8562ac10",
+      "src/components/OperationalEvidenceCenter.tsx": "295f0b38d41903f7b850e8446173761f2843870e86805151926418635ff8686b",
+      "src/integrations/coreOperationsRlAdapter.ts": "90000600203e8ae7e9fb789ac16f97676925d79a51b09255bde34d923567f75c",
+      "src/integrations/operationsControlAdapter.ts": "c910b85ae4caff795d3ff4473bbbc395c5854791980af782679162f829357ced",
+      "scripts/operations/runOperationalAcceptance.ts": "2749493fd715d827299135ca61f1ec8e3c15f34c3887aa3185a811da3749e7bc",
+      "scripts/operations/verifyOperationalAcceptance.ts": "972c59e5ca168b543b0fc6e4daed5b3b4ae505eda59c2e6bda924f916e413e1a",
+      "data/rl/mpa_vessel_arrivals_monthly.csv": "1135cd3ceac593a70b1407e40fc38fb36e06f3da4823418b50ddd3bcc5a9f12a",
+      "package.json": "2644e716fa07738c4d517294f1fc736d454e93f0d0142ea334028b1513f58ce9",
+      "pnpm-lock.yaml": "f3df4501411a10905cd78122798660286d14a75e826f6b226d025fcbedbbe6c3"
+    }
+  },
+  "evidenceReferences": {
+    "reports/operational-closure-acceptance-v1.json": "55db255283526b6673a691b5cfed12533f7109d1088115bbc130b90681e3d27b",
+    "reports/operational-closure-regulatory-extension-v1.json": "c1bf8a6c5c3c2099ad6b8321ae756e37caa582188918cb677503ee78c53afeb8",
+    "reports/regulatory-resilience-v2.json": "be337a7d354478a1098b161a1a0301b6fca3f55fd819a8e2582dc9cde7b18ce0",
+    "reports/core-operations-rl-champion-v1.json": "5bf798cc296afb6d31152bd2c9ea13e2e7d21e9f11f8d28dc0458a495947fd85"
+  },
+  "claimBoundary": [
+    "This artifact is a real execution of the backend simulator and control service.",
+    "It is not a live-port, measured field KPI, production saving, or autonomous control claim.",
+    "Historical RL benchmark artifacts remain unchanged and are verified separately."
+  ]
+}
