@@ -1,0 +1,186 @@
+$ pnpm check && pnpm benchmark:rl:verify && pnpm benchmark:public-data:verify && pnpm benchmark:regulatory:verify && pnpm benchmark:port-business:verify && pnpm benchmark:core-operations:verify && pnpm acceptance:operations:verify && pnpm security:audit && node scripts/release/check.mjs
+$ pnpm lint && pnpm test && pnpm build
+$ eslint .
+$ node --experimental-strip-types --experimental-specifier-resolution=node --test tests/*.test.ts
+✔ complete offline evidence admits only an offline champion and keeps field deployment closed (18.980921ms)
+✔ safety violations, distribution shift and final-test reuse reject the candidate (0.887423ms)
+✔ runtime safety shield substitutes hold-plan when data, traffic or physical envelopes are unsafe (0.509707ms)
+✔ core operations contract covers ten unique heads and keeps production authority closed (2.539143ms)
+✔ factorized learner consumes every observation and performs real multi-head updates (558.641458ms)
+✔ each unsafe domain choice is projected independently without weakening other heads (66.065076ms)
+✔ runtime tensor is backed by simulator fields and core control changes audited sandbox state (53.251386ms)
+✔ stored five-seed champion serves a ten-head fail-closed runtime decision (57.794123ms)
+✔ ridge fit is finite on collinear features and approximates known returns (4.067938ms)
+✔ scenario completeness does not turn engineered provenance into measured data (192.650825ms)
+✔ serving and offline admission share votes, range gates and missing-data fallback (762.175022ms)
+✔ registry rejects invalid observation order, nonfinite weights and unqualified fitted policies (20.011279ms)
+✔ atomic activation pins model and dataset, and a changed model rolls back to prior hash (54.019269ms)
+✔ all engineering variants of a public source month stay in one chronological split (64.868644ms)
+✔ engineering profile is structurally usable but cannot claim operator calibration (3.594023ms)
+✔ coupled twin preserves berth exclusivity, yard mass balance and energy accounting (53.839748ms)
+✔ under-keel-clearance gate stops unsafe channel movement (1.250016ms)
+✔ same profile, initial state and controls produce the same deterministic snapshot digest (1.644872ms)
+✔ deterministic simulator emits complete field lineage and obeys physical envelopes (139.16617ms)
+✔ simulator changes continuously without unconstrained randomness (19.741295ms)
+✔ normal simulator remains physically bounded during a two-week continuous run (160.793549ms)
+✔ grounded handoff report cites the current snapshot and does not impersonate a model (20.028319ms)
+✔ decision loop enforces dual approval, idempotency, receipts, rollback and audit hashes (21.599238ms)
+✔ data loss and simulator shutdown fail closed before recommendation or execution (34.972547ms)
+✔ six signed operator sources atomically release a complete read-only shadow snapshot (64.926458ms)
+✔ gateway rejects tampering, missing fields, unit mismatch and stale evidence (3.299962ms)
+✔ gateway accepts exact replay idempotently and blocks sequence rollback (1.678053ms)
+✔ checked-in operator source template parses but remains fail-closed (5.47486ms)
+✔ fully reviewed test manifest reaches only the operator authorization gate (1.729536ms)
+✔ manifest rejects duplicate adapters and writable purposes (3.954478ms)
+✔ port business contract has unique full observations, bounded advisory actions and external authority boundaries (2.881811ms)
+✔ public anchored dataset is deterministic, chronologically sealed and explicitly augmented (298.492918ms)
+✔ operator replacement package fails closed when a required business field is missing (187.643276ms)
+✔ safety projector masks authority-sensitive and resource-infeasible actions (65.62556ms)
+✔ business applicability imposes a post-intervention cooldown (57.751116ms)
+✔ non-RL demand model is trained only on training records and beats seasonal naive on validation replay (64.33593ms)
+✔ all declared observations reach the policy and real TD updates change stored weights (189.324004ms)
+✔ trained policy evaluation executes through the safety mask with no hard violations (122.259588ms)
+✔ generated public dataset source remains the checked-in MPA snapshot (1.763692ms)
+✔ runtime service exposes the admitted offline champion without production authority (4.326201ms)
+✔ runtime proposal assessment returns an auditable safety projection and non-dispatching fallback (59.808758ms)
+✔ champion runtime consumes all observations, exposes ensemble uncertainty and always fails closed to production (54.444743ms)
+✔ port call contract normalizes a valid DCSA-aligned event subset (3.336819ms)
+✔ port call contract rejects ambiguous timestamps and invalid vessel identifiers (66.930519ms)
+✔ community gateway accepts signed port-call events and exposes explicit standards projections (57.767332ms)
+✔ five authoritative clearance sources are preserved as exogenous receipts without dispatch authority (8.611247ms)
+✔ community gateway blocks tampering, stale messages, role impersonation and idempotency conflict (6.534428ms)
+✔ same-profile public evidence keeps the baseline Malacca topology (3.045173ms)
+✔ same-profile runtime patches channels and routes without dropping topology (3.064365ms)
+✔ explicit topology replacement supports a Shanghai snapshot with no live vessels (0.45671ms)
+✔ topology replacement fails closed when port nodes are absent (11.332185ms)
+✔ terminal operations contract fails closed when Shanghai operational evidence is incomplete (3.260669ms)
+✔ complete terminal operations fields enable every shared algorithm action and objective (1.07249ms)
+✔ operator manifest validates field mappings and reaches terminal training readiness (23.20513ms)
+✔ operator manifest rejects declared fields without mappings (1.198705ms)
+✔ authorized terminal manifest resolves into the existing five-method training dataset (84.536078ms)
+✔ two identity-bound human approvals and an independent fresh interlock pass the policy gate only (63.663904ms)
+✔ tampered identity bindings, self-approval and missing MFA fail closed (3.994091ms)
+✔ unsafe, stale or bypassed OT interlock blocks release even with valid human approvals (3.54935ms)
+✔ AISStream parser preserves real coordinates, time, identity and quality flags (5.561429ms)
+✔ AISStream parser rejects positions outside the configured Malacca region (0.611436ms)
+✔ AISStream parser labels a missing provider event time instead of inventing verified time (0.527017ms)
+✔ live AIS gateway fails closed when disconnected or cached positions become stale (1.498258ms)
+✔ live AIS gateway verifies fresh positions only after the backend websocket is connected (128.889687ms)
+✔ regulatory supplement is additive and preserves the original five actions (4.028045ms)
+✔ regulatory holds propagate statefully and repeated reads do not create phantom ticks (25.883028ms)
+✔ durable store atomically versions state and verifies its hash journal (221.899629ms)
+✔ corrupt primary state fails over to the independently checksummed previous generation (144.213627ms)
+✔ fencing numbers stop a stale leader from writing after lease turnover (99.172006ms)
+✔ reliability readiness separates local software controls from observed site SLO evidence (1.143518ms)
+✔ policy admission accepts a decisive non-regressing action (19.516825ms)
+✔ policy admission abstains on near-uniform low-confidence output (1.034882ms)
+✔ policy admission rejects a confident action that regresses carbon (0.833368ms)
+✔ public dataset is chronological and separates training, validation, and final test rows (53.12078ms)
+✔ multi-port datasets require an explicit port and reject duplicate timestamps (103.888643ms)
+✔ capacity proxy is calibrated on training records without future-demand leakage (30.352984ms)
+✔ public aggregate actions stay inside the conservative intervention envelope (0.594209ms)
+✔ objective presets resolve to distinct normalized reward functions (1.177571ms)
+✔ four RL algorithms update parameters and MPC stays a control baseline (292.010578ms)
+✔ evaluation trace uses held-out timestamps and trained inference returns a real action (203.451908ms)
+✔ completed checkpoints carry integrity metadata and restore in a fresh process (1027.006803ms)
+✔ remote listeners fail closed without a strong API token (3.871253ms)
+✔ loopback development is allowed without a token (1.839881ms)
+✔ bounded integer environment settings reject unsafe values (0.608571ms)
+✔ complete test fixture validates the evaluator but cannot become field acceptance (46.545863ms)
+✔ cryptographically signed field evidence can close site delivery but never grants dispatch itself (5.373334ms)
+✔ tampered KPI evidence, missing signoffs and a short shadow window fail closed (2.536687ms)
+✔ every native button has an action and every custom click target has a keyboard contract (359.424935ms)
+✔ Xiaoyi action registry covers every declared step with an observable verification contract (25.51438ms)
+✔ Xiaoyi resolver keeps handoff, regulatory evidence, RL configuration, policy test and report export routes distinct (1.516109ms)
+✔ changing the selected training algorithm detaches stale jobs before the next run (2.928284ms)
+✔ Xiaoyi training advice matches the six-factor reward contract (1.294408ms)
+✔ policy inference labels remain algorithm-neutral and render signed business deltas (8.261028ms)
+✔ compact interview viewport keeps map-view and fullscreen controls operable (7.809349ms)
+✔ closure exports disclose incomplete workflows and simulated approval identity (3.706489ms)
+✔ business champion and production-readiness gates are connected to the primary UI and report pipeline (3.719248ms)
+✔ multi-source fusion detects a head-on critical encounter and keeps action advisory-only (8.435246ms)
+✔ single-source pairs are labelled insufficient information instead of authoritative collision advice (0.681466ms)
+✔ conflicting and stale sensor data fail closed (0.68683ms)
+ℹ tests 99
+ℹ suites 0
+ℹ pass 99
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1995.482306
+$ tsc -b && vite build
+vite v8.1.5 building client environment for production...
+[2Ktransforming...✓ 1793 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                        0.54 kB │ gzip:   0.35 kB
+dist/assets/LiveSatelliteMap-B2k4QVOw.css             69.80 kB │ gzip:  10.10 kB
+dist/assets/index-CV-vWTmJ.css                       264.48 kB │ gzip:  46.68 kB
+dist/assets/OperationalEvidenceCenter-ClVTzpis.js     46.73 kB │ gzip:  12.07 kB
+dist/assets/index-Bupf_y7V.js                        517.20 kB │ gzip: 153.78 kB
+dist/assets/LiveSatelliteMap--zP48dHw.js           1,039.42 kB │ gzip: 277.83 kB
+
+✓ built in 1.75s
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+$ node --experimental-strip-types --experimental-specifier-resolution=node scripts/rl/verifyBenchmarkReport.ts
+WARN archived environment fingerprint differs from current candidate: package.json
+WARN archived environment fingerprint differs from current candidate: pnpm-lock.yaml
+WARN archived source path migrated to current implementation: scripts/rl/runRLBaselineBenchmark.ts
+WARN archived combined fingerprint intentionally differs after dependency/version update; report was not rewritten
+Archived benchmark evidence verified without rewriting: reports/rl-benchmark-balanced-resilience-calibrated-v2.json
+$ node --experimental-strip-types --experimental-specifier-resolution=node scripts/rl/verifyPublicDatasetComparison.ts
+WARN archived environment fingerprint differs from current candidate: package.json
+WARN archived environment fingerprint differs from current candidate: pnpm-lock.yaml
+WARN archived comparison fingerprint intentionally differs after dependency/version update; report was not rewritten
+Archived public dataset comparison verified without rewriting.
+$ node --experimental-strip-types --experimental-specifier-resolution=node scripts/rl/verifyRegulatoryResilienceBenchmark.ts
+Malacca regulatory resilience v1/v2 evidence verified; old artifacts unchanged.
+$ node --experimental-strip-types --experimental-specifier-resolution=node scripts/rl/verifyPortBusinessChampion.ts
+PORT_BUSINESS_CHAMPION_EVIDENCE:PASS:linear-dyna-q:curriculum-520
+$ node --experimental-strip-types --experimental-specifier-resolution=node scripts/rl/verifyCoreOperationsChampion.ts
+CORE_OPERATIONS_CHAMPION_EVIDENCE:PASS:factorized-linear-dyna-q:curriculum-360:10/10
+CORE_OPERATIONS_RL_V2:PASS:5/5_CONVERGENCE:DEPLOYED_ENSEMBLE:MONTH_GROUPED:IMMUTABLE_HISTORY
+$ node --experimental-strip-types --experimental-specifier-resolution=node scripts/operations/verifyOperationalAcceptance.ts
+Operational closure acceptance v2 verified with immutable v1, regulatory, and core-RL lineage.
+$ pnpm audit --audit-level=moderate
+┌─────────────────────┬────────────────────────────────────────────────────────┐
+│ high                │ Browserslist: Unbounded memory growth (no cache        │
+│                     │ eviction) via distinct query results, leading to       │
+│                     │ eventual OOM                                           │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Package             │ browserslist                                           │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Vulnerable versions │ <=4.28.6                                               │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Patched versions    │ >=4.28.7                                               │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Paths               │ .>eslint-plugin-react-hooks>@babel/core>@babel/helper- │
+│                     │ compilation-targets>browserslist                       │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ More info           │ https://github.com/advisories/GHSA-c83g-rgw3-j3cx      │
+└─────────────────────┴────────────────────────────────────────────────────────┘
+┌─────────────────────┬────────────────────────────────────────────────────────┐
+│ high                │ Browserslist: Uncaught crash / prototype write via     │
+│                     │ untrusted browserslist-stats.json custom stats         │
+│                     │ (normalizeStats)                                       │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Package             │ browserslist                                           │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Vulnerable versions │ <=4.28.6                                               │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Patched versions    │ >=4.28.7                                               │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Paths               │ .>eslint-plugin-react-hooks>@babel/core>@babel/helper- │
+│                     │ compilation-targets>browserslist                       │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ More info           │ https://github.com/advisories/GHSA-73wf-gq98-2v4g      │
+└─────────────────────┴────────────────────────────────────────────────────────┘
+2 vulnerabilities found
+Severity: 2 high
+[ELIFECYCLE] Command failed with exit code 1.
+[ELIFECYCLE] Command failed with exit code 1.

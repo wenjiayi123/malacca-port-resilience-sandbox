@@ -1,0 +1,35 @@
+{
+  "configuration": {
+    "seeds": [
+      17,
+      37,
+      59,
+      83,
+      101
+    ],
+    "iterations": 40,
+    "samples": 192,
+    "damping": 0.15,
+    "rolloutHorizon": 4,
+    "ridge": 0.03
+  },
+  "datasetFingerprint": "f18ed5fb0c271279ddd6b0c6de49fb1010f35beabd46c8772d1b695fc84f9b28",
+  "split": {
+    "method": "chronological",
+    "trainRange": [
+      "1995-01-01T00:00:00+08:00",
+      "2016-11-22T00:00:00+08:00"
+    ],
+    "validationRange": [
+      "2016-12-01T00:00:00+08:00",
+      "2021-08-22T00:00:00+08:00"
+    ],
+    "testRange": [
+      "2021-09-01T00:00:00+08:00",
+      "2026-05-22T00:00:00+08:00"
+    ]
+  },
+  "trainingSourceSha256": "b08816ae8af640394732f6ad80699664f21107a81859d5f662900f15d55e00a1",
+  "evaluation": "validation-only; historical final-test records are not read by this experiment",
+  "convergence": "last 5: action change <=2%, validation reward range <=0.003; all five seeds required"
+}

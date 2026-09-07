@@ -7,7 +7,7 @@
   <a href="docs/SHANGHAI_PORT_LANDING.md">上海港接入 / Shanghai landing</a> ·
   <a href="docs/DATASET_CONTRACT.md">数据契约 / Data contract</a> ·
   <a href="docs/RL_ARCHITECTURE.md">算法架构 / RL architecture</a> ·
-  <a href="docs/CORE_OPERATIONS_RL_V1.md">十域RL / Core RL v1</a> ·
+  <a href="docs/RL_CONVERGENCE_V2.md">十域RL / Core RL v2</a> ·
   <a href="docs/PORT_BUSINESS_RL_V3.md">全业务RL / Business RL v3</a> ·
   <a href="docs/MODEL_CARD.md">模型卡 / Model card</a> ·
   <a href="SECURITY.md">安全策略 / Security</a>
@@ -31,26 +31,25 @@
     <th align="center">长期需求证据<br /><sub>LONG-HORIZON DEMAND</sub></th>
     <th align="center">高频轨迹证据<br /><sub>HIGH-FREQUENCY AIS</sub></th>
     <th align="center">真实训练规模<br /><sub>TRAINING WORKLOAD</sub></th>
-    <th align="center">保守压力诊断<br /><sub>CALIBRATED STRESS</sub></th>
-    <th align="center">声明门禁<br /><sub>CLAIM GATE</sub></th>
+    <th align="center">训练稳定性<br /><sub>EMPIRICAL CONVERGENCE</sub></th>
+    <th align="center">业务保持门禁<br /><sub>BUSINESS GUARDRAIL</sub></th>
   </tr>
   <tr>
     <td align="center"><strong>4,064,858</strong><br />累计到港艘次 / 377月</td>
     <td align="center"><strong>371,585</strong><br />AIS messages / 1,440 min</td>
-    <td align="center"><strong>21,600</strong><br />RL episodes / 3×3 protocol</td>
-    <td align="center"><strong>0.344h → 0.110h</strong><br />吞吐保持 99.715%</td>
-    <td align="center"><strong>相对百分比禁用</strong><br />small-denominator blocked</td>
+    <td align="center"><strong>4,064,000</strong><br />模型交互 / model transitions</td>
+    <td align="center"><strong>5 / 5</strong><br />随机种子 / converged seeds</td>
+    <td align="center"><strong>99.48%</strong><br />最低吞吐保持 / throughput retained</td>
   </tr>
 </table>
 
-> **业务价值 / Business value：** 面向港航拥堵治理与韧性决策，项目以 MPA
-> `Vessel Arrivals (>75 GT) and Shipping Tonnage` 与 Open-Meteo ERA5 构建
-> **31 年、377 个月、统计口径累计 4,064,858 艘次**的长期需求证据，以 Zenodo/INFORE
-> `10.5281/zenodo.3754481` 完成 **371,585 条原始 AIS 消息、1,440 个分钟窗口**的高频接入验证，
-> 并对四种 RL 与三步 MPC 执行 **21,600 episodes** 的时序隔离评测。封存测试会阻止不稳定策略
-> 被包装成收益；保守压力诊断只报告延误绝对减少 **14.0 分钟**、拥堵绝对减少
-> **0.967 个百分点**及 **99.715% 吞吐保持**。`terminal-operations.v2` 进一步固化
-> **37 项港口运行字段**与失败关闭门禁，为授权 TOS/VTS/AIS 数据替换接入真实港口提供边界。
+> **业务价值 / Business value：** 面向港航拥堵治理、监管协同与突发事件恢复，整合 **377 个月**的 MPA 官方到港统计与 Open-Meteo ERA5 风场，完成 **371,585 条**公开船舶自动识别系统消息、**1,440 个**分钟级船舶活动窗口的数据验证。将海事安全检查、海关查验及放行等待纳入推演，综合考虑检查时长、资源占用和放行状态对可调度时窗、拥堵及延误传播的影响，支持在监管与安全约束下协调到港安排、泊位岸桥、堆场闸口、能源使用和应急恢复。四类历史仿真情景以既定作业方案为基准，系统推荐方案使能源成本指数降低 **2.69%—3.17%**、碳强度降低 **5.97%—7.61%**，最低吞吐保持率 **99.48%**。系统支持方案审批、执行回执、效果追溯及回滚，固化 **37 项港口运行字段**与异常阻断机制，为取得授权后的真实港口数据接入、现场校准和影子运行提供基础。检查结论与正式放行以主管部门信息为准。
+>
+> **金额测算范围：** 单次 15 分钟配对沙盘验证节省模型电费 265.46 林吉特，按参考汇率 1 林吉特约合 1.66 元人民币折算为约 **441 元人民币**。若全年每天 24 小时连续运行，且负荷、节电效果、电价和汇率均维持该样本水平，条件性年化测算约 **1,544 万元人民币**。这一年化数字由单次样本外推，**尚未经全年仿真或现场验证，不属于已验证年度收益**；不能用于证明投资回报或现场节支承诺。
+
+当前模型、完整业务对照和口径见 [RL v2 证据](reports/core-operations-rl-champion-v2.md)、[配对运行回执](reports/core-operations-runtime-acceptance-v2.json)及 [本次发布说明](docs/RL_V2_RELEASE.md)。人民币金额按 2026-09-07 查阅的 [Wise 参考汇率](https://wise.com/gb/currency-converter/myr-to-cny-rate)作固定展示折算，不是中国港口电价标定。4,064,858 艘次为月报累计统计量，与 4,064,000 次模型交互是不同口径；高频 AIS 来自 Piraeus 的独立 24 小时公开数据。旧四种 RL 与 MPC 的 21,600 episodes 基准、压力诊断和负向结果继续完整保留在下文。
+
+The active ten-domain RL policy passes empirical convergence checks for all five seeds after 4,064,000 model transitions. Against the modeled standard operating plan, four historical scenarios show a 2.69–3.17% reduction in the energy-cost index and a 5.97–7.61% reduction in carbon intensity, with at least 99.48% throughput retained. All gains are offline simulation results. The CNY 15.44 million annualized illustration extrapolates one 15-minute sample under unchanged load, savings, tariff and exchange rate for continuous year-round operation; it has not been validated over a full year or in a real port.
 
 <p align="center">
   <sub><strong>证据边界 / Evidence scope:</strong> 公开聚合数据驱动的离线模型回放；不是“韧性准确率”、VTS/TOS实测KPI或自动生产下发证明。</sub>
@@ -138,9 +137,17 @@ simulation_mode=true · live_data_verified=false · dispatch_allowed=false · pr
 
 第一版统一证据保持不变；纳入十域强化学习冠军与配对反事实运行验收的追加证据见 [`top-tier-hardening-evidence-v2.md`](reports/top-tier-hardening-evidence-v2.md)。分领域合同、限制和验证命令从 [`REAL_PORT_DATA_INTEGRATION.md`](docs/REAL_PORT_DATA_INTEGRATION.md) 开始。在现场证据未提供前，项目仍是可复现研究/工程验证系统，不是真实港口生产系统。
 
-### 全核心业务强化学习闭环 v1 / Core-operations RL v1
+### 当前十域强化学习模型 v2 / Active core RL v2
 
-`core-operations-rl.v1` 是当前主强化学习运行链，原有算法、检查点、报告和失败实验全部保留。它使用同一个 47 维权威快照张量，同时输出十个独立且可安全回退的动作头：到港节奏、泊位岸桥、堆场闸口、水平运输、航道引拖、岸电储能、冷藏箱与楼宇柔性负荷、设备维护、海铁水水联运、扰动恢复。十个动作头共有 30 个有界选项；主管机关放行、避碰、紧急停止、身份审批和物理下发继续由外部权威与确定性联锁掌控，不交给强化学习。
+活动指针 `reports/core-operations-active.json` 指向 `factorized-fitted-policy-iteration / source-month-grouped-02`，保留 v1 为哈希绑定的上一模型。新版按源月份整组隔离训练、验证和历史回归数据，通过配对多步回报拟合、正则化与阻尼更新改善训练稳定性；五个种子各训练 40 轮，保存全部曲线、最终评估锁及失败试验。经验稳定性不等同于全局最优证明，既有历史测试期也不作为新的前瞻现场测试。
+
+训练评估和实际服务共用投票、逐域弃权、安全投影及吞吐门禁。接口保持兼容，模型切换检查合同、参数、数据及源码哈希，原子更新指针并保留回退。实际浏览器已验证新模型推理、审批、执行、重复执行幂等性、导出、回滚及过期快照阻断。复现、切换与现场接入边界见 [收敛与切换说明](docs/RL_CONVERGENCE_V2.md)。
+
+![五个随机种子的实际训练曲线与业务回归](docs/assets/rl-convergence-v2.png)
+
+### 保留的全核心业务强化学习闭环 v1 / Archived core-operations RL v1
+
+`core-operations-rl.v1` 定义当前主强化学习运行链的接口合同，下面保留第一版学习器及历史报告；活动模型已升级为上述 v2。原有算法、检查点、报告和失败实验全部保留。它使用同一个 47 维权威快照张量，同时输出十个独立且可安全回退的动作头：到港节奏、泊位岸桥、堆场闸口、水平运输、航道引拖、岸电储能、冷藏箱与楼宇柔性负荷、设备维护、海铁水水联运、扰动恢复。十个动作头共有 30 个有界选项；主管机关放行、避碰、紧急停止、身份审批和物理下发继续由外部权威与确定性联锁掌控，不交给强化学习。
 
 正式训练比较因子化线性 Q 与因子化线性 Dyna-Q、两组超参数、五个随机种子和 180/360 两级课程。验证集选出的 `factorized-linear-dyna-q / curriculum-360` 通过未参与调参的时序封存测试：综合奖励改善百分之九十五置信下界 0.02377，平均等待减少下界 0.081238 小时，能源成本指数降低下界 0.600716%，峰值负载降低下界 1.326549 个百分点，碳强度降低下界 1.684997%，维护积压降低下界 0.058512，恢复积压降低下界 34.830831 个工程船舶当量；最低吞吐保持率 98.827313%，最低冷藏箱服务保持率 99.6%，十个动作域均实际参与，安全替换率和硬约束违规均为 0。
 

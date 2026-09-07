@@ -146,6 +146,7 @@ export function OperationalEvidenceCenter({
   const [coreReport, setCoreReport] = useState<CoreOperationsDecisionReport | null>(null);
   const [statusMessage, setStatusMessage] = useState('正在读取后端权威运行状态');
   const [controlError, setControlError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(async (signal?: AbortSignal) => {
@@ -227,7 +228,7 @@ export function OperationalEvidenceCenter({
 
   const runAction = async (label: string, action: () => Promise<unknown>) => {
     setBusy(true);
-    setControlError(null);
+    setActionError(null);
     setStatusMessage(`${label}处理中`);
     try {
       await action();
@@ -235,7 +236,9 @@ export function OperationalEvidenceCenter({
       await refresh();
     } catch (error) {
       const message = error instanceof Error ? error.message : `${label}失败`;
-      setControlError(message);
+      setActionError(message === 'CORE_PLAN_INPUT_SNAPSHOT_STALE'
+        ? '输入快照已更新，请重新生成联合计划并完成审批（CORE_PLAN_INPUT_SNAPSHOT_STALE）'
+        : message);
       setStatusMessage(`${label}未通过门禁`);
     } finally {
       setBusy(false);
@@ -383,10 +386,10 @@ export function OperationalEvidenceCenter({
         ))}
       </nav>
 
-      {controlError && (
+      {(actionError || controlError) && (
         <div className="operational-gate-error" role="alert">
           <strong>失败关闭门禁</strong>
-          <span>{controlError}</span>
+          <span>{actionError ?? controlError}</span>
           <em>production_authority=false · dispatch_allowed=false</em>
         </div>
       )}
@@ -547,12 +550,16 @@ export function OperationalEvidenceCenter({
             <section className="port-business-runtime" aria-label="全核心十域联合强化学习运行执行链">
               <header>
                 <div>
-                  <small>CORE OPERATIONS RL V1 · ACTIVE RUNTIME CHAIN</small>
+                  <small>CORE OPERATIONS RL · ACTIVE MODEL</small>
                   <strong>
                     {coreChampion
                       ? `${coreChampion.contract.observationCount}维观测 · ${coreChampion.contract.actionHeadCount}个并行动作头 · ${coreChampion.contract.actionChoiceCount}个有界选项 · ${coreChampion.contract.rewardComponentCount}项奖励`
                       : '正在读取全核心联合冠军证据'}
                   </strong>
+                  {coreChampion?.trainingConvergence && (
+                    <span>训练稳定性 {coreChampion.trainingConvergence.filter((seed) => seed.passed).length}/{coreChampion.trainingConvergence.length} 个随机种子通过 · 整月分组验证 · 模型 {shortHash(coreChampion.model?.sha256 ?? '')}</span>
+                  )}
+                  {coreChampion?.model?.fallbackReason && <span>已回退上一模型：{coreChampion.model.fallbackReason}</span>}
                 </div>
                 <span className={coreChampion?.champion.admitted ? 'is-admitted' : 'is-blocked'}>
                   {coreChampion

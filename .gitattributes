@@ -5,3 +5,6 @@
 *.webp binary
 *.wasm binary
 *.pck binary
+
+# Preserve byte-exact command logs, including tool-emitted end-of-line spaces.
+reports/artifacts/core-operations-upgrade-acceptance-v2/*.log -text whitespace=-blank-at-eol

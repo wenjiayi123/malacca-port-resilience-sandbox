@@ -1,7 +1,7 @@
 FROM node:24-bookworm-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03 AS build
 WORKDIR /app
 RUN corepack enable
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build
@@ -14,6 +14,9 @@ COPY --from=build /app/server ./server
 COPY --from=build /app/shared ./shared
 COPY --from=build /app/data ./data
 COPY --from=build /app/reports ./reports
+COPY --from=build /app/src ./src
+COPY --from=build /app/scripts ./scripts
+COPY --from=build /app/tests ./tests
 COPY --from=build /app/package.json ./package.json
 RUN mkdir -p /app/runtime/rl-jobs /app/runtime/operator-integration && chown -R node:node /app
 USER node

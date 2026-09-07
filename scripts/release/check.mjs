@@ -14,6 +14,7 @@ for (const verifier of [
   'scripts/integration/verifyOperatorDataReadiness.ts',
   'scripts/integration/verifyTopTierHardeningEvidence.ts',
   'scripts/rl/verifyPortBusinessChampion.ts',
+  'scripts/release/verifyRuntimeBundle.mjs',
 ]) {
   try {
     execFileSync(process.execPath, [

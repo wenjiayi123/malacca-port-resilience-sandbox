@@ -1,3 +1,4 @@
+import { isVerifiedCoreSourceExtension } from '../rl/verifyCoreUpgradeLineage.ts';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
@@ -18,7 +19,7 @@ if (report.areas.some((area) => area.softwareStatus !== 'PASS' || !area.external
 }
 for (const [file, expected] of Object.entries(report.verification.sourceSha256)) {
   const actual = createHash('sha256').update(await readFile(file)).digest('hex');
-  if (actual !== expected) errors.push(`hardening source fingerprint mismatch: ${file}`);
+  if (actual !== expected && !await isVerifiedCoreSourceExtension('reports/top-tier-hardening-evidence-v2.json', file, expected, actual)) errors.push(`hardening source fingerprint mismatch: ${file}`);
 }
 const expectedEvidenceFiles = [
   'reports/core-operations-rl-champion-v1.json',

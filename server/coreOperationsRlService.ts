@@ -1,6 +1,5 @@
+import { loadActiveCoreModel } from './coreOperationsModelRegistry.ts';
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
 import {
   CORE_OPERATIONS_ACTION_HEADS,
   CORE_OPERATIONS_AUTHORITY_BOUNDARY,
@@ -13,9 +12,8 @@ import type { PortOperationsSimulator, OperationalActionId } from './operational
 import {
   CORE_OPERATIONS_HOLD_CHOICES,
   corePlanEffect,
-  inferFactorizedCoreEnsemble,
+  resolveCoreRuntimePlan,
   normalizeCoreObservationRecord,
-  projectCoreActionPlan,
   type CoreActionPlan,
   type CoreObservationTensorItem,
   type CoreSafetyContext,
@@ -49,22 +47,17 @@ interface StoredCoreEvidence {
     };
   };
   valueAttribution: unknown;
+  upgrade?: { allSeedsConverged: boolean; convergence: Array<{ seed: number; passed: boolean; selectedIteration: number; maximumProbeChangePercent: number }> };
   releaseDecision: {
     simulationExecutionAdmitted: boolean;
     operationalDeploymentAdmitted: boolean;
   };
 }
 
-const readStoredEvidence = async (
-  reportPath = process.env.CORE_OPERATIONS_CHAMPION_REPORT || 'reports/core-operations-rl-champion-v1.json',
-) => {
-  const report = JSON.parse(await readFile(path.resolve(reportPath), 'utf8')) as StoredCoreEvidence;
-  if (report.schemaVersion !== 'core-operations-rl-evidence.v1' ||
-      report.contract?.version !== CORE_OPERATIONS_RL_CONTRACT_VERSION ||
-      !report.training?.champion?.seedPolicies?.length) {
-    throw new Error('全核心业务强化学习冠军证据不存在或协议不兼容');
-  }
-  return report;
+const readStoredEvidence = async () => {
+  const model = await loadActiveCoreModel();
+  return { ...model.report as unknown as StoredCoreEvidence, modelReference: model.reference,
+    modelSelection: model.selection, fallbackReason: model.fallbackReason };
 };
 
 const round = (value: number, digits = 6) => Number(value.toFixed(digits));
@@ -207,6 +200,7 @@ export const loadCoreOperationsChampionStatus = async () => {
   return {
     protocolVersion: 'core-operations-runtime-status.v1' as const,
     generatedAt: report.generatedAt,
+    model: { ...report.modelReference, selection: report.modelSelection, fallbackReason: report.fallbackReason },
     evidenceLabel: report.evidenceLabel,
     contract: {
       version: CORE_OPERATIONS_RL_CONTRACT_VERSION,
@@ -225,6 +219,7 @@ export const loadCoreOperationsChampionStatus = async () => {
       finalTestGate: report.training.champion.finalTestGate,
     },
     valueAttribution: report.valueAttribution,
+    trainingConvergence: report.upgrade?.convergence ?? null,
     boundary: CORE_OPERATIONS_AUTHORITY_BOUNDARY,
     simulationExecutionAdmitted: report.releaseDecision.simulationExecutionAdmitted,
     operationalDeploymentAdmitted: report.releaseDecision.operationalDeploymentAdmitted,
@@ -234,33 +229,9 @@ export const loadCoreOperationsChampionStatus = async () => {
 export const inferCoreOperationsChampion = async (snapshot: OperationsSnapshot) => {
   const report = await readStoredEvidence();
   const observation = buildRuntimeCoreObservation(snapshot);
-  const inference = inferFactorizedCoreEnsemble(
-    report.training.champion.seedPolicies,
-    observation.tensor,
-    observation.context,
+  const { inference, minimumVoteShare, domainAbstentions, projection, activeDomains, checks } = resolveCoreRuntimePlan(
+    report.training.champion.seedPolicies, observation.tensor, observation.context, report.training.champion.admitted,
   );
-  const minimumVoteShare = 0.6;
-  const domainAbstentions = inference.heads
-    .filter((head) => head.voteShare < minimumVoteShare)
-    .map((head) => head.domain);
-  const confidencePlan: CoreActionPlan = {
-    choices: { ...inference.requestedPlan.choices },
-  };
-  for (const domain of domainAbstentions) confidencePlan.choices[domain] = CORE_OPERATIONS_HOLD_CHOICES[domain];
-  const projection = projectCoreActionPlan(confidencePlan, observation.context);
-  const effect = corePlanEffect(projection.executed);
-  const activeDomains = CORE_OPERATIONS_ACTION_HEADS
-    .filter((head) => projection.executed.choices[head.id] !== CORE_OPERATIONS_HOLD_CHOICES[head.id])
-    .map((head) => head.id);
-  const checks = {
-    offlineChampionAdmitted: report.training.champion.admitted,
-    dataQuality: observation.context.dataQualityScore >= 0.95,
-    communicationAvailable: observation.context.communicationAvailable,
-    observationRange: inference.outOfRangeObservationCount <= 3,
-    atLeastOneActiveDomain: activeDomains.length > 0,
-    throughputNonRegression: 100 * (1 - effect.defer - effect.divert) >= 98.5,
-    safetyProjectionClean: projection.modifiedDomains.length === 0,
-  };
   const blockerLabels: Record<keyof typeof checks, string> = {
     offlineChampionAdmitted: '离线冠军业务价值门禁未通过',
     dataQuality: '输入数据完整性不足百分之九十五',
@@ -277,6 +248,7 @@ export const inferCoreOperationsChampion = async (snapshot: OperationsSnapshot) 
   const executedPlan = admitted ? projection.executed : { choices: { ...CORE_OPERATIONS_HOLD_CHOICES } };
   const finalEffect = corePlanEffect(executedPlan);
   const proposalId = `core-${createHash('sha256').update(JSON.stringify({
+    model: report.modelReference.sha256,
     dataset: report.dataset.fingerprint,
     snapshot: snapshot.snapshot_hash,
     requested: inference.requestedPlan,
@@ -319,6 +291,7 @@ export const inferCoreOperationsChampion = async (snapshot: OperationsSnapshot) 
       attemptId: report.training.champion.attemptId,
       seedPolicyCount: report.training.champion.seedPolicies.length,
       datasetFingerprint: report.dataset.fingerprint,
+      modelSha256: report.modelReference.sha256,
       evidenceLabel: report.evidenceLabel,
     },
     inference,

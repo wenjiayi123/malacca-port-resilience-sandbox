@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "core-operations-active.v1",
+  "changedAt": "2026-09-07T02:33:03.425Z",
+  "active": {
+    "reportPath": "reports/core-operations-rl-champion-v2.json",
+    "sha256": "9ecec7dffb11a18ae76b8b2cecd5ae658eeecef12c2b0e9637bc3d19f680cf4d",
+    "datasetFingerprint": "f18ed5fb0c271279ddd6b0c6de49fb1010f35beabd46c8772d1b695fc84f9b28"
+  },
+  "rollback": {
+    "reportPath": "reports/core-operations-rl-champion-v1.json",
+    "sha256": "5bf798cc296afb6d31152bd2c9ea13e2e7d21e9f11f8d28dc0458a495947fd85",
+    "datasetFingerprint": "35330af45d170e2f45d21c32dcd98a2c2f98ac53bcb80ae72f17fa3761d0abce"
+  },
+  "productionAuthority": false,
+  "dispatchAllowed": false
+}

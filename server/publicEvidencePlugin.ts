@@ -972,6 +972,7 @@ export const createPublicEvidenceMiddleware = () => {
       return;
     }
     if (request.method === 'GET' && url.pathname === '/api/operations/models') {
+      const activeCore = await loadCoreOperationsChampionStatus();
       jsonResponse(response, {
         protocol_version: 'port-model-registry.v1',
         generated_at: new Date().toISOString(),
@@ -1015,12 +1016,15 @@ export const createPublicEvidenceMiddleware = () => {
             evidence_scope: 'public aggregate anchored, engineering augmented, five-seed offline final test; not field KPI and not production authority',
           },
           {
-            id: 'core-operations-rl-v1-factorized',
+            id: `core-operations-${activeCore.champion.algorithmId}`,
+            model_hash: activeCore.model.sha256,
+            selection: activeCore.model.selection,
+            fallback_reason: activeCore.model.fallbackReason,
             version: 'core-operations-rl.v1',
-            run_id: 'validation-selected-sealed-test',
+            run_id: activeCore.champion.attemptId,
             status: 'champion',
             family: 'factorized linear value-function ensemble with ten simultaneous bounded advisory heads',
-            evidence_artifact: 'reports/core-operations-rl-champion-v1.json',
+            evidence_artifact: activeCore.model.reportPath,
             evidence_scope: 'paired offline counterfactual versus conservative SOP with simulation execution receipts; not field KPI and not production authority',
           },
           {

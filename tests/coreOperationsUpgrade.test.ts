@@ -1,0 +1,91 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { loadPortBusinessDataset } from '../server/portBusinessDataset.ts';
+import { CORE_TRAINING_KERNEL as K, buildTrainingCoreObservation, resolveCoreRuntimePlan } from '../server/coreOperationsRlEngine.ts';
+import { ridgeFit } from '../server/coreOperationsFittedRl.ts';
+import { activateCoreModel, CORE_LEGACY_REPORT, loadActiveCoreModel, validateCoreModelReport } from '../server/coreOperationsModelRegistry.ts';
+import { buildRuntimeCoreObservation, inferCoreOperationsChampion } from '../server/coreOperationsRlService.ts';
+import { PortOperationsSimulator } from '../server/operationalSimulator.ts';
+
+const report = async () => JSON.parse(await readFile(CORE_LEGACY_REPORT, 'utf8'));
+test('ridge fit is finite on collinear features and approximates known returns', () => {
+  const x = Array.from({ length: 20 }, (_, i) => [1, i / 20, i / 20]);
+  const y = x.map((r) => 0.2 + 0.6 * r[1]);
+  const w = ridgeFit(x, y, 0.00001);
+  assert.ok(w.every(Number.isFinite));
+  assert.ok(Math.max(...x.map((r, i) => Math.abs(K.dot(w, r) - y[i]))) < 0.001);
+  assert.throws(() => ridgeFit([[1, NaN]], [1], 0.1), /non-finite/);
+});
+test('scenario completeness does not turn engineered provenance into measured data', async () => {
+  const d = await loadPortBusinessDataset();
+  const record = d.trainRecords[0];
+  const obs = buildTrainingCoreObservation(record, K.initialState(record));
+  assert.equal(obs.context.dataQualityScore, 0.56);
+  assert.equal(obs.context.inputCompletenessScore, 1);
+  assert.equal(d.operationalClaimAllowed, false);
+  const broken = { ...record, windSpeedMs: NaN };
+  assert.equal(buildTrainingCoreObservation(broken, K.initialState(record)).context.inputCompletenessScore, 0);
+});
+test('serving and offline admission share votes, range gates and missing-data fallback', async () => {
+  const simulator = new PortOperationsSimulator({ seed: 240520, wallTickMs: 60000, startedAtMs: 1788138000000 });
+  const snapshot = simulator.snapshot();
+  const obs = buildRuntimeCoreObservation(snapshot);
+  const model = await loadActiveCoreModel();
+  const pure = resolveCoreRuntimePlan(model.report.training.champion.seedPolicies, obs.tensor, obs.context);
+  const served = await inferCoreOperationsChampion(snapshot);
+  assert.deepEqual(served.executedPlan, pure.executedPlan);
+  assert.deepEqual(served.admission.checks, pure.checks);
+  const missing = resolveCoreRuntimePlan(model.report.training.champion.seedPolicies, obs.tensor, { ...obs.context, dataQualityScore: 0.3 });
+  assert.equal(missing.checks.dataQuality, false);
+  assert.ok(Object.values(missing.executedPlan.choices).every((c) => c.endsWith('hold')));
+});
+test('registry rejects invalid observation order, nonfinite weights and unqualified fitted policies', async () => {
+  const r = await report();
+  validateCoreModelReport(r);
+  const reordered = structuredClone(r);
+  reordered.training.champion.seedPolicies[0].observationIds.reverse();
+  assert.throws(() => validateCoreModelReport(reordered), /CONTRACT_MISMATCH/);
+  const corrupt = structuredClone(r);
+  corrupt.training.champion.seedPolicies[0].heads[0].weights[0][0] = Infinity;
+  assert.throws(() => validateCoreModelReport(corrupt), /WEIGHTS_INVALID/);
+  const failed = structuredClone(r);
+  failed.training.champion.seedPolicies[0].algorithmId = 'factorized-fitted-policy-iteration';
+  assert.throws(() => validateCoreModelReport(failed), /UPGRADE_GATES_FAILED/);
+});
+test('atomic activation pins model and dataset, and a changed model rolls back to prior hash', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'malacca-model-test-'));
+  const manifestPath = path.join(dir, 'active.json');
+  const candidatePath = path.join(dir, 'candidate.json');
+  await writeFile(candidatePath, await readFile(CORE_LEGACY_REPORT));
+  const activated = await activateCoreModel(candidatePath, { manifestPath, receiptDirectory: dir });
+  assert.equal(activated.productionAuthority, false);
+  assert.equal((await loadActiveCoreModel({ manifestPath })).selection, 'active');
+  const unchanged = await activateCoreModel(candidatePath, { manifestPath, receiptDirectory: dir });
+  assert.deepEqual(unchanged, activated);
+  await writeFile(candidatePath, '{}');
+  const restored = await loadActiveCoreModel({ manifestPath });
+  assert.equal(restored.selection, 'rollback');
+  assert.equal(restored.fallbackReason, 'CORE_MODEL_DIGEST_MISMATCH');
+  assert.equal(restored.reference.sha256, activated.rollback.sha256);
+  const currentBytes = await readFile(manifestPath, 'utf8');
+  await assert.rejects(activateCoreModel(candidatePath, { manifestPath, receiptDirectory: dir }));
+  assert.equal(await readFile(manifestPath, 'utf8'), currentBytes);
+});
+
+test('all engineering variants of a public source month stay in one chronological split', async () => {
+  const { groupCoreDatasetBySourceMonth } = await import('../server/coreOperationsGroupedDataset.ts');
+  const original = await loadPortBusinessDataset();
+  const d = groupCoreDatasetBySourceMonth(original);
+  const train = new Set(d.trainRecords.map((r) => r.sourceMonth));
+  const validation = new Set(d.validationRecords.map((r) => r.sourceMonth));
+  const testMonths = new Set(d.testRecords.map((r) => r.sourceMonth));
+  assert.equal([...validation].some((m) => train.has(m)), false);
+  assert.equal([...testMonths].some((m) => train.has(m) || validation.has(m)), false);
+  assert.equal(d.trainRecords.length + d.validationRecords.length + d.testRecords.length, original.records.length);
+  assert.notEqual(d.fingerprint, original.fingerprint);
+  assert.equal(d.trainRecords.at(-1)!.sourceMonth, '2016-11');
+  assert.equal(d.testRecords[0].sourceMonth, '2021-09');
+});

@@ -1,0 +1,92 @@
+{
+  "schemaVersion": "core-operations-upgrade-acceptance.v2",
+  "generatedAt": "2026-09-07T02:45:21.747733+00:00",
+  "activeModel": {
+    "reportPath": "reports/core-operations-rl-champion-v2.json",
+    "sha256": "9ecec7dffb11a18ae76b8b2cecd5ae658eeecef12c2b0e9637bc3d19f680cf4d",
+    "datasetFingerprint": "f18ed5fb0c271279ddd6b0c6de49fb1010f35beabd46c8772d1b695fc84f9b28"
+  },
+  "rollbackModel": {
+    "reportPath": "reports/core-operations-rl-champion-v1.json",
+    "sha256": "5bf798cc296afb6d31152bd2c9ea13e2e7d21e9f11f8d28dc0458a495947fd85",
+    "datasetFingerprint": "35330af45d170e2f45d21c32dcd98a2c2f98ac53bcb80ae72f17fa3761d0abce"
+  },
+  "verification": {
+    "automatedTests": {
+      "passed": 99,
+      "failed": 0
+    },
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed",
+    "rlEvidenceAndHistoricalLineage": "passed",
+    "standaloneReleaseIntegrityAndPrivacy": "passed",
+    "completeReleaseCheck": "blocked_by_existing_development_dependency_audit",
+    "dependencyAudit": {
+      "package": "browserslist",
+      "severity": "high",
+      "advisories": [
+        "GHSA-c83g-rgw3-j3cx",
+        "GHSA-73wf-gq98-2v4g"
+      ]
+    }
+  },
+  "browserAcceptance": {
+    "scope": "core_rl_business_flow_only",
+    "url": "http://127.0.0.1:5173",
+    "steps": [
+      "active_model_and_5_of_5_convergence_visible",
+      "generate_joint_rl_plan",
+      "simulated_dual_role_approval",
+      "execute_and_receive_acknowledgement",
+      "repeat_execution_returns_same_receipt",
+      "export_report",
+      "rollback_and_verify_receipt",
+      "stale_snapshot_rejected_and_error_persists_across_telemetry_refresh"
+    ],
+    "proposalId": "core-8aaa55239a6da94f8313",
+    "receiptId": "core-receipt-b9b89c0244b20ed8",
+    "executionAuditHash": "a1243f465f930a19996b060980b7c15d2b171d81019e5f3237931f05d7fe4b22",
+    "rollbackAuditHash": "8062e7ead1186ac823b71bb4180bad59304a2e41cb8a0b77705637e382ea59c2",
+    "staleProposalId": "core-b18e35ff3721158228cd",
+    "observedStaleError": "输入快照已更新，请重新生成联合计划并完成审批（CORE_PLAN_INPUT_SNAPSHOT_STALE）"
+  },
+  "pairedRuntimeValue": {
+    "design": "same_state_same_seed_same_tick_new_rl_plan_vs_continue_current_plan",
+    "kpiDelta": {
+      "queue_vessels": -0.5,
+      "delay_minutes": -4.9,
+      "throughput_teu": 0,
+      "energy_kwh": -553.05,
+      "peak_grid_kw": 0,
+      "cost_myr": -265.46,
+      "carbon_tons": -0.318,
+      "service_level_percent": 0.3,
+      "safety_risk_percent": 0,
+      "resilience_index": 1.6
+    },
+    "attribution": "deterministic_simulation_not_field_measurement"
+  },
+  "authority": {
+    "simulationMode": true,
+    "liveDataVerified": false,
+    "dispatchAllowed": false,
+    "productionAuthority": false
+  },
+  "limitations": [
+    "Empirical stability is not proof of global optimality.",
+    "Final historical period is regression evidence, not prospective field validation.",
+    "Field switching still requires authoritative data mapping, calibration, shadow operation and acceptance.",
+    "No remote publication performed."
+  ],
+  "evidenceSha256": {
+    "reports/core-operations-active.json": "0c45b419a0763fa633a077ccba4f6ba6ae096c20a82efa7b991341fea708d64c",
+    "reports/core-operations-rl-champion-v2.json": "9ecec7dffb11a18ae76b8b2cecd5ae658eeecef12c2b0e9637bc3d19f680cf4d",
+    "reports/core-operations-runtime-acceptance-v2.json": "9308389e0d0106905d04c569eea70190da8bc64ff2857aff9c730b16480d8927",
+    "reports/core-operations-runtime-rollback-v2.json": "d84a56893e9212ab899e216d63e997fef99bbb6a95a50ccf0eabfb929043bf49",
+    "docs/RL_CONVERGENCE_V2.md": "1cbbaf71b54dad7273429dfc2c4b066395af283372e6a165b2040bd565ae0af0",
+    "docs/assets/rl-convergence-v2.png": "82d7bddb98f2300e6a3a3a3426e8442cfac781535424a3bb5029488fcb12bf88",
+    "reports/artifacts/core-operations-upgrade-acceptance-v2/rl-upgrade-release-check-final.log": "c1fdc622f4953acd5fb9d020eb03a342c6e203bd48da11a5074fe30c11c60432",
+    "reports/artifacts/core-operations-upgrade-acceptance-v2/rl-upgrade-standalone-release-gates.log": "6f5926ee9a7d6016b66749b5bbd2fad453af450fe41a269a9821a8e2079367f4"
+  }
+}

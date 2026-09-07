@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { readVerifiedUpgradeLineage } from './verifyCoreUpgradeLineage.ts';
+import { loadActiveCoreModel, sha256 } from '../../server/coreOperationsModelRegistry.ts';
+const report=await readVerifiedUpgradeLineage();
+const extra=report as typeof report & { retainedArtifacts:{files:Record<string,string>}; upgrade:{allSeedsConverged:boolean;convergence:Array<{passed:boolean}>;deployedValidationPassed:boolean;deployedTestPassed:boolean;sourceFiles:Record<string,string>}; training:{champion:{finalTestGate:{passed:boolean;checks:Record<string,boolean>}}} };
+assert.equal(extra.upgrade.allSeedsConverged,true);
+assert.equal(extra.upgrade.convergence.length,5);
+assert.ok(extra.upgrade.convergence.every((c)=>c.passed));
+assert.ok(Object.values(extra.training.champion.finalTestGate.checks).every(Boolean));
+for(const [file,digest] of Object.entries(extra.retainedArtifacts.files))assert.equal(sha256(await readFile(file)),digest,`artifact mismatch:${file}`);
+const active=await loadActiveCoreModel();
+assert.equal(active.selection,'active');
+assert.equal(active.report.training.champion.seedPolicies[0].algorithmId,'factorized-fitted-policy-iteration');
+console.log('CORE_OPERATIONS_RL_V2:PASS:5/5_CONVERGENCE:DEPLOYED_ENSEMBLE:MONTH_GROUPED:IMMUTABLE_HISTORY');

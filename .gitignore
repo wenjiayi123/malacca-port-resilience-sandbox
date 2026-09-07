@@ -11,6 +11,8 @@ coverage/
 *.tmp
 *.temp
 *.log
+!reports/artifacts/core-operations-upgrade-acceptance-v2/rl-upgrade-release-check-final.log
+!reports/artifacts/core-operations-upgrade-acceptance-v2/rl-upgrade-standalone-release-gates.log
 exports/*
 !exports/.gitkeep
 output/

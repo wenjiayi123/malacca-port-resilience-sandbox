@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "dependency-security-upgrade.v1",
+  "generatedAt": "2026-09-07",
+  "reason": "Pin browserslist 4.28.7 for GHSA-c83g-rgw3-j3cx and GHSA-73wf-gq98-2v4g. Verify the historical report against its original manifests and run current tests/audit independently.",
+  "archivedReportSha256": "f0ce9cece3e274a32e7365561f89deea789626da02ee404d2099a35e738d984a",
+  "archivedEnvironment": {
+    "package.json": {
+      "path": "reports/artifacts/dependency-security-upgrade-v1/package.json.snapshot",
+      "sha256": "2644e716fa07738c4d517294f1fc736d454e93f0d0142ea334028b1513f58ce9"
+    },
+    "pnpm-lock.yaml": {
+      "path": "reports/artifacts/dependency-security-upgrade-v1/pnpm-lock.yaml.snapshot",
+      "sha256": "f3df4501411a10905cd78122798660286d14a75e826f6b226d025fcbedbbe6c3"
+    }
+  },
+  "currentFiles": {
+    "package.json": "14f10f6153737770def4b0ee5bd88e039987393e80813e883ec9a6f5e646857e",
+    "pnpm-lock.yaml": "ff6610d5ffb75917e6ad5936e099946f4811e740f795d0eaa90de63beda4fdbd",
+    "pnpm-workspace.yaml": "8415e78af3cb43a6bb5cde6f2829d86453bde2ecff8ae7f6dfcf02e3f3aa6056",
+    "scripts/operations/verifyOperationalRelease.mjs": "c9cdaea4eb1d932848676bf16ea217dbb37084a03e0d92264d4c90cee646a0f1"
+  },
+  "productionAuthority": false
+}

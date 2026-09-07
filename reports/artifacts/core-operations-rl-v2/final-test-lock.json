@@ -1,0 +1,28 @@
+{
+  "generatedAt": "2026-09-07T02:22:07.059Z",
+  "protocol": {
+    "scenarioStrata": [
+      "chronological-replay",
+      "demand-surge",
+      "equipment-energy-stress",
+      "disruption-recovery"
+    ],
+    "sourceMonthsPerBlock": 4,
+    "minimumBlocks": 8,
+    "bootstrapSamples": 2000,
+    "bootstrapSeed": 9072026,
+    "design": "paired cold-start chronological windows; resample the same month-block indexes across fixed scenario strata; seeds are not counted as independent test data",
+    "fullReplayRule": "each scenario must retain nonnegative reward/wait/queue/energy/carbon gains versus both SOP and previous deployed RL; throughput>=98.5%, reefer>=99%, no projection"
+  },
+  "sourceFiles": {
+    "server/coreOperationsRlEngine.ts": "3858ee0e6a46ae35fe36739dab0403b53be7eae865e811f7aba5f719c72438aa",
+    "server/coreOperationsFittedRl.ts": "b08816ae8af640394732f6ad80699664f21107a81859d5f662900f15d55e00a1",
+    "server/coreOperationsRobustEvaluation.ts": "9b00963a6a97cec4244b035b0fefebf1f174022091a8452fee7851a02adf8d00",
+    "server/coreOperationsGroupedDataset.ts": "4f4eb31f57e59692917bbe7408156acd331d519d26926301f1279b94d986adaa",
+    "server/portBusinessDataset.ts": "39dd860378cb08b8fc37b8817dff768690bbf5641f937db841436d570d294043",
+    "shared/coreOperationsRlContract.ts": "e7df81ed5ffb5752abd976b14795e813080fc0d12886669fda740c1389a3deb6"
+  },
+  "policySha256": "91307dc7370e2245d466e33f160364b7f4503a2c42776dfbbcb98e709d42ab77",
+  "selection": "validation-only, frozen before one final historical regression evaluation",
+  "datasetFingerprint": "f18ed5fb0c271279ddd6b0c6de49fb1010f35beabd46c8772d1b695fc84f9b28"
+}

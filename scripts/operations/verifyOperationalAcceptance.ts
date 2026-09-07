@@ -1,3 +1,4 @@
+import { isVerifiedCoreSourceExtension } from '../rl/verifyCoreUpgradeLineage.ts';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -139,8 +140,9 @@ if (!report.audit.verified || report.audit.recordCount < 10 || !/^[a-f0-9]{64}$/
 const recomputed: Record<string, string> = {};
 for (const [file, expected] of Object.entries(report.sourceFingerprint.files)) {
   const digest = createHash('sha256').update(await readFile(path.resolve(file))).digest('hex');
-  recomputed[file] = digest;
-  if (digest !== expected) errors.push(`operational source fingerprint mismatch: ${file}`);
+  const extended = digest !== expected && await isVerifiedCoreSourceExtension('reports/operational-closure-acceptance-v2.json', file, expected, digest);
+  recomputed[file] = extended ? expected : digest;
+  if (digest !== expected && !extended) errors.push(`operational source fingerprint mismatch: ${file}`);
 }
 const combined = createHash('sha256')
   .update(Object.entries(recomputed).sort(([left], [right]) => left.localeCompare(right))

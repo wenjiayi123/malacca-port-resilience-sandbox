@@ -1,0 +1,1123 @@
+{
+  "allSeedsConverged": true,
+  "convergence": [
+    {
+      "seed": 17,
+      "passed": true,
+      "criterion": "last_5_iterations: action_change<=2_percent, validation_reward_range<=0.003, finite_weights<10; checkpoint_selected_on_validation_only",
+      "stableIterations": 5,
+      "selectedIteration": 24,
+      "validationRewardRange": 0.00007675,
+      "maximumProbeChangePercent": 0.26041667
+    },
+    {
+      "seed": 37,
+      "passed": true,
+      "criterion": "last_5_iterations: action_change<=2_percent, validation_reward_range<=0.003, finite_weights<10; checkpoint_selected_on_validation_only",
+      "stableIterations": 5,
+      "selectedIteration": 38,
+      "validationRewardRange": 0.000154,
+      "maximumProbeChangePercent": 0.20833333
+    },
+    {
+      "seed": 59,
+      "passed": true,
+      "criterion": "last_5_iterations: action_change<=2_percent, validation_reward_range<=0.003, finite_weights<10; checkpoint_selected_on_validation_only",
+      "stableIterations": 5,
+      "selectedIteration": 29,
+      "validationRewardRange": 0.0007865,
+      "maximumProbeChangePercent": 0.46875
+    },
+    {
+      "seed": 83,
+      "passed": true,
+      "criterion": "last_5_iterations: action_change<=2_percent, validation_reward_range<=0.003, finite_weights<10; checkpoint_selected_on_validation_only",
+      "stableIterations": 5,
+      "selectedIteration": 40,
+      "validationRewardRange": 0.00026475,
+      "maximumProbeChangePercent": 0.98958333
+    },
+    {
+      "seed": 101,
+      "passed": true,
+      "criterion": "last_5_iterations: action_change<=2_percent, validation_reward_range<=0.003, finite_weights<10; checkpoint_selected_on_validation_only",
+      "stableIterations": 5,
+      "selectedIteration": 16,
+      "validationRewardRange": 0.00006675,
+      "maximumProbeChangePercent": 0.10416667
+    }
+  ],
+  "gate": {
+    "thresholds": {
+      "minimumRewardImprovementLower95": 0.005,
+      "minimumWaitReductionHoursLower95": 0,
+      "minimumQueueReductionVesselsLower95": 0,
+      "minimumEnergyCostReductionPercentLower95": 0,
+      "minimumPeakGridReductionPointsLower95": 0,
+      "minimumCarbonReductionPercentLower95": 0,
+      "minimumMaintenanceBacklogReductionLower95": 0,
+      "minimumRecoveryBacklogReductionLower95": -0.05,
+      "minimumThroughputRetentionPercent": 98.5,
+      "minimumReeferServicePercent": 99,
+      "maximumSafetyProjectionRatePercent": 0,
+      "maximumHardConstraintViolations": 0,
+      "minimumActiveDomainCount": 10
+    },
+    "evidence": {
+      "rewardImprovement": {
+        "mean": 0.13959,
+        "lower95": 0.014069,
+        "upper95": 0.265111,
+        "min": 0.035866,
+        "max": 0.322182,
+        "samples": 4
+      },
+      "waitReductionHours": {
+        "mean": 2.633847,
+        "lower95": -0.93233,
+        "upper95": 6.200025,
+        "min": 0.051493,
+        "max": 7.771978,
+        "samples": 4
+      },
+      "queueReductionVessels": {
+        "mean": 4120.942483,
+        "lower95": -1651.382969,
+        "upper95": 9893.267936,
+        "min": 71.728078,
+        "max": 12558.811422,
+        "samples": 4
+      },
+      "energyCostReductionPercent": {
+        "mean": 2.737199,
+        "lower95": 2.565558,
+        "upper95": 2.908841,
+        "min": 2.482273,
+        "max": 2.861186,
+        "samples": 4
+      },
+      "peakGridReductionPoints": {
+        "mean": 4.384303,
+        "lower95": 3.973588,
+        "upper95": 4.795017,
+        "min": 4.118577,
+        "max": 5.009944,
+        "samples": 4
+      },
+      "carbonReductionPercent": {
+        "mean": 6.54206,
+        "lower95": 6.05233,
+        "upper95": 7.031791,
+        "min": 6.011854,
+        "max": 7.003215,
+        "samples": 4
+      },
+      "maintenanceBacklogReduction": {
+        "mean": 0.121567,
+        "lower95": 0.035579,
+        "upper95": 0.207555,
+        "min": 0.046106,
+        "max": 0.20966,
+        "samples": 4
+      },
+      "recoveryBacklogReductionVessels": {
+        "mean": 104.572843,
+        "lower95": -6.78615,
+        "upper95": 215.931837,
+        "min": 5.833103,
+        "max": 205.610163,
+        "samples": 4
+      },
+      "minimumThroughputRetentionPercent": 99.37193,
+      "minimumReeferServicePercent": 99.6,
+      "maximumSafetyProjectionRatePercent": 0,
+      "hardConstraintViolations": 0,
+      "activeDomainCount": 10,
+      "activeDomains": [
+        "arrival-flow",
+        "berth-crane",
+        "yard-gate",
+        "horizontal-transport",
+        "navigation-resources",
+        "energy-storage",
+        "reefer-building-load",
+        "equipment-maintenance",
+        "intermodal-network",
+        "disruption-recovery"
+      ]
+    },
+    "checks": {
+      "rewardImprovement": true,
+      "waitingTime": false,
+      "queue": false,
+      "energyCost": true,
+      "peakGrid": true,
+      "carbon": true,
+      "maintenance": true,
+      "recovery": false,
+      "throughput": true,
+      "reeferService": true,
+      "safetyProjection": true,
+      "hardConstraints": true,
+      "domainCoverage": true
+    },
+    "passed": false
+  },
+  "evaluations": [
+    {
+      "scenarioId": "chronological-replay",
+      "policyKind": "reinforcement-learning",
+      "algorithmId": "factorized-fitted-policy-iteration",
+      "metrics": {
+        "meanReward": 0.200649,
+        "meanWaitingHours": 0.010127,
+        "meanQueueVessels": 11.936339,
+        "throughputRetentionPercent": 99.618421,
+        "yardOverflowRatePercent": 0,
+        "gateSlaBreachRatePercent": 0,
+        "horizontalAvailabilityPercent": 96.401754,
+        "energyCostIndex": 1.022381,
+        "peakGridRatioPercent": 62.792768,
+        "carbonIntensity": 1.027439,
+        "reeferServicePercent": 99.6,
+        "maintenanceBacklog": 0.019893,
+        "fairnessGapPercent": 15.668766,
+        "recoveryBacklogVessels": 0,
+        "interventionRatePercent": 43.201754,
+        "safetyProjectionRatePercent": 0,
+        "hardConstraintViolations": 0
+      },
+      "domainActionCounts": {
+        "arrival-flow": {
+          "arrival-hold": 113,
+          "eco-speed-window": 93,
+          "arrival-smoothing": 22
+        },
+        "berth-crane": {
+          "berth-crane-hold": 56,
+          "berth-reassign": 31,
+          "crane-rebalance": 141
+        },
+        "yard-gate": {
+          "yard-gate-hold": 228,
+          "yard-block-rebalance": 0,
+          "gate-slot-smoothing": 0
+        },
+        "horizontal-transport": {
+          "horizontal-hold": 211,
+          "agv-rebalance": 17,
+          "truck-pool-rebalance": 0
+        },
+        "navigation-resources": {
+          "navigation-hold": 58,
+          "pilot-tug-priority": 169,
+          "tide-window-sequence": 1
+        },
+        "energy-storage": {
+          "energy-hold": 0,
+          "shore-power-priority": 157,
+          "battery-peak-shave": 71
+        },
+        "reefer-building-load": {
+          "flex-load-hold": 65,
+          "reefer-load-coordinate": 0,
+          "building-demand-response": 163
+        },
+        "equipment-maintenance": {
+          "maintenance-hold": 147,
+          "preventive-maintenance-window": 72,
+          "fault-recovery-priority": 9
+        },
+        "intermodal-network": {
+          "intermodal-hold": 190,
+          "rail-barge-rebalance": 0,
+          "neighbor-port-advisory": 38
+        },
+        "disruption-recovery": {
+          "recovery-hold": 227,
+          "recovery-capacity": 1,
+          "controlled-backlog-release": 0
+        }
+      }
+    },
+    {
+      "scenarioId": "demand-surge",
+      "policyKind": "reinforcement-learning",
+      "algorithmId": "factorized-fitted-policy-iteration",
+      "metrics": {
+        "meanReward": 0.194507,
+        "meanWaitingHours": 0.044912,
+        "meanQueueVessels": 62.459426,
+        "throughputRetentionPercent": 99.613158,
+        "yardOverflowRatePercent": 0,
+        "gateSlaBreachRatePercent": 0,
+        "horizontalAvailabilityPercent": 96.386404,
+        "energyCostIndex": 1.023541,
+        "peakGridRatioPercent": 64.470531,
+        "carbonIntensity": 1.026492,
+        "reeferServicePercent": 99.6,
+        "maintenanceBacklog": 0.019893,
+        "fairnessGapPercent": 15.836222,
+        "recoveryBacklogVessels": 0,
+        "interventionRatePercent": 43.684211,
+        "safetyProjectionRatePercent": 0,
+        "hardConstraintViolations": 0
+      },
+      "domainActionCounts": {
+        "arrival-flow": {
+          "arrival-hold": 108,
+          "eco-speed-window": 99,
+          "arrival-smoothing": 21
+        },
+        "berth-crane": {
+          "berth-crane-hold": 46,
+          "berth-reassign": 31,
+          "crane-rebalance": 151
+        },
+        "yard-gate": {
+          "yard-gate-hold": 228,
+          "yard-block-rebalance": 0,
+          "gate-slot-smoothing": 0
+        },
+        "horizontal-transport": {
+          "horizontal-hold": 212,
+          "agv-rebalance": 16,
+          "truck-pool-rebalance": 0
+        },
+        "navigation-resources": {
+          "navigation-hold": 62,
+          "pilot-tug-priority": 165,
+          "tide-window-sequence": 1
+        },
+        "energy-storage": {
+          "energy-hold": 0,
+          "shore-power-priority": 157,
+          "battery-peak-shave": 71
+        },
+        "reefer-building-load": {
+          "flex-load-hold": 65,
+          "reefer-load-coordinate": 0,
+          "building-demand-response": 163
+        },
+        "equipment-maintenance": {
+          "maintenance-hold": 147,
+          "preventive-maintenance-window": 72,
+          "fault-recovery-priority": 9
+        },
+        "intermodal-network": {
+          "intermodal-hold": 190,
+          "rail-barge-rebalance": 0,
+          "neighbor-port-advisory": 38
+        },
+        "disruption-recovery": {
+          "recovery-hold": 226,
+          "recovery-capacity": 2,
+          "controlled-backlog-release": 0
+        }
+      }
+    },
+    {
+      "scenarioId": "equipment-energy-stress",
+      "policyKind": "reinforcement-learning",
+      "algorithmId": "factorized-fitted-policy-iteration",
+      "metrics": {
+        "meanReward": 0.185963,
+        "meanWaitingHours": 0.007789,
+        "meanQueueVessels": 8.657984,
+        "throughputRetentionPercent": 99.37193,
+        "yardOverflowRatePercent": 0,
+        "gateSlaBreachRatePercent": 0,
+        "horizontalAvailabilityPercent": 94.740351,
+        "energyCostIndex": 1.268778,
+        "peakGridRatioPercent": 61.901401,
+        "carbonIntensity": 1.0376,
+        "reeferServicePercent": 99.6,
+        "maintenanceBacklog": 0.017018,
+        "fairnessGapPercent": 15.661932,
+        "recoveryBacklogVessels": 0,
+        "interventionRatePercent": 64.429825,
+        "safetyProjectionRatePercent": 0,
+        "hardConstraintViolations": 0
+      },
+      "domainActionCounts": {
+        "arrival-flow": {
+          "arrival-hold": 113,
+          "eco-speed-window": 22,
+          "arrival-smoothing": 93
+        },
+        "berth-crane": {
+          "berth-crane-hold": 6,
+          "berth-reassign": 0,
+          "crane-rebalance": 222
+        },
+        "yard-gate": {
+          "yard-gate-hold": 225,
+          "yard-block-rebalance": 3,
+          "gate-slot-smoothing": 0
+        },
+        "horizontal-transport": {
+          "horizontal-hold": 5,
+          "agv-rebalance": 223,
+          "truck-pool-rebalance": 0
+        },
+        "navigation-resources": {
+          "navigation-hold": 46,
+          "pilot-tug-priority": 182,
+          "tide-window-sequence": 0
+        },
+        "energy-storage": {
+          "energy-hold": 0,
+          "shore-power-priority": 157,
+          "battery-peak-shave": 71
+        },
+        "reefer-building-load": {
+          "flex-load-hold": 0,
+          "reefer-load-coordinate": 0,
+          "building-demand-response": 228
+        },
+        "equipment-maintenance": {
+          "maintenance-hold": 0,
+          "preventive-maintenance-window": 0,
+          "fault-recovery-priority": 228
+        },
+        "intermodal-network": {
+          "intermodal-hold": 190,
+          "rail-barge-rebalance": 0,
+          "neighbor-port-advisory": 38
+        },
+        "disruption-recovery": {
+          "recovery-hold": 226,
+          "recovery-capacity": 2,
+          "controlled-backlog-release": 0
+        }
+      }
+    },
+    {
+      "scenarioId": "disruption-recovery",
+      "policyKind": "reinforcement-learning",
+      "algorithmId": "factorized-fitted-policy-iteration",
+      "metrics": {
+        "meanReward": 0.159113,
+        "meanWaitingHours": 0.177755,
+        "meanQueueVessels": 220.501108,
+        "throughputRetentionPercent": 99.50614,
+        "yardOverflowRatePercent": 0,
+        "gateSlaBreachRatePercent": 0,
+        "horizontalAvailabilityPercent": 92.379825,
+        "energyCostIndex": 1.028538,
+        "peakGridRatioPercent": 65.674151,
+        "carbonIntensity": 1.035127,
+        "reeferServicePercent": 99.6,
+        "maintenanceBacklog": 0.057102,
+        "fairnessGapPercent": 15.879586,
+        "recoveryBacklogVessels": 0,
+        "interventionRatePercent": 61.315789,
+        "safetyProjectionRatePercent": 0,
+        "hardConstraintViolations": 0
+      },
+      "domainActionCounts": {
+        "arrival-flow": {
+          "arrival-hold": 108,
+          "eco-speed-window": 64,
+          "arrival-smoothing": 56
+        },
+        "berth-crane": {
+          "berth-crane-hold": 14,
+          "berth-reassign": 2,
+          "crane-rebalance": 212
+        },
+        "yard-gate": {
+          "yard-gate-hold": 226,
+          "yard-block-rebalance": 2,
+          "gate-slot-smoothing": 0
+        },
+        "horizontal-transport": {
+          "horizontal-hold": 5,
+          "agv-rebalance": 223,
+          "truck-pool-rebalance": 0
+        },
+        "navigation-resources": {
+          "navigation-hold": 49,
+          "pilot-tug-priority": 179,
+          "tide-window-sequence": 0
+        },
+        "energy-storage": {
+          "energy-hold": 0,
+          "shore-power-priority": 157,
+          "battery-peak-shave": 71
+        },
+        "reefer-building-load": {
+          "flex-load-hold": 69,
+          "reefer-load-coordinate": 0,
+          "building-demand-response": 159
+        },
+        "equipment-maintenance": {
+          "maintenance-hold": 0,
+          "preventive-maintenance-window": 0,
+          "fault-recovery-priority": 228
+        },
+        "intermodal-network": {
+          "intermodal-hold": 195,
+          "rail-barge-rebalance": 0,
+          "neighbor-port-advisory": 33
+        },
+        "disruption-recovery": {
+          "recovery-hold": 216,
+          "recovery-capacity": 12,
+          "controlled-backlog-release": 0
+        }
+      }
+    }
+  ],
+  "baselines": [
+    {
+      "scenarioId": "chronological-replay",
+      "policyKind": "standard-operating-procedure",
+      "algorithmId": "standard-operating-procedure",
+      "metrics": {
+        "meanReward": 0.164783,
+        "meanWaitingHours": 0.06162,
+        "meanQueueVessels": 83.664417,
+        "throughputRetentionPercent": 100,
+        "yardOverflowRatePercent": 0,
+        "gateSlaBreachRatePercent": 0,
+        "horizontalAvailabilityPercent": 96.140789,
+        "energyCostIndex": 1.052287,
+        "peakGridRatioPercent": 66.911345,
+        "carbonIntensity": 1.103969,
+        "reeferServicePercent": 99.6,
+        "maintenanceBacklog": 0.065999,
+        "fairnessGapPercent": 22.070026,
+        "recoveryBacklogVessels": 5.833103,
+        "interventionRatePercent": 0.04386,
+        "safetyProjectionRatePercent": 0,
+        "hardConstraintViolations": 0
+      },
+      "domainActionCounts": {
+        "arrival-flow": {
+          "arrival-hold": 228,
+          "eco-speed-window": 0,
+          "arrival-smoothing": 0
+        },
+        "berth-crane": {
+          "berth-crane-hold": 228,
+          "berth-reassign": 0,
+          "crane-rebalance": 0
+        },
+        "yard-gate": {
+          "yard-gate-hold": 228,
+          "yard-block-rebalance": 0,
+          "gate-slot-smoothing": 0
+        },
+        "horizontal-transport": {
+          "horizontal-hold": 228,
+          "agv-rebalance": 0,
+          "truck-pool-rebalance": 0
+        },
+        "navigation-resources": {
+          "navigation-hold": 228,
+          "pilot-tug-priority": 0,
+          "tide-window-sequence": 0
+        },
+        "energy-storage": {
+          "energy-hold": 228,
+          "shore-power-priority": 0,
+          "battery-peak-shave": 0
+        },
+        "reefer-building-load": {
+          "flex-load-hold": 228,
+          "reefer-load-coordinate": 0,
+          "building-demand-response": 0
+        },
+        "equipment-maintenance": {
+          "maintenance-hold": 227,
+          "preventive-maintenance-window": 0,
+          "fault-recovery-priority": 1
+        },
+        "intermodal-network": {
+          "intermodal-hold": 228,
+          "rail-barge-rebalance": 0,
+          "neighbor-port-advisory": 0
+        },
+        "disruption-recovery": {
+          "recovery-hold": 228,
+          "recovery-capacity": 0,
+          "controlled-backlog-release": 0
+        }
+      }
+    },
+    {
+      "scenarioId": "demand-surge",
+      "policyKind": "standard-operating-procedure",
+      "algorithmId": "standard-operating-procedure",
+      "metrics": {
+        "meanReward": 0.062671,
+        "meanWaitingHours": 2.703,
+        "meanQueueVessels": 3840.683427,
+        "throughputRetentionPercent": 99.542105,
+        "yardOverflowRatePercent": 0,
+        "gateSlaBreachRatePercent": 0,
+        "horizontalAvailabilityPercent": 96.140789,
+        "energyCostIndex": 1.053689,
+        "peakGridRatioPercent": 68.667164,
+        "carbonIntensity": 1.103793,
+        "reeferServicePercent": 99.6,
+        "maintenanceBacklog": 0.065999,
+        "fairnessGapPercent": 23.797417,
+        "recoveryBacklogVessels": 6.533075,
+        "interventionRatePercent": 5.350877,
+        "safetyProjectionRatePercent": 0,
+        "hardConstraintViolations": 0
+      },
+      "domainActionCounts": {
+        "arrival-flow": {
+          "arrival-hold": 141,
+          "eco-speed-window": 0,
+          "arrival-smoothing": 87
+        },
+        "berth-crane": {
+          "berth-crane-hold": 228,
+          "berth-reassign": 0,
+          "crane-rebalance": 0
+        },
+        "yard-gate": {
+          "yard-gate-hold": 195,
+          "yard-block-rebalance": 33,
+          "gate-slot-smoothing": 0
+        },
+        "horizontal-transport": {
+          "horizontal-hold": 228,
+          "agv-rebalance": 0,
+          "truck-pool-rebalance": 0
+        },
+        "navigation-resources": {
+          "navigation-hold": 228,
+          "pilot-tug-priority": 0,
+          "tide-window-sequence": 0
+        },
+        "energy-storage": {
+          "energy-hold": 227,
+          "shore-power-priority": 0,
+          "battery-peak-shave": 1
+        },
+        "reefer-building-load": {
+          "flex-load-hold": 228,
+          "reefer-load-coordinate": 0,
+          "building-demand-response": 0
+        },
+        "equipment-maintenance": {
+          "maintenance-hold": 227,
+          "preventive-maintenance-window": 0,
+          "fault-recovery-priority": 1
+        },
+        "intermodal-network": {
+          "intermodal-hold": 228,
+          "rail-barge-rebalance": 0,
+          "neighbor-port-advisory": 0
+        },
+        "disruption-recovery": {
+          "recovery-hold": 228,
+          "recovery-capacity": 0,
+          "controlled-backlog-release": 0
+        }
+      }
+    },
+    {
+      "scenarioId": "equipment-energy-stress",
+      "policyKind": "standard-operating-procedure",
+      "algorithmId": "standard-operating-procedure",
+      "metrics": {
+        "meanReward": 0.117486,
+        "meanWaitingHours": 0.06162,
+        "meanQueueVessels": 83.664417,
+        "throughputRetentionPercent": 100,
+        "yardOverflowRatePercent": 0,
+        "gateSlaBreachRatePercent": 0,
+        "horizontalAvailabilityPercent": 91.317105,
+        "energyCostIndex": 1.304835,
+        "peakGridRatioPercent": 66.911345,
+        "carbonIntensity": 1.103969,
+        "reeferServicePercent": 99.6,
+        "maintenanceBacklog": 0.201414,
+        "fairnessGapPercent": 22.070026,
+        "recoveryBacklogVessels": 200.315032,
+        "interventionRatePercent": 0.04386,
+        "safetyProjectionRatePercent": 0,
+        "hardConstraintViolations": 0
+      },
+      "domainActionCounts": {
+        "arrival-flow": {
+          "arrival-hold": 228,
+          "eco-speed-window": 0,
+          "arrival-smoothing": 0
+        },
+        "berth-crane": {
+          "berth-crane-hold": 228,
+          "berth-reassign": 0,
+          "crane-rebalance": 0
+        },
+        "yard-gate": {
+          "yard-gate-hold": 228,
+          "yard-block-rebalance": 0,
+          "gate-slot-smoothing": 0
+        },
+        "horizontal-transport": {
+          "horizontal-hold": 228,
+          "agv-rebalance": 0,
+          "truck-pool-rebalance": 0
+        },
+        "navigation-resources": {
+          "navigation-hold": 228,
+          "pilot-tug-priority": 0,
+          "tide-window-sequence": 0
+        },
+        "energy-storage": {
+          "energy-hold": 228,
+          "shore-power-priority": 0,
+          "battery-peak-shave": 0
+        },
+        "reefer-building-load": {
+          "flex-load-hold": 228,
+          "reefer-load-coordinate": 0,
+          "building-demand-response": 0
+        },
+        "equipment-maintenance": {
+          "maintenance-hold": 227,
+          "preventive-maintenance-window": 0,
+          "fault-recovery-priority": 1
+        },
+        "intermodal-network": {
+          "intermodal-hold": 228,
+          "rail-barge-rebalance": 0,
+          "neighbor-port-advisory": 0
+        },
+        "disruption-recovery": {
+          "recovery-hold": 228,
+          "recovery-capacity": 0,
+          "controlled-backlog-release": 0
+        }
+      }
+    },
+    {
+      "scenarioId": "disruption-recovery",
+      "policyKind": "standard-operating-procedure",
+      "algorithmId": "standard-operating-procedure",
+      "metrics": {
+        "meanReward": -0.163069,
+        "meanWaitingHours": 7.949733,
+        "meanQueueVessels": 12779.31253,
+        "throughputRetentionPercent": 99.278947,
+        "yardOverflowRatePercent": 44.298246,
+        "gateSlaBreachRatePercent": 0,
+        "horizontalAvailabilityPercent": 88.956579,
+        "energyCostIndex": 1.054719,
+        "peakGridRatioPercent": 69.886207,
+        "carbonIntensity": 1.103793,
+        "reeferServicePercent": 98.894903,
+        "maintenanceBacklog": 0.266762,
+        "fairnessGapPercent": 28.480095,
+        "recoveryBacklogVessels": 205.610163,
+        "interventionRatePercent": 12.675439,
+        "safetyProjectionRatePercent": 0,
+        "hardConstraintViolations": 0
+      },
+      "domainActionCounts": {
+        "arrival-flow": {
+          "arrival-hold": 91,
+          "eco-speed-window": 0,
+          "arrival-smoothing": 137
+        },
+        "berth-crane": {
+          "berth-crane-hold": 228,
+          "berth-reassign": 0,
+          "crane-rebalance": 0
+        },
+        "yard-gate": {
+          "yard-gate-hold": 80,
+          "yard-block-rebalance": 148,
+          "gate-slot-smoothing": 0
+        },
+        "horizontal-transport": {
+          "horizontal-hold": 228,
+          "agv-rebalance": 0,
+          "truck-pool-rebalance": 0
+        },
+        "navigation-resources": {
+          "navigation-hold": 228,
+          "pilot-tug-priority": 0,
+          "tide-window-sequence": 0
+        },
+        "energy-storage": {
+          "energy-hold": 227,
+          "shore-power-priority": 0,
+          "battery-peak-shave": 1
+        },
+        "reefer-building-load": {
+          "flex-load-hold": 228,
+          "reefer-load-coordinate": 0,
+          "building-demand-response": 0
+        },
+        "equipment-maintenance": {
+          "maintenance-hold": 225,
+          "preventive-maintenance-window": 0,
+          "fault-recovery-priority": 3
+        },
+        "intermodal-network": {
+          "intermodal-hold": 228,
+          "rail-barge-rebalance": 0,
+          "neighbor-port-advisory": 0
+        },
+        "disruption-recovery": {
+          "recovery-hold": 228,
+          "recovery-capacity": 0,
+          "controlled-backlog-release": 0
+        }
+      }
+    }
+  ],
+  "oldEvaluations": [
+    {
+      "scenarioId": "chronological-replay",
+      "policyKind": "reinforcement-learning",
+      "algorithmId": "factorized-linear-dyna-q",
+      "metrics": {
+        "meanReward": 0.186652,
+        "meanWaitingHours": 0.036007,
+        "meanQueueVessels": 48.021092,
+        "throughputRetentionPercent": 99.564912,
+        "yardOverflowRatePercent": 0,
+        "gateSlaBreachRatePercent": 0,
+        "horizontalAvailabilityPercent": 96.275877,
+        "energyCostIndex": 1.047264,
+        "peakGridRatioPercent": 65.463438,
+        "carbonIntensity": 1.09405,
+        "reeferServicePercent": 99.619298,
+        "maintenanceBacklog": 0.050267,
+        "fairnessGapPercent": 20.430064,
+        "recoveryBacklogVessels": 0,
+        "interventionRatePercent": 17.675439,
+        "safetyProjectionRatePercent": 0,
+        "hardConstraintViolations": 0
+      },
+      "domainActionCounts": {
+        "arrival-flow": {
+          "arrival-hold": 181,
+          "eco-speed-window": 2,
+          "arrival-smoothing": 45
+        },
+        "berth-crane": {
+          "berth-crane-hold": 156,
+          "berth-reassign": 1,
+          "crane-rebalance": 71
+        },
+        "yard-gate": {
+          "yard-gate-hold": 215,
+          "yard-block-rebalance": 0,
+          "gate-slot-smoothing": 13
+        },
+        "horizontal-transport": {
+          "horizontal-hold": 217,
+          "agv-rebalance": 0,
+          "truck-pool-rebalance": 11
+        },
+        "navigation-resources": {
+          "navigation-hold": 173,
+          "pilot-tug-priority": 39,
+          "tide-window-sequence": 16
+        },
+        "energy-storage": {
+          "energy-hold": 178,
+          "shore-power-priority": 0,
+          "battery-peak-shave": 50
+        },
+        "reefer-building-load": {
+          "flex-load-hold": 216,
+          "reefer-load-coordinate": 11,
+          "building-demand-response": 1
+        },
+        "equipment-maintenance": {
+          "maintenance-hold": 207,
+          "preventive-maintenance-window": 13,
+          "fault-recovery-priority": 8
+        },
+        "intermodal-network": {
+          "intermodal-hold": 106,
+          "rail-barge-rebalance": 64,
+          "neighbor-port-advisory": 58
+        },
+        "disruption-recovery": {
+          "recovery-hold": 228,
+          "recovery-capacity": 0,
+          "controlled-backlog-release": 0
+        }
+      }
+    },
+    {
+      "scenarioId": "demand-surge",
+      "policyKind": "reinforcement-learning",
+      "algorithmId": "factorized-linear-dyna-q",
+      "metrics": {
+        "meanReward": -0.042499,
+        "meanWaitingHours": 6.2411,
+        "meanQueueVessels": 9025.263069,
+        "throughputRetentionPercent": 99.976316,
+        "yardOverflowRatePercent": 48.684211,
+        "gateSlaBreachRatePercent": 0,
+        "horizontalAvailabilityPercent": 96.377193,
+        "energyCostIndex": 1.049362,
+        "peakGridRatioPercent": 67.568552,
+        "carbonIntensity": 1.097226,
+        "reeferServicePercent": 98.932245,
+        "maintenanceBacklog": 0.062272,
+        "fairnessGapPercent": 26.404156,
+        "recoveryBacklogVessels": 1.495656,
+        "interventionRatePercent": 11.578947,
+        "safetyProjectionRatePercent": 0,
+        "hardConstraintViolations": 0
+      },
+      "domainActionCounts": {
+        "arrival-flow": {
+          "arrival-hold": 226,
+          "eco-speed-window": 0,
+          "arrival-smoothing": 2
+        },
+        "berth-crane": {
+          "berth-crane-hold": 165,
+          "berth-reassign": 1,
+          "crane-rebalance": 62
+        },
+        "yard-gate": {
+          "yard-gate-hold": 180,
+          "yard-block-rebalance": 0,
+          "gate-slot-smoothing": 48
+        },
+        "horizontal-transport": {
+          "horizontal-hold": 209,
+          "agv-rebalance": 1,
+          "truck-pool-rebalance": 18
+        },
+        "navigation-resources": {
+          "navigation-hold": 212,
+          "pilot-tug-priority": 14,
+          "tide-window-sequence": 2
+        },
+        "energy-storage": {
+          "energy-hold": 201,
+          "shore-power-priority": 0,
+          "battery-peak-shave": 27
+        },
+        "reefer-building-load": {
+          "flex-load-hold": 187,
+          "reefer-load-coordinate": 38,
+          "building-demand-response": 3
+        },
+        "equipment-maintenance": {
+          "maintenance-hold": 221,
+          "preventive-maintenance-window": 5,
+          "fault-recovery-priority": 2
+        },
+        "intermodal-network": {
+          "intermodal-hold": 187,
+          "rail-barge-rebalance": 38,
+          "neighbor-port-advisory": 3
+        },
+        "disruption-recovery": {
+          "recovery-hold": 228,
+          "recovery-capacity": 0,
+          "controlled-backlog-release": 0
+        }
+      }
+    },
+    {
+      "scenarioId": "equipment-energy-stress",
+      "policyKind": "reinforcement-learning",
+      "algorithmId": "factorized-linear-dyna-q",
+      "metrics": {
+        "meanReward": 0.132736,
+        "meanWaitingHours": 0.027532,
+        "meanQueueVessels": 35.88608,
+        "throughputRetentionPercent": 99.535088,
+        "yardOverflowRatePercent": 0,
+        "gateSlaBreachRatePercent": 0,
+        "horizontalAvailabilityPercent": 93.960526,
+        "energyCostIndex": 1.295106,
+        "peakGridRatioPercent": 64.997215,
+        "carbonIntensity": 1.084166,
+        "reeferServicePercent": 99.603509,
+        "maintenanceBacklog": 0.029061,
+        "fairnessGapPercent": 21.763627,
+        "recoveryBacklogVessels": 164.672369,
+        "interventionRatePercent": 32.061404,
+        "safetyProjectionRatePercent": 0,
+        "hardConstraintViolations": 0
+      },
+      "domainActionCounts": {
+        "arrival-flow": {
+          "arrival-hold": 224,
+          "eco-speed-window": 1,
+          "arrival-smoothing": 3
+        },
+        "berth-crane": {
+          "berth-crane-hold": 223,
+          "berth-reassign": 0,
+          "crane-rebalance": 5
+        },
+        "yard-gate": {
+          "yard-gate-hold": 228,
+          "yard-block-rebalance": 0,
+          "gate-slot-smoothing": 0
+        },
+        "horizontal-transport": {
+          "horizontal-hold": 23,
+          "agv-rebalance": 41,
+          "truck-pool-rebalance": 164
+        },
+        "navigation-resources": {
+          "navigation-hold": 220,
+          "pilot-tug-priority": 8,
+          "tide-window-sequence": 0
+        },
+        "energy-storage": {
+          "energy-hold": 122,
+          "shore-power-priority": 35,
+          "battery-peak-shave": 71
+        },
+        "reefer-building-load": {
+          "flex-load-hold": 226,
+          "reefer-load-coordinate": 2,
+          "building-demand-response": 0
+        },
+        "equipment-maintenance": {
+          "maintenance-hold": 19,
+          "preventive-maintenance-window": 2,
+          "fault-recovery-priority": 207
+        },
+        "intermodal-network": {
+          "intermodal-hold": 55,
+          "rail-barge-rebalance": 3,
+          "neighbor-port-advisory": 170
+        },
+        "disruption-recovery": {
+          "recovery-hold": 209,
+          "recovery-capacity": 19,
+          "controlled-backlog-release": 0
+        }
+      }
+    },
+    {
+      "scenarioId": "disruption-recovery",
+      "policyKind": "reinforcement-learning",
+      "algorithmId": "factorized-linear-dyna-q",
+      "metrics": {
+        "meanReward": -0.265354,
+        "meanWaitingHours": 9.255153,
+        "meanQueueVessels": 21648.834251,
+        "throughputRetentionPercent": 99.928947,
+        "yardOverflowRatePercent": 70.614035,
+        "gateSlaBreachRatePercent": 0,
+        "horizontalAvailabilityPercent": 89.217544,
+        "energyCostIndex": 1.050381,
+        "peakGridRatioPercent": 68.837702,
+        "carbonIntensity": 1.097284,
+        "reeferServicePercent": 98.588324,
+        "maintenanceBacklog": 0.258038,
+        "fairnessGapPercent": 35.368575,
+        "recoveryBacklogVessels": 116.641015,
+        "interventionRatePercent": 11.798246,
+        "safetyProjectionRatePercent": 0,
+        "hardConstraintViolations": 0
+      },
+      "domainActionCounts": {
+        "arrival-flow": {
+          "arrival-hold": 222,
+          "eco-speed-window": 0,
+          "arrival-smoothing": 6
+        },
+        "berth-crane": {
+          "berth-crane-hold": 181,
+          "berth-reassign": 0,
+          "crane-rebalance": 47
+        },
+        "yard-gate": {
+          "yard-gate-hold": 183,
+          "yard-block-rebalance": 0,
+          "gate-slot-smoothing": 45
+        },
+        "horizontal-transport": {
+          "horizontal-hold": 207,
+          "agv-rebalance": 1,
+          "truck-pool-rebalance": 20
+        },
+        "navigation-resources": {
+          "navigation-hold": 227,
+          "pilot-tug-priority": 0,
+          "tide-window-sequence": 1
+        },
+        "energy-storage": {
+          "energy-hold": 206,
+          "shore-power-priority": 0,
+          "battery-peak-shave": 22
+        },
+        "reefer-building-load": {
+          "flex-load-hold": 181,
+          "reefer-load-coordinate": 46,
+          "building-demand-response": 1
+        },
+        "equipment-maintenance": {
+          "maintenance-hold": 213,
+          "preventive-maintenance-window": 5,
+          "fault-recovery-priority": 10
+        },
+        "intermodal-network": {
+          "intermodal-hold": 165,
+          "rail-barge-rebalance": 49,
+          "neighbor-port-advisory": 14
+        },
+        "disruption-recovery": {
+          "recovery-hold": 226,
+          "recovery-capacity": 2,
+          "controlled-backlog-release": 0
+        }
+      }
+    }
+  ],
+  "agreement": {
+    "meanVoteShare": 0.9446491228070146,
+    "belowMinimumVotePercent": 3.1140350877192984,
+    "blockedRecordPercent": 0,
+    "reasons": {},
+    "domainActions": {
+      "arrival-flow": 115,
+      "berth-crane": 172,
+      "yard-gate": 0,
+      "horizontal-transport": 17,
+      "navigation-resources": 170,
+      "energy-storage": 228,
+      "reefer-building-load": 163,
+      "equipment-maintenance": 81,
+      "intermodal-network": 38,
+      "disruption-recovery": 1
+    }
+  },
+  "oldAgreement": {
+    "meanVoteShare": 0.763947368421051,
+    "belowMinimumVotePercent": 17.412280701754383,
+    "blockedRecordPercent": 22.807017543859647,
+    "reasons": {
+      "throughputNonRegression": 17,
+      "atLeastOneActiveDomain": 35
+    },
+    "domainActions": {
+      "arrival-flow": 47,
+      "berth-crane": 72,
+      "yard-gate": 13,
+      "horizontal-transport": 11,
+      "navigation-resources": 55,
+      "energy-storage": 50,
+      "reefer-building-load": 12,
+      "equipment-maintenance": 21,
+      "intermodal-network": 122,
+      "disruption-recovery": 0
+    }
+  }
+}

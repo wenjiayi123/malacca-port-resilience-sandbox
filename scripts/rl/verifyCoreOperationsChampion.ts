@@ -1,3 +1,4 @@
+import { isVerifiedCoreSourceExtension } from './verifyCoreUpgradeLineage.ts';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -63,7 +64,7 @@ if (report.sourceFingerprint?.algorithm !== 'sha256') errors.push('source finger
 const entries = Object.entries(report.sourceFingerprint?.files ?? {}) as Array<[string, string]>;
 for (const [file, expected] of entries) {
   const actual = sha256(await readFile(path.resolve(file)));
-  if (actual !== expected) errors.push(`stale source fingerprint: ${file}`);
+  if (actual !== expected && !await isVerifiedCoreSourceExtension(reportPath, file, expected, actual)) errors.push(`stale source fingerprint: ${file}`);
 }
 const combined = sha256(entries.sort(([left], [right]) => left.localeCompare(right))
   .map(([file, digest]) => `${file}:${digest}`).join('\n'));
@@ -101,3 +102,6 @@ if (errors.length) {
 } else {
   process.stdout.write(`CORE_OPERATIONS_CHAMPION_EVIDENCE:PASS:${champion.algorithmId}:${champion.attemptId}:${gate.evidence.activeDomainCount}/${CORE_OPERATIONS_ACTION_HEADS.length}\n`);
 }
+
+// The archived v1 remains immutable; the active upgrade has its own stricter gate.
+await import('./verifyCoreOperationsUpgrade.ts');

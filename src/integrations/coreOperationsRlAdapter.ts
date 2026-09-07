@@ -13,6 +13,8 @@ export type CoreOperationsDomain =
 export interface CoreOperationsChampionStatus {
   protocolVersion: 'core-operations-runtime-status.v1';
   generatedAt: string;
+  model?: { reportPath: string; sha256: string; selection: string; fallbackReason: string | null };
+  trainingConvergence?: Array<{ seed: number; passed: boolean; selectedIteration: number; maximumProbeChangePercent: number }> | null;
   evidenceLabel: string;
   contract: {
     version: 'core-operations-rl.v1';

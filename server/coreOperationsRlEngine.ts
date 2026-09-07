@@ -6,9 +6,9 @@ import {
   type CoreObservationId,
   type CoreOperationsDomain,
 } from '../shared/coreOperationsRlContract.ts';
-import type { PortBusinessDataset, PortBusinessRecord } from './portBusinessDataset.ts';
+import { PORT_BUSINESS_DATASET_REQUIRED_FIELDS, type PortBusinessDataset, type PortBusinessRecord } from './portBusinessDataset.ts';
 
-export type CoreOperationsRlAlgorithmId = 'factorized-linear-q' | 'factorized-linear-dyna-q';
+export type CoreOperationsRlAlgorithmId = 'factorized-linear-q' | 'factorized-linear-dyna-q' | 'factorized-fitted-policy-iteration';
 export type CoreEvaluationScenarioId =
   | 'chronological-replay'
   | 'demand-surge'
@@ -34,6 +34,8 @@ export interface CoreSafetyContext {
   maintenanceDueRatio: number;
   communicationAvailable: boolean;
   dataQualityScore: number;
+  /** Completeness is distinct from provenance confidence (public scenario data stays 0.56). */
+  inputCompletenessScore?: number;
 }
 
 export interface CoreObservationTensorItem {
@@ -287,6 +289,9 @@ const contextFromTraining = (
     maintenanceDueRatio: clamp(record.capacityLossRatio * 1.2 + (Number(record.sourceMonth.slice(-2)) % 5) * 0.03, 0, 1),
     communicationAvailable: record.dataQualityScore >= 0.45,
     dataQualityScore: record.dataQualityScore,
+    inputCompletenessScore: PORT_BUSINESS_DATASET_REQUIRED_FIELDS.map((key) => record[key]).every((value) =>
+      typeof value === 'number' ? Number.isFinite(value) :
+        typeof value === 'boolean' || (typeof value === 'string' && value.length > 0)) ? 1 : 0,
   };
 };
 
@@ -794,7 +799,7 @@ const sopPlan = (
 };
 
 export const evaluateCorePolicy = (
-  mode: { kind: 'reinforcement-learning'; policy: FactorizedCorePolicy } | { kind: 'standard-operating-procedure' },
+  mode: { kind: 'reinforcement-learning'; policy: FactorizedCorePolicy; ensemble?: FactorizedCorePolicy[] } | { kind: 'standard-operating-procedure' },
   records: PortBusinessRecord[],
   scenarioId: CoreEvaluationScenarioId,
 ): CoreEvaluationResult => {
@@ -816,7 +821,9 @@ export const evaluateCorePolicy = (
         const allowed = applicableChoiceIndexes(head.domain, head.choiceIds, observation.tensor, observation.context);
         choices[head.domain] = head.choiceIds[bestIndex(qValues(head.weights, features), allowed)];
       }
-      plan = { choices };
+      plan = mode.ensemble
+        ? resolveCoreRuntimePlan(mode.ensemble, observation.tensor, observation.context).executedPlan
+        : { choices };
     } else {
       plan = sopPlan(observation.tensor, observation.context);
     }
@@ -1114,3 +1121,38 @@ export const inferFactorizedCoreEnsemble = (
 export const CORE_OPERATIONS_RL_ALGORITHMS = [...algorithms] as const;
 export const CORE_OPERATIONS_EVALUATION_SCENARIOS = [...scenarios] as const;
 export const CORE_OPERATIONS_HOLD_CHOICES = { ...holdChoice };
+
+/** The same abstention, range and throughput gates are used in replay and serving. */
+export const resolveCoreRuntimePlan = (
+  policies: FactorizedCorePolicy[],
+  tensor: CoreObservationTensorItem[],
+  context: CoreSafetyContext,
+  offlineChampionAdmitted = true,
+) => {
+  const inference = inferFactorizedCoreEnsemble(policies, tensor, context);
+  const minimumVoteShare = 0.6;
+  const domainAbstentions = inference.heads.filter((head) => head.voteShare < minimumVoteShare).map((head) => head.domain);
+  const confidencePlan = { choices: { ...inference.requestedPlan.choices } };
+  for (const domain of domainAbstentions) confidencePlan.choices[domain] = holdChoice[domain];
+  const projection = projectCoreActionPlan(confidencePlan, context);
+  const effect = corePlanEffect(projection.executed);
+  const activeDomains = headDefinitions.filter((head) => projection.executed.choices[head.domain] !== holdChoice[head.domain]).map((head) => head.domain);
+  const checks = {
+    offlineChampionAdmitted,
+    dataQuality: (context.inputCompletenessScore ?? context.dataQualityScore) >= 0.95,
+    communicationAvailable: context.communicationAvailable,
+    observationRange: inference.outOfRangeObservationCount <= 3,
+    atLeastOneActiveDomain: activeDomains.length > 0,
+    throughputNonRegression: 100 * (1 - effect.defer - effect.divert) >= 98.5,
+    safetyProjectionClean: projection.modifiedDomains.length === 0,
+  };
+  return {
+    inference, minimumVoteShare, domainAbstentions, projection, effect, activeDomains, checks,
+    executedPlan: Object.values(checks).every(Boolean) ? projection.executed : createHoldCorePlan(),
+  };
+};
+/** Shared simulator kernel; the historical learners and calibration stay unchanged. */
+export const CORE_TRAINING_KERNEL = {
+  seededRandom, planFeatures, dot, qValues, bestIndex, initialState, transition,
+  applicableChoiceIndexes, scenarioRecords, sopPlan,
+};
