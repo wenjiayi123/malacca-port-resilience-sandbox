@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "godot-web-export-manifest.v1",
+  "generatedAt": "2026-09-12T09:35:21.786816+00:00",
+  "engineVersion": "4.7.1.stable.official.a13da4feb",
+  "exportPreset": "Malacca Web Simulator",
+  "source": {
+    "gitSha": "dc0624f5ee3b0bcbeb21f5c610b670bc8bb3778f",
+    "gitTree": "5cb8c1d54cf46d51565fcd70855e1291a7089ad6",
+    "commitDate": "2026-09-07T14:29:05+08:00",
+    "dirty": false,
+    "keyFiles": {
+      "project.godot": "135d482f0c9be3a5a719c8a625c3ff96f93e39a7c686883c333be8aa9ff288b2",
+      "main.tscn": "d7d80d769abb891c2a9519e9cb7a1c56d2b8f32a213e7edefabe78e03c371161",
+      "scripts/integration/malacca_validation_bridge.gd": "ccea0d891aeb526c8f30cf9c0387cee6be2c2371ac6e8de4c1f9f116c5abe72a",
+      "scripts/audio/ship_ambient_audio.gd": "42e2f7e6d966d407365be5dbf5449c121f659de9aac88e888b43d0bc1dba89bd",
+      "export_presets.cfg": "b96bbea15168617ecc044807ed9127d48f353ed6efd688109f560ba34221c4cb"
+    }
+  },
+  "sourceIsolatedBeforeImport": true,
+  "webCompatibility": {
+    "executionScope": "isolated-source-copy",
+    "patches": [
+      {
+        "id": "procedural-ambient-audio-stream-v1",
+        "file": "scripts/audio/ship_ambient_audio.gd",
+        "beforeSha256": "42e2f7e6d966d407365be5dbf5449c121f659de9aac88e888b43d0bc1dba89bd",
+        "afterSha256": "1c8726d990eba0ef85ca9a8cbb9387c4b2c4fd80fc34956b4e27a3f38f3e30df",
+        "reason": "The four AudioStreamGenerator channels require Stream playback; Web Sample playback cannot generate their frames."
+      }
+    ]
+  },
+  "artifacts": {
+    "index.html": {
+      "bytes": 5469,
+      "sha256": "20de4547b71f40529106c3a3bbf587d500a84f7857c93962376d3aa25ac8061c"
+    },
+    "index.js": {
+      "bytes": 279815,
+      "sha256": "68586d6daafc93c6e697b3fb258976874aa7459b8931165ebb1dc3c9614cc42c"
+    },
+    "index.pck": {
+      "bytes": 588161912,
+      "sha256": "754c3b8e7f9c15a84ab8e4dea421ddf15d6d319092db8e912cddb37ca202f825"
+    },
+    "index.wasm": {
+      "bytes": 39513091,
+      "sha256": "35116f68540ac41acf7d71ea457added91b5e960a9cca3e2acc72918eaf01277"
+    }
+  },
+  "authority": {
+    "simulationMode": true,
+    "productionAuthority": false
+  }
+}

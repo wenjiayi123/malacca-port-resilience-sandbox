@@ -1096,9 +1096,10 @@
 }
 
 .rl-training-sticky-console {
-  position: sticky;
+  /* Scroll with the cards so focused controls cannot sit beneath this monitor. */
+  position: relative;
   z-index: 6;
-  top: -13px;
+  top: 0;
   display: grid;
   gap: 7px;
   padding-bottom: 7px;
@@ -1646,6 +1647,40 @@
 .micro-validation-action-row .micro-validation-button:last-of-type {
   grid-column: 1 / -1;
 }
+
+.micro-validation-actions.micro-validation-actions--native {
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+.micro-validation-actions--native .micro-validation-action-row {
+  flex: 0 0 auto;
+}
+
+.micro-validation-actions--native .micro-validation-button:last-of-type {
+  grid-column: auto;
+}
+
+.micro-validation-actions--native .micro-validation-feed {
+  flex: 1 0 68px;
+}
+
+.native-validation-status {
+  flex: 0 0 auto;
+  padding: 4px 6px;
+  border: 1px solid rgba(82, 205, 255, 0.25);
+  background: rgba(7, 31, 44, 0.8);
+  color: #c3e7f0;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.native-validation-status p { margin: 0; }
+.native-validation-status .native-validation-error { color: #ffacaa; }
+.native-validation-status > div { display: flex; gap: 12px; flex-wrap: wrap; }
+.native-validation-status button { padding: 3px 0; border: 0; background: transparent; color: #8ddbf6; font: inherit; text-decoration: underline; cursor: pointer; }
+.native-validation-status button:disabled { color: #6d8390; cursor: default; }
 
 .micro-validation-button .bilingual-label__zh,
 .micro-validation-button .bilingual-label__en {
@@ -4219,7 +4254,7 @@ button.alert-pill {
 
 .godot-simulator-dock {
   position: absolute;
-  z-index: 4;
+  z-index: 45;
   top: 92px;
   right: 320px;
   display: grid;
@@ -8047,7 +8082,7 @@ button.alert-pill {
 
 .rl-training-window {
   position: absolute;
-  z-index: 32;
+  z-index: 50;
   top: 54%;
   left: 50%;
   display: grid;
@@ -10486,6 +10521,7 @@ button.alert-pill {
 }
 
 .settings-popover {
+  z-index: 60;
   top: 72px;
   right: 18px;
   display: grid;
@@ -15027,5 +15063,69 @@ button.alert-pill {
     width: auto;
     min-width: 0;
     max-height: calc(100dvh - 78px);
+  }
+}
+
+/* Keep mode controls outside the map hit area and use a compact overview footer. */
+.dashboard-shell {
+  --map-control-left: 256px;
+  --map-control-right: 296px;
+}
+
+.map-surface-switch {
+  z-index: 4;
+  top: 184px;
+  right: var(--map-control-right);
+  left: var(--map-control-left);
+  min-height: 46px;
+  justify-content: center;
+  border-radius: 0;
+  transform: none;
+}
+
+.map-stage {
+  top: 234px;
+}
+
+.dashboard-shell--module-overview .bottom-console {
+  height: 150px;
+  grid-template-rows: minmax(0, 1fr) 38px;
+}
+
+.dashboard-shell--module-overview .map-stage,
+.dashboard-shell--module-overview .side-rail {
+  bottom: 150px;
+}
+
+.dashboard-shell--module-overview .event-feed {
+  overflow-y: auto;
+  align-content: start;
+}
+
+@media (max-width: 1400px) {
+  .dashboard-shell {
+    --map-control-left: 236px;
+    --map-control-right: 260px;
+  }
+}
+
+@media (max-width: 760px) {
+  .dashboard-shell {
+    --map-control-left: 0px;
+    --map-control-right: 0px;
+  }
+
+  .map-surface-switch {
+    top: 64px;
+    min-height: 46px;
+  }
+
+  .map-surface-switch button {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .map-stage {
+    top: 114px;
   }
 }

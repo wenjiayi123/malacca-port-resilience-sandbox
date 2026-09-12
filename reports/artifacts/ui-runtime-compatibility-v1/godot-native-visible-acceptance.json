@@ -1,0 +1,197 @@
+{
+  "schemaVersion": "godot-native-visible-acceptance.v1",
+  "startedAt": "2026-09-12T10:20:13.855Z",
+  "completedAt": "2026-09-12T10:20:32.249Z",
+  "job": {
+    "id": "5869bede-0628-4977-967e-2cfdd44420e8",
+    "requestId": "native-visible-20260912-1789208416449",
+    "vesselId": "vessel-001",
+    "status": "completed",
+    "createdAt": "2026-09-12T10:20:16.454Z",
+    "updatedAt": "2026-09-12T10:20:31.489Z",
+    "windowOpen": true,
+    "sourceGitSha": "dc0624f5ee3b0bcbeb21f5c610b670bc8bb3778f",
+    "pckSha256": "8b461d67a225d19fef03afb13770adce89e68486344756e0fa9b84eae3e3e473",
+    "result": {
+      "averageSpeedKnots": 11.62,
+      "carbonDeltaTons": 0,
+      "carbonModel": {
+        "co2TonsPerFuelTon": 3.114,
+        "hotelLoadKw": 12,
+        "measured": false,
+        "name": "cubic_propulsion_sfoc_v1",
+        "referencePropulsionPowerKw": 180,
+        "referenceSpeedKnots": 12,
+        "specificFuelConsumptionKgPerKwh": 0.205
+      },
+      "collisionCount": 0,
+      "delayDeltaMinutes": 0,
+      "estimatedTravelMinutes": 1.07,
+      "groundingCount": 0,
+      "loadedScene": {
+        "coordinateMapping": {
+          "baseBoxCount": 32,
+          "baseRockCount": 6,
+          "boundaryHalfExtent": 780,
+          "candidateCount": 2546,
+          "geographicCalibrationVerified": false,
+          "gridDivisions": 48,
+          "mappedDestination": {
+            "x": 561.601989746094,
+            "y": -140.734939575195,
+            "z": -218.277801513672
+          },
+          "mappedStart": {
+            "x": 328.201965332031,
+            "y": -140.734939575195,
+            "z": 73.8999938964844
+          },
+          "marginMeters": 56.4,
+          "mode": "translated",
+          "offset": {
+            "x": 393.448638916016,
+            "z": -30.9577865600586
+          },
+          "ok": true,
+          "originalDestination": {
+            "x": 168.153335571289,
+            "y": -140.734939575195,
+            "z": -187.320007324219
+          },
+          "originalProgressPercent": 88.2,
+          "originalStart": {
+            "x": -65.2466659545898,
+            "y": -140.734939575195,
+            "z": 104.857780456543
+          },
+          "reason": "base_terrain_segment_clear",
+          "riskObstaclesAppliedAfterMapping": true,
+          "routeLengthMeters": 373.956451416016,
+          "schemaVersion": "godot-web-coordinate-mapping.v1",
+          "selection": "minimum_translation_among_deterministic_candidates",
+          "translationMeters": 394.664703369141
+        },
+        "riskZoneCount": 0,
+        "routePointCount": 2,
+        "temporaryObstacleCount": 0
+      },
+      "minClearanceMeters": 228.8,
+      "reachedDestination": false,
+      "recommendedSpeedKnots": 11.2,
+      "requestId": "native-visible-20260912-1789208416449",
+      "riskEventResolvedCount": 0,
+      "riskLevel": "low",
+      "safePass": true,
+      "simulatedDurationSeconds": 2.01,
+      "status": "passed",
+      "summary": "验证通过：外部船舶参数已适配到 Godot，当前验证窗口内未触发碰撞或搁浅。",
+      "vesselId": "vessel-001"
+    }
+  },
+  "runtime": {
+    "displayDriver": "macOS",
+    "resultAtUnixSeconds": 1789208431.48421,
+    "sceneReadyAtUnixSeconds": 1789208428.20602,
+    "sceneScreenshotCaptured": true,
+    "scriptStartedAtUnixSeconds": 1789208419.58612
+  },
+  "afterClose": {
+    "id": "5869bede-0628-4977-967e-2cfdd44420e8",
+    "requestId": "native-visible-20260912-1789208416449",
+    "vesselId": "vessel-001",
+    "status": "completed",
+    "createdAt": "2026-09-12T10:20:16.454Z",
+    "updatedAt": "2026-09-12T10:20:32.251Z",
+    "windowOpen": false,
+    "sourceGitSha": "dc0624f5ee3b0bcbeb21f5c610b670bc8bb3778f",
+    "pckSha256": "8b461d67a225d19fef03afb13770adce89e68486344756e0fa9b84eae3e3e473",
+    "result": {
+      "averageSpeedKnots": 11.62,
+      "carbonDeltaTons": 0,
+      "carbonModel": {
+        "co2TonsPerFuelTon": 3.114,
+        "hotelLoadKw": 12,
+        "measured": false,
+        "name": "cubic_propulsion_sfoc_v1",
+        "referencePropulsionPowerKw": 180,
+        "referenceSpeedKnots": 12,
+        "specificFuelConsumptionKgPerKwh": 0.205
+      },
+      "collisionCount": 0,
+      "delayDeltaMinutes": 0,
+      "estimatedTravelMinutes": 1.07,
+      "groundingCount": 0,
+      "loadedScene": {
+        "coordinateMapping": {
+          "baseBoxCount": 32,
+          "baseRockCount": 6,
+          "boundaryHalfExtent": 780,
+          "candidateCount": 2546,
+          "geographicCalibrationVerified": false,
+          "gridDivisions": 48,
+          "mappedDestination": {
+            "x": 561.601989746094,
+            "y": -140.734939575195,
+            "z": -218.277801513672
+          },
+          "mappedStart": {
+            "x": 328.201965332031,
+            "y": -140.734939575195,
+            "z": 73.8999938964844
+          },
+          "marginMeters": 56.4,
+          "mode": "translated",
+          "offset": {
+            "x": 393.448638916016,
+            "z": -30.9577865600586
+          },
+          "ok": true,
+          "originalDestination": {
+            "x": 168.153335571289,
+            "y": -140.734939575195,
+            "z": -187.320007324219
+          },
+          "originalProgressPercent": 88.2,
+          "originalStart": {
+            "x": -65.2466659545898,
+            "y": -140.734939575195,
+            "z": 104.857780456543
+          },
+          "reason": "base_terrain_segment_clear",
+          "riskObstaclesAppliedAfterMapping": true,
+          "routeLengthMeters": 373.956451416016,
+          "schemaVersion": "godot-web-coordinate-mapping.v1",
+          "selection": "minimum_translation_among_deterministic_candidates",
+          "translationMeters": 394.664703369141
+        },
+        "riskZoneCount": 0,
+        "routePointCount": 2,
+        "temporaryObstacleCount": 0
+      },
+      "minClearanceMeters": 228.8,
+      "reachedDestination": false,
+      "recommendedSpeedKnots": 11.2,
+      "requestId": "native-visible-20260912-1789208416449",
+      "riskEventResolvedCount": 0,
+      "riskLevel": "low",
+      "safePass": true,
+      "simulatedDurationSeconds": 2.01,
+      "status": "passed",
+      "summary": "验证通过：外部船舶参数已适配到 Godot，当前验证窗口内未触发碰撞或搁浅。",
+      "vesselId": "vessel-001"
+    }
+  },
+  "screenshot": {
+    "file": "godot-native-visible-scene.png",
+    "sha256": "2cc1ff2d0270a64f20ce7b2697ce21132743306ebcef99f9f85f9294ec0131cf",
+    "width": 1920,
+    "height": 1080,
+    "reviewed": true
+  },
+  "passed": true,
+  "timing": {
+    "jobStartToSceneReadySeconds": 11.752,
+    "jobStartToResultSeconds": 15.03,
+    "physicalWindowSeconds": 2.01
+  }
+}

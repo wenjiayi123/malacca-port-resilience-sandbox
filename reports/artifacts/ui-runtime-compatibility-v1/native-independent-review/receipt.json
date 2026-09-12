@@ -1,0 +1,23 @@
+{
+  "exitCode": 0,
+  "wallSeconds": 11.771,
+  "timing": {
+    "engine": "4.7.1-stable (official)",
+    "milestonesMs": {
+      "afterInstantiate": 2525,
+      "afterLoad": 2506,
+      "afterSceneReady": 8393,
+      "beforeLoad": 260,
+      "beforeSubmit": 8545,
+      "initialize": 257,
+      "result": 10564,
+      "running": 8587
+    },
+    "minClearanceMeters": 228.8,
+    "mode": "headless_actual_pck",
+    "note": "Headless startup timing does not measure native GPU/window readiness.",
+    "resultStatus": "passed",
+    "safePass": true,
+    "simulatedDurationSeconds": 2.0
+  }
+}

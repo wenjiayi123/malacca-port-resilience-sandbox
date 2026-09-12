@@ -1,0 +1,86 @@
+{
+  "id": "3cb60dc7-a8c5-4824-95b4-c7effd597659",
+  "requestId": "malacca-demo-normal-transit-20260101023000-acc2bdf4-85fc-406c-afdb-77376d52388c",
+  "vesselId": "vessel-001",
+  "status": "completed",
+  "createdAt": "2026-09-12T10:25:04.055Z",
+  "updatedAt": "2026-09-12T10:26:44.176Z",
+  "windowOpen": false,
+  "sourceGitSha": "dc0624f5ee3b0bcbeb21f5c610b670bc8bb3778f",
+  "pckSha256": "8b461d67a225d19fef03afb13770adce89e68486344756e0fa9b84eae3e3e473",
+  "result": {
+    "averageSpeedKnots": 14.52,
+    "carbonDeltaTons": 0.0009,
+    "carbonModel": {
+      "co2TonsPerFuelTon": 3.114,
+      "hotelLoadKw": 12,
+      "measured": false,
+      "name": "cubic_propulsion_sfoc_v1",
+      "referencePropulsionPowerKw": 180,
+      "referenceSpeedKnots": 12,
+      "specificFuelConsumptionKgPerKwh": 0.205
+    },
+    "collisionCount": 0,
+    "delayDeltaMinutes": -0.02,
+    "estimatedTravelMinutes": 0.85,
+    "groundingCount": 0,
+    "loadedScene": {
+      "coordinateMapping": {
+        "baseBoxCount": 32,
+        "baseRockCount": 6,
+        "boundaryHalfExtent": 780,
+        "candidateCount": 2546,
+        "geographicCalibrationVerified": false,
+        "gridDivisions": 48,
+        "mappedDestination": {
+          "x": 565.898803710938,
+          "y": -140.734939575195,
+          "z": -218.953964233398
+        },
+        "mappedStart": {
+          "x": 332.498809814453,
+          "y": -140.734939575195,
+          "z": 73.2238235473633
+        },
+        "marginMeters": 57,
+        "mode": "translated",
+        "offset": {
+          "x": 397.745483398438,
+          "z": -31.6339569091797
+        },
+        "ok": true,
+        "originalDestination": {
+          "x": 168.153335571289,
+          "y": -140.734939575195,
+          "z": -187.320007324219
+        },
+        "originalProgressPercent": 14,
+        "originalStart": {
+          "x": -65.2466659545898,
+          "y": -140.734939575195,
+          "z": 104.857780456543
+        },
+        "reason": "base_terrain_segment_clear",
+        "riskObstaclesAppliedAfterMapping": true,
+        "routeLengthMeters": 373.956451416016,
+        "schemaVersion": "godot-web-coordinate-mapping.v1",
+        "selection": "minimum_translation_among_deterministic_candidates",
+        "translationMeters": 399.00146484375
+      },
+      "riskZoneCount": 0,
+      "routePointCount": 2,
+      "temporaryObstacleCount": 0
+    },
+    "minClearanceMeters": 89.43,
+    "reachedDestination": false,
+    "recommendedSpeedKnots": 14.2,
+    "requestId": "malacca-demo-normal-transit-20260101023000-acc2bdf4-85fc-406c-afdb-77376d52388c",
+    "riskEventResolvedCount": 0,
+    "riskLevel": "low",
+    "safePass": true,
+    "simulatedDurationSeconds": 2.13,
+    "status": "passed",
+    "summary": "\u9a8c\u8bc1\u901a\u8fc7\uff1a\u5916\u90e8\u8239\u8236\u53c2\u6570\u5df2\u9002\u914d\u5230 Godot\uff0c\u5f53\u524d\u9a8c\u8bc1\u7a97\u53e3\u5185\u672a\u89e6\u53d1\u78b0\u649e\u6216\u6401\u6d45\u3002",
+    "vesselId": "vessel-001"
+  }
+}

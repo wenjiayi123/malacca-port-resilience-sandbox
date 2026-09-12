@@ -1,0 +1,329 @@
+{
+  "schemaVersion": "operational-closure-acceptance.v2",
+  "generatedAt": "2026-09-12T10:42:48.820Z",
+  "evidenceLabel": "PUBLIC_DATA_CALIBRATED_SIMULATION_NOT_FIELD_KPI",
+  "authority": {
+    "simulation_mode": true,
+    "live_data_verified": false,
+    "dispatch_allowed": false,
+    "production_authority": false
+  },
+  "simulator": {
+    "seed": 240520,
+    "runId": "ops-1135cd3c-a52eac07",
+    "protocolVersion": "port-operations.telemetry.v1",
+    "firstSequence": 0,
+    "secondSequence": 2,
+    "firstSnapshotHash": "30620bfda304b607293859c730fc357f3b0606503e5592e1f17c0ad61e40f8e2",
+    "secondSnapshotHash": "155086bb14bad41f048cd402c746377ecdd145b040522ef3fbd4521b75503d64",
+    "changedContinuously": true,
+    "quality": {
+      "total_fields": 61,
+      "normal_fields": 61,
+      "degraded_fields": 0,
+      "measured_fields": 0,
+      "simulated_fields": 43,
+      "derived_fields": 18,
+      "completeness_percent": 100,
+      "consistency_checks": [
+        {
+          "id": "flow-conservation",
+          "passed": true,
+          "detail": "queue(t)=queue(t-1)+arrivals-diverted-serviced-control_relief"
+        },
+        {
+          "id": "yard-capacity",
+          "passed": true,
+          "detail": "0% ≤ yard occupancy ≤ 100%"
+        },
+        {
+          "id": "battery-envelope",
+          "passed": true,
+          "detail": "15% ≤ SOC ≤ 95%"
+        },
+        {
+          "id": "transformer-envelope",
+          "passed": true,
+          "detail": "grid load ≤ 18 MW transformer capacity"
+        },
+        {
+          "id": "causal-energy-link",
+          "passed": true,
+          "detail": "positive throughput requires positive equipment and grid energy"
+        }
+      ]
+    }
+  },
+  "forecast": {
+    "modelId": "mpa-train-only-exponential-smoothing-v1",
+    "modelHash": "02191efc030fa7050530066b83816c4046ca4d1df6010d62d29bed71c9fbb3fe",
+    "trainRows": 263,
+    "validationRows": 114,
+    "trainRmseVesselsPerMonth": 464,
+    "validationRmseVesselsPerMonth": 760.04,
+    "inputSnapshotHash": "30620bfda304b607293859c730fc357f3b0606503e5592e1f17c0ad61e40f8e2"
+  },
+  "groundedHandoff": {
+    "protocolVersion": "xiaoyi-operational-handoff.v1",
+    "generator": {
+      "id": "operations-grounded-explainer.v1",
+      "kind": "deterministic_state_grounding",
+      "model_used": false,
+      "disclosure": "这是后端状态规则生成的可审计底稿；只有 xiaoyi_model.status=connected 时才展示生成模型回答。"
+    },
+    "inputSnapshotHash": "155086bb14bad41f048cd402c746377ecdd145b040522ef3fbd4521b75503d64",
+    "traceCount": 4,
+    "productionAuthority": false
+  },
+  "control": {
+    "candidateCount": 5,
+    "controllers": [
+      {
+        "id": "fcfs",
+        "action": "hold-plan",
+        "eligible": true,
+        "rejectionReason": null
+      },
+      {
+        "id": "port-sop",
+        "action": "eco-speed",
+        "eligible": true,
+        "rejectionReason": null
+      },
+      {
+        "id": "operations-research",
+        "action": "capacity-control",
+        "eligible": true,
+        "rejectionReason": null
+      },
+      {
+        "id": "mpc",
+        "action": "capacity-control",
+        "eligible": true,
+        "rejectionReason": null
+      },
+      {
+        "id": "rl-checkpoint",
+        "action": "hold-plan",
+        "eligible": false,
+        "rejectionReason": "missing_completed_checkpoint_inference"
+      }
+    ],
+    "decisionStatusAfterExecution": "receipt-recorded",
+    "approvalCount": 2,
+    "receiptId": "receipt-f42a139bbf668889",
+    "kpiDelta": {
+      "queue_vessels": -1.2,
+      "delay_minutes": -4,
+      "throughput_teu": 25,
+      "energy_kwh": 5.85,
+      "peak_grid_kw": 23.4,
+      "cost_myr": 1.99,
+      "carbon_tons": 0.019,
+      "service_level_percent": 0.5,
+      "safety_risk_percent": -0.1,
+      "resilience_index": 1.3
+    },
+    "idempotentReplay": true,
+    "rollbackStatus": "rolled_back"
+  },
+  "coreOperationsControl": {
+    "champion": {
+      "admitted": true,
+      "algorithmId": "factorized-fitted-policy-iteration",
+      "attemptId": "source-month-grouped-02",
+      "seedPolicyCount": 5,
+      "actionHeadCount": 10
+    },
+    "proposalId": "core-b0777567c463a5cb687c",
+    "admissionStatus": "admitted_for_simulation_approval",
+    "activeDomains": [
+      "arrival-flow",
+      "berth-crane",
+      "navigation-resources",
+      "energy-storage",
+      "reefer-building-load",
+      "equipment-maintenance",
+      "disruption-recovery"
+    ],
+    "domainAbstentions": [],
+    "simulatedApprovals": [
+      {
+        "approverId": "acceptance-core-operator",
+        "role": "operator"
+      },
+      {
+        "approverId": "acceptance-core-safety",
+        "role": "safety_officer"
+      }
+    ],
+    "receipt": {
+      "protocol_version": "core-operations-simulation-receipt.v1",
+      "receipt_id": "core-receipt-16578ec1b679bc86",
+      "proposal_id": "core-b0777567c463a5cb687c",
+      "executor": "simulation-executor.v2-core-plan",
+      "status": "acknowledged",
+      "executed_at": "2025-12-31T17:15:00.000Z",
+      "input_snapshot_hash": "ef735a2c3a992b95d35a9d15a727f28015af61ba1aa2cf76573ccd1c5e22738b",
+      "output_snapshot_hash": "ebfe72d4cdfba6d44c2f3bc6b5065d261fa4f443377075cec51c802cf1fd438e",
+      "plan_hash": "37856e6225675b23eb643f1dc8f7ec9334aa0f8b0d8c10f3235003f3bcd3c36f",
+      "active_domains": [
+        "arrival-flow",
+        "berth-crane",
+        "navigation-resources",
+        "energy-storage",
+        "reefer-building-load",
+        "equipment-maintenance",
+        "disruption-recovery"
+      ],
+      "applied_effect": {
+        "remainingTicks": 8,
+        "queueRelief": 0.8,
+        "capacityMultiplier": 1.057692375,
+        "carbonMultiplier": 0.982,
+        "diversionFraction": 0,
+        "yardOutflowMultiplier": 1.1,
+        "gateOutflowMultiplier": 1.06,
+        "intermodalOutflowMultiplier": 1,
+        "energyLoadMultiplier": 0.973990383776,
+        "peakGridMultiplier": 0.86632,
+        "reeferPowerMultiplier": 0.99,
+        "equipmentAvailabilityBonus": 1,
+        "batteryPowerAdjustmentKw": 1200,
+        "maintenanceReliefCount": 2
+      },
+      "before_kpis": {
+        "queue_vessels": 8.8,
+        "delay_minutes": 25.4,
+        "throughput_teu": 3505,
+        "energy_kwh": 2796.5,
+        "peak_grid_kw": 11186,
+        "cost_myr": 950.81,
+        "carbon_tons": 1.622,
+        "service_level_percent": 39.1,
+        "safety_risk_percent": 4.1,
+        "resilience_index": 90
+      },
+      "after_kpis": {
+        "queue_vessels": 7,
+        "delay_minutes": 19.1,
+        "throughput_teu": 3530,
+        "energy_kwh": 2108.4,
+        "peak_grid_kw": 11186,
+        "cost_myr": 716.86,
+        "carbon_tons": 1.201,
+        "service_level_percent": 45.5,
+        "safety_risk_percent": 3.8,
+        "resilience_index": 92.2
+      },
+      "kpi_delta": {
+        "queue_vessels": -1.8,
+        "delay_minutes": -6.3,
+        "throughput_teu": 25,
+        "energy_kwh": -688.1,
+        "peak_grid_kw": 0,
+        "cost_myr": -233.95,
+        "carbon_tons": -0.421,
+        "service_level_percent": 6.4,
+        "safety_risk_percent": -0.3,
+        "resilience_index": 2.2
+      },
+      "domain_delta": {
+        "yard_occupancy_percent": 0.3,
+        "truck_turn_time_minutes": -0.7,
+        "maintenance_due_count": -1,
+        "active_faults": 0,
+        "transformer_loading_percent": -15.2,
+        "battery_soc_percent": 0,
+        "reefer_power_kw": -12.9,
+        "rail_transfer_teu": 0,
+        "water_transfer_teu": 4.7
+      },
+      "counterfactual": {
+        "design": "same_state_same_seed_same_tick_new_rl_plan_vs_continue_current_plan",
+        "baseline_output_snapshot_hash": "b043ebf7f654162a341cafc0aa7b05f2890b8007b6757f415fc3ee6f479eadc0",
+        "baseline_kpis": {
+          "queue_vessels": 7.8,
+          "delay_minutes": 22.5,
+          "throughput_teu": 3530,
+          "energy_kwh": 2802.35,
+          "peak_grid_kw": 11209.4,
+          "cost_myr": 952.8,
+          "carbon_tons": 1.625,
+          "service_level_percent": 42.4,
+          "safety_risk_percent": 3.8,
+          "resilience_index": 91.1
+        },
+        "rl_vs_baseline_kpi_delta": {
+          "queue_vessels": -0.8,
+          "delay_minutes": -3.4,
+          "throughput_teu": 0,
+          "energy_kwh": -693.95,
+          "peak_grid_kw": -23.4,
+          "cost_myr": -235.94,
+          "carbon_tons": -0.424,
+          "service_level_percent": 3.1,
+          "safety_risk_percent": 0,
+          "resilience_index": 1.1
+        },
+        "rl_vs_baseline_domain_delta": {
+          "yard_occupancy_percent": 0,
+          "truck_turn_time_minutes": -0.3,
+          "maintenance_due_count": -2,
+          "active_faults": 0,
+          "transformer_loading_percent": -15.4,
+          "battery_soc_percent": -2.3,
+          "reefer_power_kw": -14.4,
+          "rail_transfer_teu": 0,
+          "water_transfer_teu": 0
+        }
+      },
+      "attribution": "paired_deterministic_simulation_counterfactual_not_field_causal_estimate",
+      "dispatch_allowed": false,
+      "production_authority": false,
+      "rollback_reason": null
+    },
+    "idempotentReplay": true,
+    "rollbackStatus": "rolled_back"
+  },
+  "failureClosure": {
+    "dataLossFailure": "DATA_QUALITY_GATE_BLOCKED",
+    "simulatorStoppedFailure": "SIMULATOR_STOPPED"
+  },
+  "audit": {
+    "verified": true,
+    "recordCount": 10,
+    "headHash": "ef1fb4637c96a4ad1d8112f38e91fe0cf333d1e4f24f04c17096bb59ea83c08b"
+  },
+  "sourceFingerprint": {
+    "algorithm": "sha256",
+    "digest": "337b44805b6e9b758478097d6f2f6db98aedf87745442ca55fe612bdf135b9f7",
+    "files": {
+      "server/operationalSimulator.ts": "6474d38458a7e4d0492d8436841564c3b797295cc4f038e3fa12c6cc4257fd5c",
+      "server/publicEvidencePlugin.ts": "4c83311d3e58ecd04599e820a6c4dd27f85dac0633b32731a6cc6d88dd1970b9",
+      "server/coreOperationsRlEngine.ts": "3858ee0e6a46ae35fe36739dab0403b53be7eae865e811f7aba5f719c72438aa",
+      "server/coreOperationsRlService.ts": "33c97797c065b76bda7f0cdd88c1034bf48ad44a99331a57e1e160d849d8dc6d",
+      "shared/coreOperationsRlContract.ts": "e7df81ed5ffb5752abd976b14795e813080fc0d12886669fda740c1389a3deb6",
+      "shared/portTelemetryContract.ts": "cffd750e2ccea66021bf797509f3ac0c594e229202635cd0e47664cb8562ac10",
+      "src/components/OperationalEvidenceCenter.tsx": "2c1e9bce56836a340ded6caf9980f5fca48a4761f03a8fd2fbc853e43f90fdea",
+      "src/integrations/coreOperationsRlAdapter.ts": "03a1cb10847695b0ae7d37f151087d5e016a80a4ef08d339a21f599f525a288d",
+      "src/integrations/operationsControlAdapter.ts": "e8021506cf8350ac7b53bdc93e9749169735011aa61beb84157cefda96a4ff86",
+      "scripts/operations/runOperationalAcceptance.ts": "2749493fd715d827299135ca61f1ec8e3c15f34c3887aa3185a811da3749e7bc",
+      "scripts/operations/verifyOperationalAcceptance.ts": "31c910d8a25d36a9c6e65ce9ba5ea637437a7b60a856b352f7a3ba68c21bdc3a",
+      "data/rl/mpa_vessel_arrivals_monthly.csv": "1135cd3ceac593a70b1407e40fc38fb36e06f3da4823418b50ddd3bcc5a9f12a",
+      "package.json": "61b91338864d8b31f9873223fdc1c0c544f6c82ee16fd7495205b79471c2a052",
+      "pnpm-lock.yaml": "9ecb76f14a934de1dc0a79f80001e2d9881b9ad046f4e0fe92137609b75e7c2c"
+    }
+  },
+  "evidenceReferences": {
+    "reports/operational-closure-acceptance-v1.json": "55db255283526b6673a691b5cfed12533f7109d1088115bbc130b90681e3d27b",
+    "reports/operational-closure-regulatory-extension-v1.json": "c1bf8a6c5c3c2099ad6b8321ae756e37caa582188918cb677503ee78c53afeb8",
+    "reports/regulatory-resilience-v2.json": "be337a7d354478a1098b161a1a0301b6fca3f55fd819a8e2582dc9cde7b18ce0",
+    "reports/core-operations-rl-champion-v1.json": "5bf798cc296afb6d31152bd2c9ea13e2e7d21e9f11f8d28dc0458a495947fd85"
+  },
+  "claimBoundary": [
+    "This artifact is a real execution of the backend simulator and control service.",
+    "It is not a live-port, measured field KPI, production saving, or autonomous control claim.",
+    "Historical RL benchmark artifacts remain unchanged and are verified separately."
+  ]
+}

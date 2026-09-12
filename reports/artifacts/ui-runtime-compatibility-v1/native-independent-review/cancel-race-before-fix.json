@@ -1,0 +1,7 @@
+{
+  "trigger": "cancel while result stat is pending, with oversized result file",
+  "cancelReturned": "cancelled",
+  "afterPendingPoll": "failed",
+  "expected": "cancelled",
+  "pass": false
+}

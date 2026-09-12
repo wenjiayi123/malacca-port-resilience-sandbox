@@ -8,3 +8,4 @@
 
 # Preserve byte-exact command logs, including tool-emitted end-of-line spaces.
 reports/artifacts/core-operations-upgrade-acceptance-v2/*.log -text whitespace=-blank-at-eol
+reports/artifacts/ui-runtime-compatibility-v1/pnpm-*.txt -text whitespace=-blank-at-eol

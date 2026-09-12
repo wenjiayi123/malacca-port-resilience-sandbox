@@ -1,0 +1,51 @@
+{
+  "requestId": "coordinate-regression-fixture",
+  "vesselId": "vessel-001",
+  "vesselName": "MXS Aurora",
+  "imo": "IMO 9834012",
+  "category": "container",
+  "routeId": "main-route-north",
+  "channelId": "malacca-main",
+  "origin": {
+    "portId": "penang",
+    "portName": "槟城港",
+    "geo": {
+      "lat": 5.4164,
+      "lon": 100.3213
+    }
+  },
+  "destination": {
+    "portId": "singapore",
+    "portName": "新加坡港",
+    "geo": {
+      "lat": 1.2644,
+      "lon": 103.8223
+    }
+  },
+  "speedProfile": {
+    "initialKnots": 11.2,
+    "targetKnots": 11.2,
+    "minSafeKnots": 7.3,
+    "maxSafeKnots": 16.6
+  },
+  "headingDeg": 87.4,
+  "progressPercent": 88.2,
+  "riskEvents": [
+    {
+      "id": "risk-malacca-main",
+      "type": "collision-risk",
+      "label": "马六甲主航道通航风险",
+      "affectedArea": "西北入口至新加坡主通道",
+      "severity": "warning",
+      "startMinute": 0,
+      "expectedDurationMinutes": 68,
+      "recommendedAction": "新加坡港分流至丹戎帕拉帕斯港"
+    }
+  ],
+  "dispatchStrategyIds": [
+    "divert-to-tanjung-pelepas",
+    "reroute-east-dumai-risk",
+    "slow-steaming-eastbound"
+  ],
+  "createdAt": "2026-01-01T07:45:00.000Z"
+}

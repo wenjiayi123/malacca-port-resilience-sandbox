@@ -1,0 +1,83 @@
+{
+  "scope": "Independent native API and lifecycle review; no visible Godot window launched",
+  "count": 19,
+  "passed": 19,
+  "cases": [
+    {
+      "name": "same-origin-ip",
+      "pass": true
+    },
+    {
+      "name": "remote-socket",
+      "pass": true
+    },
+    {
+      "name": "dns-rebinding",
+      "pass": true
+    },
+    {
+      "name": "foreign-origin",
+      "pass": true
+    },
+    {
+      "name": "mismatched-port",
+      "pass": true
+    },
+    {
+      "name": "null-origin",
+      "pass": true
+    },
+    {
+      "name": "spoofed-host-credentials",
+      "pass": true
+    },
+    {
+      "name": "loopback-ipv6",
+      "pass": true
+    },
+    {
+      "name": "cli-loopback",
+      "pass": true
+    },
+    {
+      "name": "caller-executable-path-url-discarded",
+      "pass": true
+    },
+    {
+      "name": "invalid-latitude",
+      "pass": true
+    },
+    {
+      "name": "invalid-speed",
+      "pass": true
+    },
+    {
+      "name": "invalid-progress",
+      "pass": true
+    },
+    {
+      "name": "bearer-missing",
+      "pass": true
+    },
+    {
+      "name": "bearer-wrong",
+      "pass": true
+    },
+    {
+      "name": "bearer-trimmed",
+      "pass": true
+    },
+    {
+      "name": "bearer-does-not-bypass-host",
+      "pass": true
+    },
+    {
+      "name": "cancelled-status-survives-pending-stat",
+      "pass": true
+    },
+    {
+      "name": "dispose-prevents-late-process-start",
+      "pass": true
+    }
+  ]
+}

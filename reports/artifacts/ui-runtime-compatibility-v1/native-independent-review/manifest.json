@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "native-godot-independent-review.v1",
+  "finalChecks": 19,
+  "finalPassed": 19,
+  "headlessOnly": true,
+  "historicalFailuresPreserved": true,
+  "sourceCodeModifiedDuringArchive": false,
+  "testsRerunDuringArchive": false,
+  "redactions": [
+    {
+      "file": "dispose-race-before-fix.json",
+      "change": "System fixture executable path replaced with NATIVE_REVIEW_FIXTURE_ENGINE variable; outcomes unchanged."
+    },
+    {
+      "file": "timing.gd",
+      "change": "The three original temporary input/output paths now use NATIVE_REVIEW_DIR; timing milestones and simulation logic unchanged."
+    },
+    {
+      "file": "native-api-lifecycle-probe.mjs",
+      "change": "Executed inline security and lifecycle snippets consolidated into one file; repository imports are relative and fixture/output paths are variables. Assertions, race ordering and outcomes are unchanged. Standard Node process/console imports made explicit for lint; runtime assertions unchanged."
+    }
+  ],
+  "pathScan": "PASS",
+  "artifacts": {
+    "README.md": {
+      "bytes": 1311,
+      "sha256": "dd518cd14cd9f97ddaaa52f186882a7fa75acebdfad6badc0acceb8c20492ba8"
+    },
+    "cancel-race-after-fix.json": {
+      "bytes": 193,
+      "sha256": "252f5777ba5f1a5e197771c773fe168b093fe15897de35e4cc7a394e0c2095a9"
+    },
+    "cancel-race-before-fix.json": {
+      "bytes": 191,
+      "sha256": "db094e2cc260107705e3588822e8420759c72de0c58a6c10133fa88fb77da459"
+    },
+    "dispose-race-after-fix.json": {
+      "bytes": 198,
+      "sha256": "6c3b1ca2962dfa8cf635b3390685f734a4e31b67ddb99ee1a493b156dcda2f37"
+    },
+    "dispose-race-before-fix.json": {
+      "bytes": 234,
+      "sha256": "f46f2e1718ca9757aa3e4e767dcea9a599a5bb5dafa2421ce716465f3d3b8655"
+    },
+    "final-review.json": {
+      "bytes": 1442,
+      "sha256": "c7dcdfbc7467a5ce5e4d491a71c3d028ffe60ab08096100efc235dc18441c244"
+    },
+    "native-api-lifecycle-probe.mjs": {
+      "bytes": 6541,
+      "sha256": "d8321fde1151b8a5d724dc09cdffd7831f9847cfef29af599cdf394d5b098ed9"
+    },
+    "raw-result.json": {
+      "bytes": 2031,
+      "sha256": "a887d1cae074a10629ea13153ca759988f7046e7e66e81a3d72d17d4afa946ec"
+    },
+    "receipt.json": {
+      "bytes": 585,
+      "sha256": "0ae1450ab32ed7f4035e4b6839fa616f84fd1b5c8d3ef96d434988768c30ac8e"
+    },
+    "request.json": {
+      "bytes": 747,
+      "sha256": "5a46bec686c6b85de8bb8b99d47e36d1cc2125a27ed3c588972a06bcc37ca7d5"
+    },
+    "timing.gd": {
+      "bytes": 2094,
+      "sha256": "0d5ce6500bd29dcb4ba2a8074eb824422eb6fb6fe5aa65913aec74bf53d6556a"
+    },
+    "timing.json": {
+      "bytes": 466,
+      "sha256": "8c4ecf559c223caafb4eb278d1d8f46b926962e01858e3969e4a6db79029f80a"
+    }
+  }
+}

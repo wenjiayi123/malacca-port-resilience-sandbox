@@ -8,6 +8,7 @@ import {
   Send,
   ShieldCheck,
   Sparkles,
+  Square,
   X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent, type PointerEvent as ReactPointerEvent } from 'react';
@@ -19,6 +20,7 @@ interface XiaoyiActionStep {
   target: string;
   label: string;
   skipWhenState?: string;
+  skipWhenVerified?: boolean;
   verification: XiaoyiStepVerification;
 }
 
@@ -30,6 +32,7 @@ type XiaoyiStepVerification =
       target?: string;
       description: string;
       timeoutMs?: number;
+      requireRevisionChange?: boolean;
     }
   | {
       mode: 'changed';
@@ -90,6 +93,7 @@ interface DragRuntime extends DragPosition {
 const moduleStep = (moduleId: string, label: string): XiaoyiActionStep => ({
   target: `module-${moduleId}`,
   label: `进入${label}`,
+  skipWhenVerified: true,
   verification: {
     mode: 'attribute',
     attribute: 'aria-pressed',
@@ -194,13 +198,14 @@ const xiaoyiActions: Record<string, XiaoyiAction> = {
   },
   'inject-event': {
     id: 'inject-event',
-    label: '注入扰动事件',
-    summary: '进入沙盘模块并注入下一条场景扰动事件。',
+    label: '打开事件注入',
+    summary: '进入沙盘模块并打开事件注入面板，等待人工选择具体扰动事件。',
     steps: [
       moduleStep('sandbox', '沙盘推演'),
       {
         target: 'inject-event',
         label: '点击“事件注入”',
+        skipWhenVerified: true,
         verification: {
           mode: 'attribute',
           attribute: 'aria-pressed',
@@ -289,6 +294,7 @@ const xiaoyiActions: Record<string, XiaoyiAction> = {
           mode: 'attribute',
           attribute: 'data-xiaoyi-state',
           expected: ['ready'],
+          requireRevisionChange: true,
           description: '小懿推荐已返回并绑定当前目标',
           timeoutMs: 15_000,
         },
@@ -393,6 +399,7 @@ const xiaoyiActions: Record<string, XiaoyiAction> = {
     steps: [{
       target: 'open-settings',
       label: '点击“系统设置”',
+      skipWhenVerified: true,
       verification: {
         mode: 'attribute',
         attribute: 'aria-expanded',
@@ -465,6 +472,7 @@ const xiaoyiActions: Record<string, XiaoyiAction> = {
           mode: 'attribute',
           attribute: 'data-xiaoyi-state',
           expected: ['ready'],
+          requireRevisionChange: true,
           description: '交班已绑定权威快照和证据哈希',
           timeoutMs: 20_000,
         },
@@ -529,6 +537,7 @@ const resolveXiaoyiAction = (command: string): XiaoyiAction | null => {
   if (/运行交班|交班报告|小懿交班|生成.*交班/.test(text)) return xiaoyiActions['operations-handoff'];
   if (/监管韧性|监管延误|海事.*检查|海关.*查验|放行.*恢复/.test(text)) return xiaoyiActions.regulatory;
   if (/证据与闭环|证据中心|审计闭环/.test(text)) return xiaoyiActions.evidence;
+  if (/导出.*报告|下载.*报告|闭环报告/.test(text)) return xiaoyiActions['export-report'];
   if (/重置.*(沙盘|推演)|重新开始推演/.test(text)) return xiaoyiActions['reset-simulation'];
   if (/(开始|启动).*(强化学习|rl).*训练|(强化学习|rl).*训练.*(开始|启动)/.test(text)) return xiaoyiActions['rl-start'];
   if (/智能配置|推荐.*训练|训练.*推荐|配置.*(强化学习|rl).*训练|(强化学习|rl).*训练.*配置/.test(text)) return xiaoyiActions['rl-configure'];
@@ -549,7 +558,6 @@ const resolveXiaoyiAction = (command: string): XiaoyiAction | null => {
   if (/调度优化|调度模块|策略对比/.test(text)) return xiaoyiActions.dispatch;
   if (/应急预案|应急模块/.test(text)) return xiaoyiActions.emergency;
   if (/系统设置|数据接入设置/.test(text)) return xiaoyiActions.settings;
-  if (/导出.*报告|下载.*报告|闭环报告/.test(text)) return xiaoyiActions['export-report'];
   return null;
 };
 
@@ -562,9 +570,17 @@ const calculateIntentConfidence = (command: string, action: XiaoyiAction) => {
   return 91;
 };
 
-const waitForTarget = async (target: string, runId: number, currentRun: { current: number }) => {
+interface XiaoyiRunReference {
+  current: { id: number; cancelled: boolean };
+}
+
+const assertActiveRun = (runId: number, currentRun: XiaoyiRunReference) => {
+  if (currentRun.current.id !== runId || currentRun.current.cancelled) throw new Error('人工已停止联动，后续按钮未触发；已执行的页面操作仍保留，请核对业务状态。');
+};
+
+const waitForTarget = async (target: string, runId: number, currentRun: XiaoyiRunReference) => {
   for (let attempt = 0; attempt < 50; attempt += 1) {
-    if (currentRun.current !== runId) throw new Error('执行已取消');
+    assertActiveRun(runId, currentRun);
     const element = document.querySelector<HTMLElement>(`[data-xiaoyi-action="${target}"]`);
     if (element) return element;
     await delay(100);
@@ -583,20 +599,28 @@ const verifyStepResult = async (
   step: XiaoyiActionStep,
   initialValue: string | null,
   runId: number,
-  currentRun: { current: number },
+  currentRun: XiaoyiRunReference,
+  initialRevision: string | null = null,
 ) => {
   if (step.verification.mode === 'trigger') return step.verification.description;
   const verificationTarget = step.verification.target ?? step.target;
   const timeoutMs = step.verification.timeoutMs ?? 8_000;
   const attempts = Math.max(1, Math.ceil(timeoutMs / 100));
+  // Let the click handler commit its new React state before checking for success.
+  await delay(100);
   let lastValue: string | null = null;
   for (let attempt = 0; attempt < attempts; attempt += 1) {
-    if (currentRun.current !== runId) throw new Error('执行已取消');
+    assertActiveRun(runId, currentRun);
     const element = document.querySelector<HTMLElement>(`[data-xiaoyi-action="${verificationTarget}"]`);
     if (element) {
       lastValue = readVerificationAttribute(element, step.verification.attribute);
+      if (lastValue === 'failed' || lastValue === 'error' || lastValue === 'rejected') {
+        throw new Error(`页面操作失败：${step.label}（${element.dataset.xiaoyiError || lastValue}）`);
+      }
       if (
-        (step.verification.mode === 'attribute' && step.verification.expected.includes(lastValue ?? '')) ||
+        (step.verification.mode === 'attribute' && step.verification.expected.includes(lastValue ?? '') &&
+          (!step.verification.requireRevisionChange ||
+            Boolean(element.dataset.xiaoyiRevision && element.dataset.xiaoyiRevision !== initialRevision))) ||
         (step.verification.mode === 'changed' && lastValue !== null && lastValue !== initialValue)
       ) {
         return `${step.verification.description} · ${step.verification.attribute}=${lastValue}`;
@@ -627,7 +651,9 @@ export function XiaoyiSystemAssistant() {
   const [reviewRecorded, setReviewRecorded] = useState(false);
   const [dragPosition, setDragPosition] = useState<DragPosition | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const currentRun = useRef(0);
+  const currentRun = useRef({ id: 0, cancelled: false });
+  const commandLocked = useRef(false);
+  const executionInProgress = useRef(false);
   const activeCommand = useRef('');
   const activeConfidence = useRef(0);
   const dragRuntime = useRef<DragRuntime | null>(null);
@@ -649,11 +675,17 @@ export function XiaoyiSystemAssistant() {
       });
     };
     window.addEventListener('resize', keepAvatarInViewport);
-    return () => window.removeEventListener('resize', keepAvatarInViewport);
+    const runtime = currentRun.current;
+    return () => {
+      window.removeEventListener('resize', keepAvatarInViewport);
+      runtime.id += 1;
+    };
   }, []);
 
   const executeAction = async (action: XiaoyiAction, preparedRunId?: number) => {
-    const runId = preparedRunId ?? currentRun.current + 1;
+    if (executionInProgress.current) return;
+    executionInProgress.current = true;
+    const runId = preparedRunId ?? currentRun.current.id + 1;
     const executionStartedAt = new Date();
     const executionStartedAtRuntime = getRuntimeTimestamp();
     let reportSteps = createVisibleSteps(action);
@@ -661,7 +693,7 @@ export function XiaoyiSystemAssistant() {
       reportSteps = reportSteps.map((item, stepIndex) => stepIndex === index ? { ...item, status, detail } : item);
       setVisibleSteps(reportSteps);
     };
-    currentRun.current = runId;
+    currentRun.current.id = runId;
     setPendingAction(null);
     setConfirmationAcknowledged(false);
     setIsOpen(true);
@@ -685,10 +717,12 @@ export function XiaoyiSystemAssistant() {
         target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
         target.classList.add('xiaoyi-system-target');
         await delay(900);
+        assertActiveRun(runId, currentRun);
 
         updateExecutionStep(index, 'validating', '目标已定位 · 正在校验可见性、禁用状态与运行上下文');
         setMessage(`安全校验 ${index + 1}/${action.steps.length}：目标已登记，正在检查按钮状态和重复执行条件。`);
         await delay(750);
+        assertActiveRun(runId, currentRun);
         const targetStyle = window.getComputedStyle(target);
         const targetRect = target.getBoundingClientRect();
         if (
@@ -701,16 +735,20 @@ export function XiaoyiSystemAssistant() {
           throw new Error(`按钮当前不可见：${step.label}`);
         }
         const state = target.dataset.xiaoyiState;
-        if (step.skipWhenState && state === step.skipWhenState) {
+        const alreadyVerified = step.skipWhenVerified && step.verification.mode === 'attribute' &&
+          step.verification.expected.includes(readVerificationAttribute(target, step.verification.attribute) ?? '');
+        if ((step.skipWhenState && state === step.skipWhenState) || alreadyVerified ||
+          (step.target === 'rl-start-training' && state === 'queued')) {
           target.classList.remove('xiaoyi-system-target');
           activeTarget = null;
-          updateExecutionStep(index, 'skipped', `当前状态已是 ${state} · 已阻止重复点击`);
+          updateExecutionStep(index, 'skipped', `当前已满足目标状态 · 已阻止重复点击`);
           setMessage(`${step.label}：当前已经处于目标状态，跳过重复点击。`);
           setProgress(Math.round(40 + ((index + 1) / action.steps.length) * 60));
           await delay(700);
+          assertActiveRun(runId, currentRun);
           continue;
         }
-        if (target instanceof HTMLButtonElement && target.disabled) throw new Error(`按钮当前不可用：${step.label}`);
+        if (target.matches(':disabled') || target.getAttribute('aria-disabled') === 'true') throw new Error(`按钮当前不可用：${step.label}${target.title ? `（${target.title}）` : ''}`);
 
         const verificationTarget = step.verification.mode === 'trigger'
           ? target
@@ -720,10 +758,18 @@ export function XiaoyiSystemAssistant() {
         const initialVerificationValue = step.verification.mode === 'trigger' || !verificationTarget
           ? null
           : readVerificationAttribute(verificationTarget, step.verification.attribute);
+        const initialVerificationRevision = verificationTarget?.dataset.xiaoyiRevision ?? null;
 
         updateExecutionStep(index, 'clicking', '校验通过 · 正在触发受控 UI 点击');
         setMessage(`确认可执行，正在触发 ${index + 1}/${action.steps.length}：${step.label}`);
         await delay(800);
+        assertActiveRun(runId, currentRun);
+        const clickStyle = window.getComputedStyle(target);
+        const clickRect = target.getBoundingClientRect();
+        if (!target.isConnected || target.matches(':disabled') || target.getAttribute('aria-disabled') === 'true' ||
+          clickStyle.display === 'none' || clickStyle.visibility === 'hidden' || clickRect.width <= 0 || clickRect.height <= 0) {
+          throw new Error(`点击前按钮状态已改变：${step.label}`);
+        }
         target.click();
         updateExecutionStep(index, 'clicking', '动作已触发 · 正在核对声明的页面回写条件');
         const verificationDetail = await verifyStepResult(
@@ -731,6 +777,7 @@ export function XiaoyiSystemAssistant() {
           initialVerificationValue,
           runId,
           currentRun,
+          initialVerificationRevision,
         );
         target.classList.remove('xiaoyi-system-target');
         activeTarget = null;
@@ -742,6 +789,7 @@ export function XiaoyiSystemAssistant() {
           await delay(650);
         }
       }
+      assertActiveRun(runId, currentRun);
       const executionCompletedAt = new Date();
       const completedSteps = reportSteps.filter((step) => step.status === 'done' || step.status === 'skipped').length;
       setPhase('reviewing');
@@ -766,8 +814,9 @@ export function XiaoyiSystemAssistant() {
       setIsExecutionReportOpen(true);
     } catch (error) {
       activeTarget?.classList.remove('xiaoyi-system-target');
+      if (currentRun.current.id !== runId) return;
       const failureReason = error instanceof Error ? error.message : '执行未完成，请检查目标按钮。';
-      reportSteps = reportSteps.map((item) => item.status === 'locating' || item.status === 'validating' || item.status === 'clicking' ? { ...item, status: 'failed', detail: '执行中断 · 等待人工检查' } : item);
+      reportSteps = reportSteps.map((item) => item.status === 'locating' || item.status === 'validating' || item.status === 'clicking' ? { ...item, status: 'failed', detail: `执行中断 · ${failureReason}` } : item);
       const executionCompletedAt = new Date();
       const completedSteps = reportSteps.filter((step) => step.status === 'done' || step.status === 'skipped').length;
       setPhase('failed');
@@ -792,13 +841,19 @@ export function XiaoyiSystemAssistant() {
       setReviewRecorded(false);
       setIsExecutionReportOpen(true);
     } finally {
-      if (currentRun.current === runId) setIsRunning(false);
+      if (currentRun.current.id === runId) {
+        setIsRunning(false);
+        executionInProgress.current = false;
+      }
     }
   };
 
   const prepareAction = async (action: XiaoyiAction, originalCommand: string) => {
-    const runId = currentRun.current + 1;
-    currentRun.current = runId;
+    if (commandLocked.current) return;
+    commandLocked.current = true;
+    currentRun.current.cancelled = false;
+    const runId = currentRun.current.id + 1;
+    currentRun.current.id = runId;
     setIsOpen(true);
     setIsRunning(true);
     setPendingAction(null);
@@ -819,7 +874,7 @@ export function XiaoyiSystemAssistant() {
     setProgress(6);
     setMessage('正在解析自然语言指令，提取目标对象、操作类型和状态影响。');
 
-    const continueRun = () => currentRun.current === runId;
+    const continueRun = () => currentRun.current.id === runId && !currentRun.current.cancelled;
     await delay(700);
     if (!continueRun()) return;
     setProgress(15);
@@ -857,7 +912,7 @@ export function XiaoyiSystemAssistant() {
   const handleCommand = (event?: FormEvent) => {
     event?.preventDefault();
     const trimmed = command.trim();
-    if (!trimmed || isRunning) return;
+    if (!trimmed || commandLocked.current) return;
     const action = resolveXiaoyiAction(trimmed);
     if (!action) {
       setPendingAction(null);
@@ -876,13 +931,15 @@ export function XiaoyiSystemAssistant() {
   };
 
   const handleQuickCommand = (value: string) => {
+    if (commandLocked.current) return;
     setCommand(value);
     const action = resolveXiaoyiAction(value);
     if (action) void prepareAction(action, value);
   };
 
   const cancelConfirmation = () => {
-    currentRun.current += 1;
+    commandLocked.current = false;
+    currentRun.current.id += 1;
     setPendingAction(null);
     setConfirmationAcknowledged(false);
     setApprovalRecorded(false);
@@ -894,13 +951,14 @@ export function XiaoyiSystemAssistant() {
   };
 
   const approvePendingAction = () => {
-    if (!pendingAction || !confirmationAcknowledged) return;
+    if (!pendingAction || !confirmationAcknowledged || executionInProgress.current) return;
     setApprovalRecorded(true);
     void executeAction(pendingAction);
   };
 
   const confirmExecutionReview = () => {
     if (!executionReport || !reviewAcknowledged) return;
+    commandLocked.current = false;
     const confirmedAt = formatRuntimeTime(new Date());
     setExecutionReport({ ...executionReport, confirmedAt });
     setReviewRecorded(true);
@@ -912,6 +970,23 @@ export function XiaoyiSystemAssistant() {
       return;
     }
     setMessage(`人工已确认本次执行异常。报告 ${executionReport.id} 已归档，可修复页面状态后重新下达指令。`);
+  };
+
+  const stopExecution = () => {
+    if (!isRunning) return;
+    currentRun.current.cancelled = true;
+    if (executionInProgress.current) {
+      setMessage('已收到停止指令，正在终止后续步骤并整理已执行记录；已启动的推演或训练需在业务面板中停止。');
+      return;
+    }
+    currentRun.current.id += 1;
+    commandLocked.current = false;
+    setIsRunning(false);
+    setPhase('idle');
+    setProgress(0);
+    setVisibleSteps([]);
+    setActiveAction(null);
+    setMessage('已停止本次指令编排，尚未点击页面按钮。');
   };
 
   const phaseTrackIndex = phase === 'understanding' ? 0 : phase === 'planning' || phase === 'confirming' ? 2 : phase === 'executing' ? 3 : phase === 'reviewing' || phase === 'complete' ? 4 : -1;
@@ -986,10 +1061,11 @@ export function XiaoyiSystemAssistant() {
               <Sparkles size={15} />
               <span><strong>小懿AI · 系统联动</strong><span>{actionCount} 个动作 · STEP-BY-STEP LINKAGE</span></span>
             </span>
+            {isRunning && <button className="xiaoyi-system-close" aria-label="停止小懿联动" title="停止后续页面操作" onClick={stopExecution} type="button"><Square size={13} /></button>}
             <button className="xiaoyi-system-close" aria-label="收起小懿系统助手" onClick={() => setIsOpen(false)} type="button"><X size={14} /></button>
           </header>
           <div className="xiaoyi-system-message">
-            <span className={isRunning ? 'is-running' : ''}>{isRunning ? <Sparkles size={13} /> : pendingAction ? <CircleAlert size={13} /> : <CheckCircle2 size={13} />}</span>
+            <span className={isRunning ? 'is-running' : ''}>{isRunning ? <Sparkles size={13} /> : pendingAction || phase === 'failed' ? <CircleAlert size={13} /> : <CheckCircle2 size={13} />}</span>
             <p>{message}</p>
           </div>
           {activeAction && (
@@ -1098,7 +1174,7 @@ export function XiaoyiSystemAssistant() {
                 <span>{executionReport.status === 'success' ? <CheckCircle2 size={20} /> : <CircleAlert size={20} />}</span>
                 <div>
                   <small>{executionReport.status === 'success' ? 'AUTOMATION STEPS COMPLETED' : 'AUTOMATION INTERRUPTED'}</small>
-                  <strong>{executionReport.status === 'success' ? '页面操作链已完成，任务尚未人工闭环' : '页面操作链执行中断，禁止确认成功'}</strong>
+                  <strong>{executionReport.status === 'success' ? reviewRecorded ? '页面操作链已完成，人工验收已归档' : '页面操作链已完成，任务尚未人工闭环' : '页面操作链执行中断，禁止确认成功'}</strong>
                   <p>{executionReport.summary}</p>
                 </div>
                 <b>{executionReport.completedSteps}/{executionReport.steps.length}</b>
@@ -1177,6 +1253,7 @@ export function XiaoyiSystemAssistant() {
       <button
         className="xiaoyi-system-avatar"
         aria-label="打开或拖动小懿全系统联动助手"
+        aria-expanded={isOpen}
         onClick={handleAvatarClick}
         onPointerCancel={handleAvatarPointerEnd}
         onPointerDown={handleAvatarPointerDown}

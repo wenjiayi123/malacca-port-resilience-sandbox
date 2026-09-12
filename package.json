@@ -39,9 +39,9 @@
     "benchmark:port-business": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/rl/runPortBusinessChampion.ts",
     "benchmark:port-business:verify": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/rl/verifyPortBusinessChampion.ts",
     "benchmark:core-operations": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/rl/runCoreOperationsChampion.ts",
-    "benchmark:core-operations:verify": "node scripts/operations/verifyOperationalRelease.mjs --core",
+    "benchmark:core-operations:verify": "node scripts/operations/verifyOperationalReleaseV2.mjs --core",
     "acceptance:operations": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/operations/runOperationalAcceptance.ts",
-    "acceptance:operations:verify": "node scripts/operations/verifyOperationalRelease.mjs",
+    "acceptance:operations:verify": "node scripts/operations/verifyOperationalReleaseV2.mjs",
     "check": "pnpm lint && pnpm test && pnpm build",
     "security:audit": "pnpm audit --audit-level=moderate",
     "release:check": "pnpm check && pnpm benchmark:rl:verify && pnpm benchmark:public-data:verify && pnpm benchmark:regulatory:verify && pnpm benchmark:port-business:verify && pnpm benchmark:core-operations:verify && pnpm acceptance:operations:verify && pnpm security:audit && node scripts/release/check.mjs",
@@ -60,7 +60,7 @@
   "dependencies": {
     "clsx": "^2.1.1",
     "lucide-react": "^1.25.0",
-    "maplibre-gl": "^5.24.0",
+    "maplibre-gl": "6.4.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "recharts": "^3.9.2"

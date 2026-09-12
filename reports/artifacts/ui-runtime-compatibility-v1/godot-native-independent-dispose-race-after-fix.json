@@ -1,0 +1,7 @@
+{
+  "trigger": "dispose while start is waiting for configuration; harmless true fixture executable",
+  "rejectedAfterDispose": true,
+  "returnedStatus": null,
+  "registeredJobs": 0,
+  "pass": true
+}

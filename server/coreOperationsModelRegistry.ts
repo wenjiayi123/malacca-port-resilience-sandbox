@@ -1,3 +1,4 @@
+import { isVerifiedRuntimeSourceExtension } from './runtimeCompatibilityEvidence.ts';
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -55,7 +56,10 @@ const readVerified = async (file: string, expected?: CoreModelReference) => {
   validateCoreModelReport(report);
   if (expected && report.dataset.fingerprint !== expected.datasetFingerprint) throw new Error('CORE_MODEL_DATASET_MISMATCH');
   for (const [source, expectedHash] of Object.entries(report.upgrade?.sourceFiles ?? {})) {
-    if (sha256(await readFile(path.resolve(source))) !== expectedHash) throw new Error(`CORE_MODEL_SOURCE_MISMATCH:${source}`);
+    const actualHash = sha256(await readFile(path.resolve(source)));
+    if (actualHash !== expectedHash && !await isVerifiedRuntimeSourceExtension(file, source, expectedHash, actualHash)) {
+      throw new Error(`CORE_MODEL_SOURCE_MISMATCH:${source}`);
+    }
   }
   return { report, reference: { reportPath: file, sha256: digest, datasetFingerprint: report.dataset.fingerprint } };
 };

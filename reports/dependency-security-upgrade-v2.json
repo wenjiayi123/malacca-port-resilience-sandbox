@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "dependency-security-upgrade.v2",
+  "generatedAt": "2026-09-12T09:48:59.920Z",
+  "reason": "Upgrade the minimum patched MapLibre release and bundle its ESM worker; preserve and compose all v1 dependency and operational evidence.",
+  "advisory": {
+    "id": "GHSA-jrc7-96c5-q579",
+    "cve": "CVE-2026-85061",
+    "severity": "critical",
+    "affectedRange": "<=6.4.0",
+    "previousVersion": "5.24.0",
+    "patchedVersion": "6.4.1",
+    "url": "https://github.com/advisories/GHSA-jrc7-96c5-q579",
+    "release": "https://github.com/maplibre/maplibre-gl-js/releases/tag/v6.4.1",
+    "npmIntegrity": "sha512-KzxQKtfBu/pSz1C+yW1hNS9eyj2h2lC7ufdAi6/SEt177n3oAfDfmUmslRfJdXY7ReAFBcnvwsqmiyoDhtA9GQ=="
+  },
+  "previousExtension": {
+    "path": "reports/dependency-security-upgrade-v1.json",
+    "sha256": "d5fedf9c520bd8f95c47d7e78bdc21019a14ce14114a7efd52174e50aafe9a13"
+  },
+  "priorEnvironment": {
+    "package.json": {
+      "path": "reports/artifacts/dependency-security-upgrade-v2/package.json.snapshot",
+      "sha256": "14f10f6153737770def4b0ee5bd88e039987393e80813e883ec9a6f5e646857e"
+    },
+    "pnpm-lock.yaml": {
+      "path": "reports/artifacts/dependency-security-upgrade-v2/pnpm-lock.yaml.snapshot",
+      "sha256": "ff6610d5ffb75917e6ad5936e099946f4811e740f795d0eaa90de63beda4fdbd"
+    }
+  },
+  "currentFiles": {
+    "package.json": "61b91338864d8b31f9873223fdc1c0c544f6c82ee16fd7495205b79471c2a052",
+    "pnpm-lock.yaml": "9ecb76f14a934de1dc0a79f80001e2d9881b9ad046f4e0fe92137609b75e7c2c",
+    "pnpm-workspace.yaml": "8415e78af3cb43a6bb5cde6f2829d86453bde2ecff8ae7f6dfcf02e3f3aa6056",
+    "src/components/LiveSatelliteMap.tsx": "4b561b5a3682aaf92ef5a4e02b74a40fdffd18372f2f6b6550fe4188b262ccec",
+    "scripts/operations/verifyOperationalReleaseV2.mjs": "063bdcd1ce9e15299dda8ffc49790b62fe24793af4fb0119088968c48d22f1e7",
+    "scripts/operations/buildDependencySecurityUpgradeV2.mjs": "b661ed7ce3f129ff5c31af6c1325d8b07349b6b6f62af95c8db153f47ee03466",
+    "tests/dependencySecurityUpgradeV2.test.ts": "4602594d6787791e0cedc6fa3e2ec434b6c9ab328ce813875b598e3b6559e3d5"
+  },
+  "audit": {
+    "path": "reports/artifacts/dependency-security-upgrade-v2/pnpm-audit.json",
+    "sha256": "ddc3269ecc8f90d8c918cf898b6f69a0fbd943aa7c93d8ba80e1d71388aa157b",
+    "command": "pnpm audit --audit-level=moderate --json"
+  },
+  "productionAuthority": false
+}

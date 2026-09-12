@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "godot-coordinate-independent-review.v1",
+  "engineVersion": "4.7.1.stable.official.a13da4feb",
+  "scope": "Isolated Godot helper and bridge probes; separate from the final exported PCK and browser acceptance.",
+  "beforeFix": {
+    "file": "results-before-fix.json",
+    "checks": 19,
+    "passed": 17,
+    "failed": [
+      "fallback_destination_matches_full_segment",
+      "mapping_failure_does_not_reuse_prior_collision_counts"
+    ]
+  },
+  "afterFix": {
+    "file": "results.json",
+    "checks": 19,
+    "passed": 19,
+    "failed": []
+  },
+  "probe": {
+    "file": "probe.gd",
+    "version": "Final regression probe used for after-fix results.",
+    "pathRedaction": "Only two output paths were replaced with user:// paths; assertions and test logic are unchanged."
+  },
+  "sourceIsolation": "The probes ran against isolated copies of the mapper and patched bridge. No original simulator source or terrain was changed.",
+  "limitations": [
+    "Finite grid search can miss a narrow feasible corridor.",
+    "This is simulation terrain embedding, not verified geographic calibration.",
+    "Final exported PCK and browser acceptance are separate evidence."
+  ],
+  "artifacts": {
+    "probe.gd": {
+      "bytes": 5420,
+      "sha256": "95061801cc5005ed8e16aba0ed4524782266c2883f1abd1f2ec529c539d7527d"
+    },
+    "results-before-fix.json": {
+      "bytes": 4812,
+      "sha256": "c84460249199e190de08d81ed720da4254f3f1d99598796854bf9b7dade3e50f"
+    },
+    "results.json": {
+      "bytes": 4811,
+      "sha256": "c59b7b2a62a3ca9139363db9cc48f9c120935197941007c655505aea8367ff9d"
+    }
+  }
+}

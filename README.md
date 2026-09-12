@@ -85,6 +85,21 @@ This is not an animation-only dashboard. Training progress comes from completed 
   policy replay, and human control share one operational surface with explicit evidence modes.</sub>
 </p>
 
+## 本次界面与模拟器更新 / UI and simulator update
+
+2026-09-12：修复按钮、训练、报告和小懿联动中的状态与异步响应问题，新增本机独立单船验证。
+在“沙盘推演 → 生成信息流 → 独立模拟器验证”中，当前请求自动传入本地 Godot，结果按请求和船舶关联回写；
+保留内嵌预览，支持取消、关闭及关闭状态同步。本机约 15–16 秒完成启动和约 2 秒的物理验证窗口，
+不代表完成全航程。模拟器工程及生成的二进制需在本地准备，未随源码仓库分发。
+
+本次本地验收为 195/195 测试通过，原有模型和历史证据保留。完整覆盖、实测结果与限制见
+[功能与联动验收记录](docs/UI_FUNCTIONAL_AUDIT_20260912.md)，本地配置见
+[模拟器使用说明](public/godot-simulator/README.md)。
+
+The update adds native single-vessel validation with automatic request transfer, correlated result import,
+cancellation and window-state tracking. It preserves embedded preview and historical models. The local
+195-test acceptance covers the documented workflows; the short physics window is not a full-voyage validation.
+
 ## 可运行实时闭环 / Executable operational loop
 
 当前 `v1.1.0-local-candidate` 在既有四种 RL + MPC 训练证据之外，新增后端权威的连续运行链：

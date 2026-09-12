@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import maplibregl, {
+import * as maplibregl from 'maplibre-gl';
+import {
   type Map as MapLibreMap,
   type Marker as MapLibreMarker,
 } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import mapLibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { AlertTriangle, CheckCircle2, Mountain, RefreshCw, Satellite, Ship, WifiOff } from 'lucide-react';
 import type { FeatureCollection, LineString } from 'geojson';
 import type { PortNode } from '../types/sandbox';
@@ -24,6 +26,9 @@ const PUBLIC_SATELLITE_TILE_URL =
   'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2025_3857/default/g/{z}/{y}/{x}.jpg';
 const MAPTERHORN_TERRAIN_URL = 'https://tiles.mapterhorn.com/tilejson.json';
 const TERRAIN_EXAGGERATION = 1.5;
+// Vite must bundle the v6 ESM worker; its package-relative URL is otherwise
+// resolved next to our generated app chunk and returns a missing resource.
+maplibregl.setWorkerUrl(mapLibreWorkerUrl);
 const PUBLIC_SATELLITE_ATTRIBUTION =
   '<a href="https://cloudless.eox.at/">EOxCloudless</a> by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2025)';
 
@@ -153,12 +158,16 @@ export function LiveSatelliteMap({ ports }: LiveSatelliteMapProps) {
   const [requestError, setRequestError] = useState<string | null>(null);
   const [tileState, setTileState] = useState<TileState>('checking');
   const [baseMapLoaded, setBaseMapLoaded] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
+  const [mapReloadKey, setMapReloadKey] = useState(0);
 
   const loadSnapshot = useCallback(async (signal?: AbortSignal) => {
     try {
       const next = await loadGeospatialLiveSnapshot(signal);
       setSnapshot(next);
-      setMapSetupSnapshot((current) => current ?? next);
+      setMapSetupSnapshot((current) => current
+        && current.satellite.tileUrlTemplate === next.satellite.tileUrlTemplate
+        && JSON.stringify(current.region) === JSON.stringify(next.region) ? current : next);
       setRequestStatus('ready');
       setRequestError(null);
     } catch (error) {
@@ -171,7 +180,7 @@ export function LiveSatelliteMap({ ports }: LiveSatelliteMapProps) {
   useEffect(() => {
     const controller = new AbortController();
     const initialTimer = window.setTimeout(() => void loadSnapshot(controller.signal), 0);
-    const timer = window.setInterval(() => void loadSnapshot(), 5_000);
+    const timer = window.setInterval(() => void loadSnapshot(controller.signal), 5_000);
     return () => {
       controller.abort();
       window.clearTimeout(initialTimer);
@@ -182,27 +191,44 @@ export function LiveSatelliteMap({ ports }: LiveSatelliteMapProps) {
   useEffect(() => {
     if (!mapSetupSnapshot || !containerRef.current || mapRef.current) return;
     setTileState('checking');
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: PUBLIC_BASEMAP_STYLE_URL,
-      bounds: [
-        [mapSetupSnapshot.region.bounds.west, mapSetupSnapshot.region.bounds.south],
-        [mapSetupSnapshot.region.bounds.east, mapSetupSnapshot.region.bounds.north],
-      ],
-      fitBoundsOptions: {
-        padding: { top: 116, right: 58, bottom: 72, left: 58 },
-        maxZoom: 5.65,
-      },
-      minZoom: 2.5,
-      maxZoom: 18,
-      maxPitch: 85,
-      pitch: 58,
-      bearing: -18,
-      attributionControl: { compact: true },
-      pitchWithRotate: true,
-      canvasContextAttributes: { antialias: true },
-    });
+    setBaseMapLoaded(false);
+    setMapError(null);
+    let map: MapLibreMap;
+    try {
+      map = new maplibregl.Map({
+        container: containerRef.current,
+        style: PUBLIC_BASEMAP_STYLE_URL,
+        bounds: [
+          [mapSetupSnapshot.region.bounds.west, mapSetupSnapshot.region.bounds.south],
+          [mapSetupSnapshot.region.bounds.east, mapSetupSnapshot.region.bounds.north],
+        ],
+        fitBoundsOptions: {
+          padding: { top: 116, right: 58, bottom: 72, left: 58 },
+          maxZoom: 5.65,
+        },
+        minZoom: 2.5,
+        maxZoom: 18,
+        maxPitch: 85,
+        pitch: 58,
+        bearing: -18,
+        attributionControl: { compact: true },
+        pitchWithRotate: true,
+        canvasContextAttributes: { antialias: true },
+      });
+    } catch {
+      const errorTimer = window.setTimeout(() => {
+        setTileState('failed');
+        setMapError('三维地图初始化失败，请检查浏览器 WebGL 支持后重新检查。');
+      }, 0);
+      return () => window.clearTimeout(errorTimer);
+    }
     mapRef.current = map;
+    const resizeObserver = new ResizeObserver(() => map.resize());
+    resizeObserver.observe(containerRef.current);
+    const loadTimeout = window.setTimeout(() => {
+      if (!map.isStyleLoaded()) setMapError('地图资源加载超时，请检查网络后重新检查。');
+      setTileState((current) => current === 'checking' ? 'failed' : current);
+    }, 25_000);
     map.addControl(new maplibregl.NavigationControl({
       showCompass: true,
       showZoom: true,
@@ -224,9 +250,6 @@ export function LiveSatelliteMap({ ports }: LiveSatelliteMapProps) {
         bearing: -25,
         duration: 0,
       });
-    });
-    map.on('load', () => {
-      setBaseMapLoaded(true);
       map.addSource('reference-routes', {
         type: 'geojson',
         data: buildReferenceRoutes(mapPorts),
@@ -263,8 +286,19 @@ export function LiveSatelliteMap({ ports }: LiveSatelliteMapProps) {
         const label = document.createElement('strong');
         label.textContent = port.name;
         element.append(dot, label);
+        const content = document.createElement('section');
+        content.className = 'live-ais-popup';
+        const heading = document.createElement('h3');
+        heading.textContent = `${port.name} / ${port.englishName}`;
+        content.append(
+          heading,
+          createTextLine('国家', port.country),
+          createTextLine('经纬度', `${port.geo.lat.toFixed(5)}, ${port.geo.lon.toFixed(5)}`),
+          createTextLine('数据范围', '港口地理参考位置；运营数据请查看港口监测模块'),
+        );
         const marker = new maplibregl.Marker({ element, anchor: 'center' })
           .setLngLat([port.geo.lon, port.geo.lat])
+          .setPopup(new maplibregl.Popup({ offset: 18, closeButton: true }).setDOMContent(content))
           .addTo(map);
         portMarkersRef.current.push(marker);
       }
@@ -277,8 +311,15 @@ export function LiveSatelliteMap({ ports }: LiveSatelliteMapProps) {
     map.on('error', (event) => {
       const sourceId = (event as typeof event & { sourceId?: string }).sourceId;
       if (sourceId === 'satellite-3d-surface') setTileState('failed');
+      else if (sourceId === 'terrain-3d-source' || sourceId === 'terrain-hillshade-source') {
+        setMapError('三维高程资源加载失败，当前地貌可能不完整；可重新检查。');
+      } else {
+        setMapError('地图资源加载失败，请检查网络后重新检查。');
+      }
     });
     return () => {
+      resizeObserver.disconnect();
+      window.clearTimeout(loadTimeout);
       vesselMarkersRef.current.forEach((marker) => marker.remove());
       portMarkersRef.current.forEach((marker) => marker.remove());
       vesselMarkersRef.current = [];
@@ -286,14 +327,14 @@ export function LiveSatelliteMap({ ports }: LiveSatelliteMapProps) {
       map.remove();
       mapRef.current = null;
     };
-  }, [mapPorts, mapSetupSnapshot]);
+  }, [mapPorts, mapSetupSnapshot, mapReloadKey]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !snapshot) return;
     vesselMarkersRef.current.forEach((marker) => marker.remove());
     vesselMarkersRef.current = [];
-    if (!snapshot.authority.live_data_verified) return;
+    if (requestStatus !== 'ready' || !snapshot.authority.live_data_verified) return;
     for (const vessel of snapshot.ais.vessels.slice(0, 250)) {
       const element = document.createElement('button');
       element.className = 'live-ais-vessel-marker';
@@ -328,7 +369,7 @@ export function LiveSatelliteMap({ ports }: LiveSatelliteMapProps) {
         .addTo(map);
       vesselMarkersRef.current.push(marker);
     }
-  }, [snapshot]);
+  }, [snapshot, mapReloadKey, requestStatus]);
 
   const newestVessel = useMemo(
     () => snapshot?.ais.vessels.reduce<LiveAisVessel | undefined>(
@@ -340,23 +381,27 @@ export function LiveSatelliteMap({ ports }: LiveSatelliteMapProps) {
   const satelliteLoaded = tileState === 'loaded';
   const publicSatelliteLoaded = Boolean(!snapshot?.satellite.configured && satelliteLoaded);
   const publicBaseMapLoaded = Boolean(!snapshot?.satellite.configured && baseMapLoaded);
-  const realtimeVerified = Boolean(snapshot?.authority.live_data_verified);
+  const realtimeVerified = requestStatus === 'ready' && Boolean(snapshot?.authority.live_data_verified);
   const fullyReady = Boolean(
     satelliteLoaded
     && realtimeVerified
-    && snapshot?.authority.satellite_realtime_ready,
+    && snapshot?.authority.satellite_realtime_ready
+    && !mapError,
   );
   const lockReasons = [
-    !snapshot?.satellite.configured
+    tileState === 'failed'
+      ? '卫星瓦片加载失败或超时，可重新检查'
+      : !snapshot?.satellite.configured
       ? publicSatelliteLoaded
         ? '当前影像为 Sentinel-2 cloudless 2025 合成层，非实时拍摄'
         : '高分影像缺少 MAPTILER_API_KEY'
-      : tileState === 'failed' ? '卫星瓦片加载失败' : null,
+      : null,
     !snapshot?.ais.configured ? '缺少 AISSTREAM_API_KEY' : null,
     snapshot?.ais.configured && !realtimeVerified
       ? `AIS ${snapshot.ais.connectionState}，暂无五分钟内新鲜船位`
       : null,
     requestStatus === 'failed' ? requestError : null,
+    mapError,
   ].filter(Boolean) as string[];
 
   return (
@@ -374,6 +419,8 @@ export function LiveSatelliteMap({ ports }: LiveSatelliteMapProps) {
               ? publicSatelliteLoaded
                 ? '3D卫星地貌已加载 · 实时 AIS 待授权'
                 : '高分3D卫星地貌已加载 · 实时 AIS 待授权'
+              : tileState === 'failed' || mapError
+                ? '地图资源加载失败 · 请重新检查'
               : publicBaseMapLoaded
                 ? '3D地理引擎已加载 · 卫星纹理加载中'
               : '实时模式严格失败关闭'}
@@ -384,16 +431,16 @@ export function LiveSatelliteMap({ ports }: LiveSatelliteMapProps) {
             {satelliteLoaded
               ? publicSatelliteLoaded ? 'Sentinel-2 3D影像 已加载' : '高分卫星瓦片 已加载'
               : publicBaseMapLoaded
-                ? '三维高程引擎 已加载'
+                ? '公开地理底图 已加载'
                 : `卫星瓦片 ${tileState === 'checking' ? '检查中' : '失败'}`}
           </span>
           <span className={realtimeVerified ? 'is-ready' : 'is-locked'}>
             {realtimeVerified ? <CheckCircle2 size={12} /> : <WifiOff size={12} />}
-            AIS {snapshot?.ais.connectionState ?? '检查中'}
+            AIS {requestStatus === 'failed' ? '状态读取失败' : snapshot?.ais.connectionState ?? '检查中'}
           </span>
           <span className={realtimeVerified ? 'is-ready' : 'is-locked'}>
             <Ship size={12} />
-            真实船位 {snapshot?.ais.freshVesselCount ?? 0}
+            真实船位 {realtimeVerified ? snapshot?.ais.freshVesselCount ?? 0 : 0}
           </span>
         </div>
         <small>
@@ -413,7 +460,11 @@ export function LiveSatelliteMap({ ports }: LiveSatelliteMapProps) {
               ? '海岸线、城市和海域来自公开地图；配置完成后才切换卫星瓦片与授权 AIS。'
               : '配置完成后后端自动订阅马六甲区域；AIS 密钥不会下发到浏览器。'}
           </small>
-          <button onClick={() => void loadSnapshot()} type="button">
+          <button onClick={() => {
+            setRequestStatus('loading');
+            if (tileState === 'failed' || mapError) setMapReloadKey((key) => key + 1);
+            void loadSnapshot();
+          }} type="button">
             <RefreshCw size={13} />
             重新检查
           </button>

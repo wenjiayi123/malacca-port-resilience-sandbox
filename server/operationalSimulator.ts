@@ -1112,7 +1112,7 @@ export class PortOperationsSimulator {
         overview: { portCount: 32, channelCount: 6, anchorageCount: 48, monitoredVesselCount },
         metrics,
         riskAlerts: this.scenario === 'normal' ? [] : [{ id: `ops-${this.scenario}`, label: `模拟场景：${this.scenario}`, description: '后端异常场景引擎已改变受约束状态', tone: this.scenario === 'data-loss' || this.scenario === 'channel-closure' ? 'danger' : 'warning', affectedArea: '参考码头与航道', estimatedImpact: `队列 ${tick.queueVessels} 艘 / 设备故障 ${tick.equipmentFaults}` }],
-        eventLog: [{ id: `ops-tick-${tick.sequence}`, time: tick.eventTime.slice(11, 19), message: `实时模拟 tick ${tick.sequence} · 到港 ${tick.arrivals} / 服务 ${tick.servicedVessels} / 队列 ${tick.queueVessels}`, tone: tick.queueVessels > 30 ? 'warning' : 'ok' }],
+        eventLog: [{ id: `ops-tick-${tick.sequence}`, time: malaysiaTime(tick.eventTime).slice(11, 19), message: `实时模拟 tick ${tick.sequence} · 到港 ${tick.arrivals} / 服务 ${tick.servicedVessels} / 队列 ${tick.queueVessels}`, tone: tick.queueVessels > 30 ? 'warning' : 'ok' }],
       },
       evidence: {
         mode: 'public-evidence',

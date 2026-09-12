@@ -82,7 +82,7 @@ export const loadGeospatialLiveSnapshot = async (signal?: AbortSignal) => {
   const response = await fetch('/api/geospatial/live', {
     cache: 'no-store',
     headers: { Accept: 'application/json' },
-    signal,
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(10_000)]) : AbortSignal.timeout(10_000),
   });
   if (!response.ok) throw new Error(`卫星实时接口返回 HTTP ${response.status}`);
   return assertSnapshot(await response.json());

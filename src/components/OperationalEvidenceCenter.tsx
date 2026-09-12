@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   approveOperationalDecision,
   createOperationalDecision,
@@ -125,6 +125,21 @@ const formatValue = (field?: TelemetryField) => {
 
 const shortHash = (value?: string) => value ? `${value.slice(0, 12)}…${value.slice(-6)}` : '--';
 
+const downloadReport = (report: PortBusinessDecisionReport | CoreOperationsDecisionReport, filename: string) => {
+  const url = URL.createObjectURL(new Blob(
+    [JSON.stringify(report, null, 2)],
+    { type: 'application/json;charset=utf-8' },
+  ));
+  try {
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+  } finally {
+    window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+  }
+};
+
 export function OperationalEvidenceCenter({
   authToken = '',
   onBusinessEvidenceChange,
@@ -145,70 +160,69 @@ export function OperationalEvidenceCenter({
   const [coreDecision, setCoreDecision] = useState<CoreOperationsRuntimeDecision | null>(null);
   const [coreReport, setCoreReport] = useState<CoreOperationsDecisionReport | null>(null);
   const [statusMessage, setStatusMessage] = useState('正在读取后端权威运行状态');
-  const [controlError, setControlError] = useState<string | null>(null);
+  const [evidenceErrors, setEvidenceErrors] = useState<string[]>([]);
+  const [telemetryAvailable, setTelemetryAvailable] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [activeAction, setActiveAction] = useState<string | null>(null);
+  const busy = activeAction !== null;
+  const actionInFlight = useRef(false);
+  const refreshController = useRef<AbortController | null>(null);
 
   const refresh = useCallback(async (signal?: AbortSignal) => {
-    const [snapshotResult, recommendationResult, auditResult, modelResult, regulatoryResult, readinessResult] = await Promise.allSettled([
-      fetchOperationsSnapshot(authToken, signal),
-      fetchOperationalRecommendations(authToken, signal),
-      fetchOperationalAudit(authToken, signal),
-      fetchOperationalModels(authToken, signal),
-      fetchRegulatoryResilience(authToken, signal),
-      fetchProductionReadiness(authToken, signal),
+    refreshController.current?.abort();
+    const controller = new AbortController();
+    refreshController.current = controller;
+    const requestSignal = AbortSignal.any([
+      controller.signal,
+      AbortSignal.timeout(15_000),
+      ...(signal ? [signal] : []),
     ]);
+    const results = await Promise.allSettled([
+      fetchOperationsSnapshot(authToken, requestSignal),
+      fetchOperationalRecommendations(authToken, requestSignal),
+      fetchOperationalAudit(authToken, requestSignal),
+      fetchOperationalModels(authToken, requestSignal),
+      fetchRegulatoryResilience(authToken, requestSignal),
+      fetchProductionReadiness(authToken, requestSignal),
+      fetchPortBusinessChampionStatus(authToken, requestSignal),
+      fetchCoreOperationsChampionStatus(authToken, requestSignal),
+    ]);
+    // Superseded reads must not restore pre-action state or clear a newer error.
+    if (controller.signal.aborted || signal?.aborted) return;
+    const [snapshotResult, recommendationResult, auditResult, modelResult, regulatoryResult, readinessResult, businessResult, coreResult] = results;
+    const labels = ['实时遥测', '策略推荐', '审计记录', '模型注册表', '监管韧性', '生产就绪门禁', '全业务冠军', '全核心联合冠军'];
+    setEvidenceErrors(results.flatMap((result, index) => result.status === 'rejected'
+      ? [`${labels[index]}读取失败：${result.reason instanceof Error ? result.reason.message : '后端请求失败'}`]
+      : []));
+    setTelemetryAvailable(snapshotResult.status === 'fulfilled');
     if (snapshotResult.status === 'fulfilled') {
       setSnapshot(snapshotResult.value);
-      setStatusMessage(`后端 tick ${snapshotResult.value.sequence} · ${snapshotResult.value.event_time}`);
+      setStatusMessage((current) => current === '正在读取后端权威运行状态' ? '后端运行状态已连接' : current);
     }
-    if (recommendationResult.status === 'fulfilled') {
-      setRecommendations(recommendationResult.value);
-      setControlError(null);
-    } else if (!(recommendationResult.reason instanceof DOMException && recommendationResult.reason.name === 'AbortError')) {
-      setRecommendations(null);
-      setControlError(recommendationResult.reason instanceof Error ? recommendationResult.reason.message : '策略门禁阻断');
-    }
-    if (auditResult.status === 'fulfilled') setAudit(auditResult.value);
-    if (modelResult.status === 'fulfilled') setModels(modelResult.value);
-    if (regulatoryResult.status === 'fulfilled') setRegulatory(regulatoryResult.value);
-    if (readinessResult.status === 'fulfilled') setProductionReadiness(readinessResult.value);
+    setRecommendations(recommendationResult.status === 'fulfilled' && snapshotResult.status === 'fulfilled'
+      ? recommendationResult.value : null);
+    setAudit(auditResult.status === 'fulfilled' ? auditResult.value : null);
+    setModels(modelResult.status === 'fulfilled' ? modelResult.value : null);
+    setRegulatory(regulatoryResult.status === 'fulfilled' ? regulatoryResult.value : null);
+    setProductionReadiness(readinessResult.status === 'fulfilled' ? readinessResult.value : null);
+    setBusinessChampion(businessResult.status === 'fulfilled' ? businessResult.value : null);
+    setCoreChampion(coreResult.status === 'fulfilled' ? coreResult.value : null);
   }, [authToken]);
 
   useEffect(() => {
     const controller = new AbortController();
-    const initialTimer = window.setTimeout(() => void refresh(controller.signal), 0);
-    const timer = window.setInterval(() => void refresh(controller.signal), 5_000);
+    let timer: number;
+    const poll = async () => {
+      if (!actionInFlight.current) await refresh(controller.signal);
+      if (!controller.signal.aborted) timer = window.setTimeout(() => void poll(), 5_000);
+    };
+    timer = window.setTimeout(() => void poll(), 0);
     return () => {
       controller.abort();
-      window.clearTimeout(initialTimer);
-      window.clearInterval(timer);
+      refreshController.current?.abort();
+      window.clearTimeout(timer);
     };
   }, [refresh]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    void fetchPortBusinessChampionStatus(authToken, controller.signal)
-      .then(setBusinessChampion)
-      .catch((error) => {
-        if (!(error instanceof DOMException && error.name === 'AbortError')) {
-          setControlError(error instanceof Error ? error.message : '全业务冠军证据读取失败');
-        }
-      });
-    return () => controller.abort();
-  }, [authToken]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    void fetchCoreOperationsChampionStatus(authToken, controller.signal)
-      .then(setCoreChampion)
-      .catch((error) => {
-        if (!(error instanceof DOMException && error.name === 'AbortError')) {
-          setControlError(error instanceof Error ? error.message : '全核心联合冠军证据读取失败');
-        }
-      });
-    return () => controller.abort();
-  }, [authToken]);
 
   useEffect(() => {
     onBusinessEvidenceChange?.({
@@ -227,13 +241,16 @@ export function OperationalEvidenceCenter({
     : [], [snapshot]);
 
   const runAction = async (label: string, action: () => Promise<unknown>) => {
-    setBusy(true);
+    if (actionInFlight.current) return;
+    actionInFlight.current = true;
+    refreshController.current?.abort();
+    setActiveAction(label);
     setActionError(null);
     setStatusMessage(`${label}处理中`);
     try {
       await action();
-      setStatusMessage(`${label}已由后端确认`);
       await refresh();
+      setStatusMessage(`${label}已由后端确认`);
     } catch (error) {
       const message = error instanceof Error ? error.message : `${label}失败`;
       setActionError(message === 'CORE_PLAN_INPUT_SNAPSHOT_STALE'
@@ -241,7 +258,8 @@ export function OperationalEvidenceCenter({
         : message);
       setStatusMessage(`${label}未通过门禁`);
     } finally {
-      setBusy(false);
+      actionInFlight.current = false;
+      setActiveAction(null);
     }
   };
 
@@ -274,68 +292,62 @@ export function OperationalEvidenceCenter({
   );
 
   const generateHandoff = () => runAction('生成小懿交班报告', async () => {
+    setHandoff(null);
     setHandoff(await fetchXiaoyiOperationalHandoff(authToken));
   });
 
   const runBusinessInference = () => snapshot && runAction('33维全业务冠军推理', async () => {
     setBusinessReport(null);
+    setBusinessDecision(null);
     setBusinessDecision(await inferCurrentPortBusinessPolicy(snapshot, authToken));
   });
 
   const approveBusinessDecision = () => businessDecision && runAction('全业务模拟双岗审批', async () => {
+    setBusinessReport(null);
     setBusinessDecision(await approvePortBusinessProposal(businessDecision.proposalId, authToken));
   });
 
   const downloadBusinessDecisionReport = () => businessDecision && runAction('生成全业务决策报告', async () => {
+    setBusinessReport(null);
     const report = await fetchPortBusinessDecisionReport(businessDecision.proposalId, authToken);
+    downloadReport(report, `port-business-decision-${report.completionStatus.toLowerCase()}-${businessDecision.proposalId}.json`);
     setBusinessReport(report);
-    const url = URL.createObjectURL(new Blob(
-      [JSON.stringify(report, null, 2)],
-      { type: 'application/json;charset=utf-8' },
-    ));
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = `port-business-decision-${report.completionStatus.toLowerCase()}-${businessDecision.proposalId}.json`;
-    anchor.click();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
   });
 
   const runCoreInference = () => runAction('全核心十域联合推理', async () => {
     setCoreReport(null);
+    setCoreDecision(null);
     setCoreDecision(await inferCoreOperationsPolicy(authToken));
   });
 
   const approveCoreDecision = () => coreDecision && runAction('全核心联合计划模拟双岗审批', async () => {
+    setCoreReport(null);
     setCoreDecision(await approveCoreOperationsProposal(coreDecision.proposalId, authToken));
   });
 
   const executeCoreDecision = () => coreDecision && runAction('执行全核心联合沙盘计划', async () => {
+    setCoreReport(null);
     setCoreDecision(await executeCoreOperationsProposal(coreDecision.proposalId, authToken));
   });
 
   const rollbackCoreDecision = () => coreDecision && runAction('回滚全核心联合沙盘计划', async () => {
+    setCoreReport(null);
     setCoreDecision(await rollbackCoreOperationsProposal(coreDecision.proposalId, authToken));
   });
 
   const downloadCoreDecisionReport = () => coreDecision && runAction('生成全核心联合决策报告', async () => {
+    setCoreReport(null);
     const report = await fetchCoreOperationsDecisionReport(coreDecision.proposalId, authToken);
+    downloadReport(report, `core-operations-decision-${report.completionStatus.toLowerCase()}-${coreDecision.proposalId}.json`);
     setCoreReport(report);
-    const url = URL.createObjectURL(new Blob(
-      [JSON.stringify(report, null, 2)],
-      { type: 'application/json;charset=utf-8' },
-    ));
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = `core-operations-decision-${report.completionStatus.toLowerCase()}-${coreDecision.proposalId}.json`;
-    anchor.click();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
   });
 
   if (!snapshot) {
     return (
       <section className="operational-evidence-center operational-evidence-center--loading">
         <strong>证据与闭环中心正在连接后端</strong>
-        <span>{controlError ?? statusMessage}</span>
+        <span role={evidenceErrors.length ? 'alert' : 'status'}>{evidenceErrors.join('；') || statusMessage}</span>
+        <button disabled={busy} onClick={() => void refresh()} type="button">重新连接后端</button>
       </section>
     );
   }
@@ -353,7 +365,8 @@ export function OperationalEvidenceCenter({
         <div>
           <small>PORT OPERATIONS CONTROL ROOM · {snapshot.protocolVersion}</small>
           <strong>真实数据边界、模型推理与人机执行闭环</strong>
-          <span>{statusMessage}</span>
+          <span role="status">{statusMessage}</span>
+          <span>{telemetryAvailable ? '后端' : '上次成功快照（刷新失败）'} tick {snapshot.sequence} · {snapshot.event_time}</span>
         </div>
         <div
           className="operational-truth-badges"
@@ -386,10 +399,11 @@ export function OperationalEvidenceCenter({
         ))}
       </nav>
 
-      {(actionError || controlError) && (
+      {(actionError || evidenceErrors.length > 0) && (
         <div className="operational-gate-error" role="alert">
           <strong>失败关闭门禁</strong>
-          <span>{actionError ?? controlError}</span>
+          {actionError && <span>{actionError}</span>}
+          {evidenceErrors.map((error) => <span key={error}>{error}</span>)}
           <em>production_authority=false · dispatch_allowed=false</em>
         </div>
       )}
@@ -567,7 +581,7 @@ export function OperationalEvidenceCenter({
                     : 'EVIDENCE PENDING'}
                 </span>
                 <button
-                  disabled={busy || !coreChampion?.champion.admitted}
+                  disabled={busy || !telemetryAvailable || !recommendations || !coreChampion?.champion.admitted}
                   onClick={() => void runCoreInference()}
                   type="button"
                 >生成十域联合计划</button>
@@ -614,7 +628,7 @@ export function OperationalEvidenceCenter({
                       type="button"
                     >模拟双岗审批（测试身份）</button>
                     <button
-                      disabled={busy || coreDecision.approval.status !== 'approved_for_sandbox'}
+                      disabled={busy || coreDecision.approval.status !== 'approved_for_sandbox' || coreDecision.execution.status !== 'not_executed'}
                       onClick={() => void executeCoreDecision()}
                       type="button"
                     >执行联合沙盘计划并取回执</button>
@@ -659,7 +673,7 @@ export function OperationalEvidenceCenter({
                     : '正在读取冠军证据'}
                 </span>
                 <button
-                  disabled={busy || !businessChampion?.champion.admitted}
+                  disabled={busy || !telemetryAvailable || !recommendations || !businessChampion?.champion.admitted}
                   onClick={() => void runBusinessInference()}
                   type="button"
                 >基于当前权威快照推理</button>
@@ -922,14 +936,15 @@ export function OperationalEvidenceCenter({
                 <em>{handoff?.xiaoyi_model.status ?? '尚未生成'}</em>
               </header>
               <button
-                aria-busy={busy}
+                aria-busy={activeAction === '生成小懿交班报告'}
                 data-xiaoyi-action="xiaoyi-operational-handoff"
-                data-xiaoyi-state={busy ? 'loading' : handoff ? 'ready' : 'idle'}
+                data-xiaoyi-revision={handoff ? `${handoff.generated_at}:${handoff.correlation_id}` : ''}
+                data-xiaoyi-state={activeAction === '生成小懿交班报告' ? 'loading' : handoff ? 'ready' : 'idle'}
                 disabled={busy}
                 onClick={() => void generateHandoff()}
                 type="button"
               >
-                {busy ? '正在生成并校验证据' : handoff ? '重新基于最新快照生成' : '基于当前后端快照生成'}
+                {activeAction === '生成小懿交班报告' ? '正在生成并校验证据' : handoff ? '重新基于最新快照生成' : '基于当前后端快照生成'}
               </button>
               {handoff ? (
                 <div>

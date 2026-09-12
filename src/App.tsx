@@ -1,3 +1,6 @@
+import { checkGodotWebExport, isGodotValidationResult } from './integrations/godotValidationAdapter';
+import { useNativeGodotValidation } from './hooks/useNativeGodotValidation';
+import { formatCarbonDeltaTons } from './ui/formatCarbonDelta';
 import {
   lazy,
   Suspense,
@@ -70,6 +73,7 @@ import {
   type RlPolicyEvaluationResponse,
   type RlTrainingJobSnapshot,
 } from './integrations/rlBenchmarkAdapter';
+import { resolveRlServiceEndpoint } from './integrations/rlServiceEndpoint';
 import {
   submitRlPolicyInference,
   type RlDisturbanceType,
@@ -130,32 +134,6 @@ const LiveSatelliteMap = lazy(async () => ({
   default: (await import('./components/LiveSatelliteMap')).LiveSatelliteMap,
 }));
 
-const isGodotValidationResult = (value: unknown): value is GodotValidationResult => {
-  if (!value || typeof value !== 'object') return false;
-  const candidate = value as Partial<GodotValidationResult>;
-  const numericFields: Array<keyof GodotValidationResult> = [
-    'estimatedTravelMinutes',
-    'recommendedSpeedKnots',
-    'simulatedDurationSeconds',
-    'averageSpeedKnots',
-    'minClearanceMeters',
-    'collisionCount',
-    'groundingCount',
-    'riskEventResolvedCount',
-    'delayDeltaMinutes',
-    'carbonDeltaTons',
-  ];
-  return Boolean(
-    candidate.requestId &&
-    candidate.vesselId &&
-    candidate.summary &&
-    ['pending', 'running', 'passed', 'failed', 'degraded'].includes(candidate.status ?? '') &&
-    ['low', 'medium', 'high', 'critical'].includes(candidate.riskLevel ?? '') &&
-    typeof candidate.safePass === 'boolean' &&
-    typeof candidate.reachedDestination === 'boolean' &&
-    numericFields.every((field) => Number.isFinite(candidate[field] as number)),
-  );
-};
 
 const routeClassByRole: Record<ChannelRole, string> = {
   main: 'main',
@@ -555,7 +533,7 @@ type RlTrainingStatus = 'idle' | 'queued' | 'running' | 'completed' | 'failed' |
 
 type RlAlgorithmId = 'q-learning' | 'sarsa' | 'expected-sarsa' | 'dyna-q' | 'mpc';
 
-type RlPolicyTestStatus = 'locked' | 'idle' | 'running' | 'completed';
+type RlPolicyTestStatus = 'locked' | 'idle' | 'running' | 'completed' | 'failed';
 
 type RlTrainingObjectiveId = RlObjectiveId;
 
@@ -891,6 +869,7 @@ const rlPolicyTestStatusLabel: Record<RlPolicyTestStatus, string> = {
   idle: '测试待命',
   running: '测试中',
   completed: '测试完成',
+  failed: '测试失败',
 };
 
 const rlBackendModeLabel: Record<RlBackendMode, string> = {
@@ -1211,8 +1190,8 @@ const rlRolloutParameterControls: Array<{
   {
     key: 'seed',
     label: '随机种子',
-    min: 1,
-    max: 99999,
+    min: 0,
+    max: 2_147_483_647,
     step: 1,
     unit: '',
   },
@@ -1474,11 +1453,11 @@ const restoreRlBenchmark = (): RlBenchmarkResponse | null => {
 
 const pendingPhaseStartLabel = '待启动';
 
-const createInitialSandboxPhases = (): SandboxPhaseState[] =>
+const createInitialSandboxPhases = (initialClock = defaultPortScenario.currentTime): SandboxPhaseState[] =>
   Object.entries(sandboxPhaseDefinitions).map(([id, definition], index) => ({
     id: id as SandboxPhaseId,
     status: index === 0 ? 'running' : 'pending',
-    startedAt: index === 0 ? defaultPortScenario.currentTime : pendingPhaseStartLabel,
+    startedAt: index === 0 ? initialClock : pendingPhaseStartLabel,
     startedMinute: 0,
     summary: definition.initialSummary,
   }));
@@ -1493,8 +1472,13 @@ const patchSandboxPhases = (
 
   return phases.map((phase) => {
     const patch = patchById.get(phase.id);
-
-    return patch ? { ...phase, ...patch } : phase;
+    if (!patch) return phase;
+    const next = { ...phase, ...patch };
+    if (phase.status === 'pending' && next.status === 'completed' && !patch.startedAt) {
+      next.startedAt = patch.completedAt ?? phase.startedAt;
+      next.startedMinute = patch.completedMinute ?? phase.startedMinute;
+    }
+    return next;
   });
 };
 
@@ -1577,7 +1561,7 @@ interface RuntimeInjectedEvent extends EventLogEntry {
   impact: SandboxEventImpactProfile;
 }
 
-const createInitialSandboxRuntime = (): SandboxRuntimeState => ({
+const createInitialSandboxRuntime = (initialClock = defaultPortScenario.currentTime): SandboxRuntimeState => ({
   isSimulationRunning: false,
   simulationSpeed: 1,
   elapsedMinutes: 0,
@@ -1586,7 +1570,7 @@ const createInitialSandboxRuntime = (): SandboxRuntimeState => ({
   activeDemoCaseId: null,
   generatedGodotRequest: null,
   importedGodotResult: null,
-  phases: createInitialSandboxPhases(),
+  phases: createInitialSandboxPhases(initialClock),
   rlTraining: restoreRlTrainingState(),
   policyRecovery: {
     status: 'idle',
@@ -2236,6 +2220,8 @@ const englishTextByChinese: Record<string, string> = {
   生成信息流: 'Generate Stream',
   导入模拟结果: 'Import Result',
   航行模拟器: 'Simulator',
+  独立模拟器验证: 'Native Validation',
+  内嵌预览: 'Web Preview',
   港口控制算法训练: 'Port Control Training',
   打开中央训练窗口: 'Open Training Window',
   推演运行中: 'Simulation Running',
@@ -2679,6 +2665,7 @@ export function App() {
   );
   const [isRlDecisionPanelOpen, setIsRlDecisionPanelOpen] = useState(false);
   const [rlInferenceStatus, setRlInferenceStatus] = useState<'idle' | 'running' | 'completed' | 'failed'>('idle');
+  const [rlInferenceError, setRlInferenceError] = useState('');
   const [rlInferenceProgress, setRlInferenceProgress] = useState(0);
   const [rlInferenceRunId, setRlInferenceRunId] = useState(0);
   const [rlDisturbance, setRlDisturbance] = useState<{
@@ -2711,6 +2698,7 @@ export function App() {
     createInitialRlTrainingWindowState,
   );
   const [xiaoyiAdvisorStatus, setXiaoyiAdvisorStatus] = useState<'idle' | 'thinking' | 'ready' | 'failed'>('idle');
+  const [xiaoyiAdvisorError, setXiaoyiAdvisorError] = useState('');
   const [xiaoyiAdvisorScope, setXiaoyiAdvisorScope] = useState<RlTrainingCardId | 'all'>('all');
   const [xiaoyiRlAdvice, setXiaoyiRlAdvice] = useState<XiaoyiRlAdvisorResponse | null>(null);
   const [xiaoyiAdviceObjectiveId, setXiaoyiAdviceObjectiveId] = useState<RlTrainingObjectiveId | null>(null);
@@ -2743,6 +2731,9 @@ export function App() {
       : '等待提交四种RL算法与MPC控制基线训练',
   );
   const godotResultInputRef = useRef<HTMLInputElement | null>(null);
+  const godotRequestRef = useRef(generatedGodotRequest);
+  godotRequestRef.current = generatedGodotRequest;
+  const godotImportGenerationRef = useRef(0);
   const godotSimulatorFrameRef = useRef<HTMLIFrameElement | null>(null);
   const simulationMapDragRef = useRef<{
     pointerId: number;
@@ -2753,7 +2744,50 @@ export function App() {
   } | null>(null);
   const xiaoyiAdviceRequestIdRef = useRef(0);
   const xiaoyiApplyFeedbackTimerRef = useRef<number | null>(null);
+  const rlTrainingRequestGenerationRef = useRef(0);
+  const rlTrainingSubmissionRef = useRef<number | null>(null);
+  const rlPolicyTestRequestGenerationRef = useRef(0);
+  const rlPolicyTestControllerRef = useRef<AbortController | null>(null);
+  const rlBackendCheckGenerationRef = useRef(0);
+  const rlBackendCheckControllerRef = useRef<AbortController | null>(null);
+
+  const invalidateRlPolicyTestRequests = () => {
+    rlPolicyTestRequestGenerationRef.current += 1;
+    rlPolicyTestControllerRef.current?.abort();
+    rlPolicyTestControllerRef.current = null;
+    setRlPolicyEvaluation(null);
+  };
+  const cancelDetachedRlTrainingJob = (jobId: string, authToken: string, endpoint = rlTraining.backend.endpoint) => {
+    void cancelRlTrainingJob(jobId, authToken, endpoint).catch((error: unknown) => {
+      setRlBenchmarkMessage(`此前训练任务 ${jobId} 的取消未获确认：${error instanceof Error ? error.message : '服务未响应'}；请检查后端任务状态。`);
+    });
+  };
+  const invalidateRlBackendCheck = () => {
+    rlBackendCheckGenerationRef.current += 1;
+    rlBackendCheckControllerRef.current?.abort();
+    rlBackendCheckControllerRef.current = null;
+  };
+  const invalidateRlTrainingRequests = () => {
+    rlTrainingRequestGenerationRef.current += 1;
+    rlTrainingSubmissionRef.current = null;
+    invalidateRlPolicyTestRequests();
+    invalidateRlBackendCheck();
+    setRlTrainingJob(null);
+    if (rlTraining.jobId && (rlTraining.status === 'queued' || rlTraining.status === 'running')) {
+      cancelDetachedRlTrainingJob(rlTraining.jobId, rlTraining.backend.authToken);
+    }
+  };
+  useEffect(() => () => {
+    godotImportGenerationRef.current += 1;
+    rlTrainingRequestGenerationRef.current += 1;
+    rlPolicyTestRequestGenerationRef.current += 1;
+    rlBackendCheckGenerationRef.current += 1;
+    rlPolicyTestControllerRef.current?.abort();
+    rlBackendCheckControllerRef.current?.abort();
+  }, []);
   const godotResultReceiverRef = useRef<(result: GodotValidationResult) => void>(() => undefined);
+  const receiveNativeGodotResult = useCallback((result: GodotValidationResult) => godotResultReceiverRef.current(result), []);
+  const nativeGodot = useNativeGodotValidation(generatedGodotRequest, receiveNativeGodotResult, portDataConfig.apiKey);
   const simulationMapViewBox = getSimulationMapViewBox(simulationMapViewport);
   const simulationMapZoomPercent = Math.round(simulationMapViewport.zoom * 100);
 
@@ -2870,6 +2904,16 @@ export function App() {
     [baseScenarioTime, elapsedMinutes],
   );
   const scenarioClockLabel = formatScenarioDateTime(scenarioClock);
+  useEffect(() => {
+    if (!nativeGodot.error && nativeGodot.job?.status !== 'cancelled') return;
+    const summary = nativeGodot.error || '独立模拟器验证已取消，可重新启动。';
+    setSandboxRuntime((runtime) => runtime.importedGodotResult ? runtime : ({
+      ...runtime,
+      phases: patchSandboxPhases(runtime.phases, [{ id: 'micro-validation', status: 'pending', summary, completedAt: undefined, completedMinute: undefined }]),
+    }));
+  }, [nativeGodot.error, nativeGodot.job?.status]);
+  const policyReplayClockRef = useRef(scenarioClockLabel);
+  policyReplayClockRef.current = scenarioClockLabel;
   const simulationProgressPercent = Math.min(100, ((elapsedMinutes % 180) / 180) * 100);
   const displayedEventLog = useMemo(
     () => [...injectedEvents, ...baseScenario.eventLog].slice(0, 4),
@@ -3327,7 +3371,9 @@ export function App() {
           rlTraining.jobId!,
           rlTraining.backend.authToken,
           controller.signal,
+          rlTraining.backend.endpoint,
         );
+        if (controller.signal.aborted) return;
         setRlTrainingJob(job);
         if (job.result) {
           setRlBenchmark(job.result);
@@ -3404,16 +3450,21 @@ export function App() {
       controller.abort();
       if (timer !== undefined) window.clearTimeout(timer);
     };
-  }, [rlTraining.backend.authToken, rlTraining.jobId, rlTraining.status]);
+  }, [rlTraining.backend.authToken, rlTraining.backend.endpoint, rlTraining.jobId, rlTraining.status]);
 
   useEffect(() => {
     if (rlTraining.policyTest.status !== 'running' || !rlPolicyEvaluation) {
       return undefined;
     }
 
+    const requestGeneration = rlPolicyTestRequestGenerationRef.current;
     const timer = window.setInterval(() => {
       setSandboxRuntime((runtime) => {
-        if (runtime.rlTraining.policyTest.status !== 'running') {
+        if (requestGeneration !== rlPolicyTestRequestGenerationRef.current ||
+          runtime.rlTraining.policyTest.status !== 'running' ||
+          runtime.rlTraining.jobId !== rlPolicyEvaluation.jobId ||
+          runtime.rlTraining.selectedAlgorithmId !== rlPolicyEvaluation.algorithmId ||
+          runtime.rlTraining.policyTest.selectedCaseId !== rlPolicyEvaluation.testCaseId) {
           return runtime;
         }
 
@@ -3433,7 +3484,7 @@ export function App() {
               status: isCompleted ? 'completed' : 'running',
               progressPercent: nextProgress,
               logCursor: nextCursor,
-              completedAt: isCompleted ? scenarioClockLabel : null,
+              completedAt: isCompleted ? policyReplayClockRef.current : null,
             },
           },
         };
@@ -3441,7 +3492,7 @@ export function App() {
     }, 650);
 
     return () => window.clearInterval(timer);
-  }, [rlPolicyEvaluation, rlTraining.policyTest.status, scenarioClockLabel]);
+  }, [rlPolicyEvaluation, rlTraining.policyTest.status]);
 
   useEffect(() => {
     if (rlTraining.status !== 'completed') {
@@ -3476,45 +3527,25 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    let canceled = false;
-
-    const checkGodotSimulator = async () => {
+    const controller = new AbortController();
+    const check = async () => {
       setGodotSimulatorStatus('checking');
-
       try {
-        const response = await fetch(GODOT_SIMULATOR_URL, {
-          cache: 'no-store',
-          method: 'HEAD',
-        });
-
-        if (!canceled) {
-          setGodotSimulatorStatus(response.ok ? 'available' : 'missing');
-        }
+        const available = await checkGodotWebExport(GODOT_SIMULATOR_URL, controller.signal);
+        if (!controller.signal.aborted) setGodotSimulatorStatus(available ? 'available' : 'missing');
       } catch {
-        try {
-          const response = await fetch(GODOT_SIMULATOR_URL, { cache: 'no-store' });
-
-          if (!canceled) {
-            setGodotSimulatorStatus(response.ok ? 'available' : 'missing');
-          }
-        } catch {
-          if (!canceled) {
-            setGodotSimulatorStatus('missing');
-          }
-        }
+        if (!controller.signal.aborted) setGodotSimulatorStatus('missing');
       }
     };
-
-    void checkGodotSimulator();
-
-    return () => {
-      canceled = true;
-    };
+    void check();
+    return () => controller.abort();
   }, [godotSimulatorReloadKey]);
 
   useEffect(() => {
     const receiveGodotMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin || !event.data || typeof event.data !== 'object') {
+      if (event.origin !== window.location.origin ||
+          event.source !== godotSimulatorFrameRef.current?.contentWindow ||
+          !event.data || typeof event.data !== 'object') {
         return;
       }
       const envelope = event.data as { type?: string; payload?: unknown };
@@ -3586,25 +3617,32 @@ export function App() {
 
     const refresh = async () => {
       activeController?.abort();
-      activeController = new AbortController();
+      const controller = new AbortController();
+      activeController = controller;
       setPortDataStatus('connecting');
       setPortDataMessage(`正在同步 ${portDataConfig.endpoint}`);
 
       try {
-        const timeout = window.setTimeout(() => activeController?.abort(), 8000);
+        const timeout = window.setTimeout(() => controller.abort(), 8000);
         const result = await loadPortTelemetry(
           portDataConfig,
           defaultPortScenario,
-          activeController.signal,
+          controller.signal,
         ).finally(() => window.clearTimeout(timeout));
-        if (canceled) return;
+        if (canceled || activeController !== controller) return;
         setBaseScenario(result.scenario);
+        setSandboxRuntime((runtime) => {
+          if (runtime.elapsedMinutes || runtime.injectedEvents.length || runtime.generatedGodotRequest) return runtime;
+          const initialPhase = runtime.phases.find((phase) => phase.id === 'event-sensing');
+          if (initialPhase?.status !== 'running' || initialPhase.startedAt !== defaultPortScenario.currentTime) return runtime;
+          return { ...runtime, phases: patchSandboxPhases(runtime.phases, [{ id: 'event-sensing', startedAt: formatScenarioDateTime(new Date(result.scenario.currentTime.replace(' ', 'T'))) }]) };
+        });
         setPortDataObservedAt(result.observedAt);
         setPublicEvidence(result.evidence ?? null);
         setPortDataStatus(portDataConfig.mode === 'public' ? 'public' : 'live');
         setPortDataMessage(`${result.source} · ${new Date(result.observedAt).toLocaleString()}`);
       } catch (error) {
-        if (canceled) return;
+        if (canceled || activeController !== controller) return;
         setBaseScenario(defaultPortScenario);
         setPublicEvidence(null);
         setPortDataObservedAt(null);
@@ -3659,7 +3697,12 @@ export function App() {
   };
 
   const resetSimulation = () => {
-    setSandboxRuntime(createInitialSandboxRuntime());
+    invalidateRlTrainingRequests();
+    setRlTrainingJob(null);
+    setRlPolicyEvaluation(null);
+    setRlInferenceRunId(0);
+    setIsRlPolicyApplyConfirmationOpen(false);
+    setSandboxRuntime(createInitialSandboxRuntime(formatScenarioDateTime(baseScenarioTime)));
     setIsGodotSimulatorOpen(false);
     setHasPreviewedGodotSimulator(false);
     setIsEventInjectionPanelOpen(false);
@@ -3935,7 +3978,8 @@ export function App() {
     })
     .join(' ');
   const carbonAxisLabels = trendValues
-    .filter((item) => ['00时', '06时', '12时', '18时', '24时'].includes(item.hour))
+    .filter((item, index) => index === 0 || index === trendValues.length - 1 ||
+      ['06时', '12时', '18时'].includes(item.hour))
     .map((item) => item.hour);
   const carbonLatestTrend = trendValues[trendValues.length - 1];
   const carbonPeakTrend = trendValues.reduce((peak, item) =>
@@ -4941,13 +4985,13 @@ export function App() {
         title: '碳排优化',
         summary: importedGodotResult
           ? importedGodotResult.carbonDeltaTons <= 0
-            ? `单船验证预计减排 ${Math.abs(importedGodotResult.carbonDeltaTons).toFixed(1)}t`
-            : `单船验证增排 ${importedGodotResult.carbonDeltaTons.toFixed(1)}t`
+            ? `单船验证预计减排 ${formatCarbonDeltaTons(Math.abs(importedGodotResult.carbonDeltaTons))}t`
+            : `单船验证增排 ${formatCarbonDeltaTons(importedGodotResult.carbonDeltaTons)}t`
           : totalCarbonChangePercent > 6
             ? `优先压降${peakVesselEmission?.vesselName ?? '高排放船舶'}能耗`
             : `保持${carbonStrategy?.label ?? '绿色调度'}窗口`,
         evidence: importedGodotResult
-          ? `推荐航速 ${importedGodotResult.recommendedSpeedKnots.toFixed(1)}kn / 碳排变化 ${importedGodotResult.carbonDeltaTons.toFixed(1)}t`
+          ? `推荐航速 ${importedGodotResult.recommendedSpeedKnots.toFixed(1)}kn / 碳排变化 ${formatCarbonDeltaTons(importedGodotResult.carbonDeltaTons)}t`
           : carbonStrategy
             ? `可减排 ${carbonStrategy.carbonReductionTons.toFixed(0)}t CO₂ / 节油 ${carbonStrategy.fuelSavingTons.toFixed(1)}t`
             : `当前总碳排 ${totalCarbonTons.toFixed(0)}t CO₂`,
@@ -5317,7 +5361,7 @@ export function App() {
     const requestStamp = scenarioClockLabel.replace(/\D/g, '').slice(0, 14);
 
     return {
-      requestId: `malacca-validation-${requestStamp}-${selectedValidationVessel.id}`,
+      requestId: `malacca-validation-${requestStamp}-${selectedValidationVessel.id}-${crypto.randomUUID()}`,
       vesselId: selectedValidationVessel.id,
       vesselName: selectedValidationVessel.name,
       imo: selectedValidationVessel.imo,
@@ -5371,7 +5415,7 @@ export function App() {
     const targetKnots = demoCase.targetSpeedKnots;
 
     return {
-      requestId: `malacca-demo-${demoCase.id}-${requestStamp}`,
+      requestId: `malacca-demo-${demoCase.id}-${requestStamp}-${crypto.randomUUID()}`,
       vesselId: vessel.id,
       vesselName: vessel.name,
       imo: vessel.imo,
@@ -5525,7 +5569,7 @@ export function App() {
         riskZoneCount: generatedGodotRequest.riskEvents.length,
         temporaryObstacleCount: hasDangerRisk ? 1 : 0,
       },
-      summary: `本地单船参考验证完成：${generatedGodotRequest.vesselName} 以 ${recommendedSpeedKnots.toFixed(1)}kn ${hasDangerRisk ? '降级安全通过' : '安全通过'}，结果已回写主沙盘。`,
+      summary: `本地规则估算（未运行 Godot 物理场景）：${generatedGodotRequest.vesselName} 参考航速 ${recommendedSpeedKnots.toFixed(1)}kn；本结果不能作为真实微观验证证据，请运行独立模拟器验证。`,
     };
     applyGodotValidationResult(result);
   };
@@ -5544,6 +5588,11 @@ export function App() {
     };
 
     setRlPolicyApplied(false);
+    setRlInferenceRunId(0);
+    setRlPolicyInference(null);
+    setRlInferenceStatus('idle');
+    setRlInferenceProgress(0);
+    setIsRlPolicyApplyConfirmationOpen(false);
     setValidationSelection({ type: 'vessel', id: demoCase.vesselId });
     setSandboxRuntime((runtime) => ({
       ...runtime,
@@ -5608,7 +5657,7 @@ export function App() {
           startedMinute: runtime.elapsedMinutes,
           completedAt: scenarioClockLabel,
           completedMinute: runtime.elapsedMinutes,
-          summary: `回写 ${result.recommendedSpeedKnots.toFixed(1)}kn / ${result.estimatedTravelMinutes.toFixed(0)}分 / 碳排 ${result.carbonDeltaTons.toFixed(1)}t`,
+          summary: `回写 ${result.recommendedSpeedKnots.toFixed(1)}kn / ${result.estimatedTravelMinutes.toFixed(0)}分 / 碳排 ${formatCarbonDeltaTons(result.carbonDeltaTons)}t`,
         },
       ]),
     }));
@@ -5624,6 +5673,17 @@ export function App() {
   };
 
   const applyGodotValidationResult = (parsed: GodotValidationResult) => {
+      const currentRequest = godotRequestRef.current;
+      if (!isGodotValidationResult(parsed) || !currentRequest ||
+          parsed.requestId !== currentRequest.requestId ||
+          parsed.vesselId !== currentRequest.vesselId) {
+        setGodotImportFeedback({ tone: 'danger', message: '回写已拒绝：结果无效或与当前单船验证请求不匹配。' });
+        return;
+      }
+      if (Date.parse(currentRequest.createdAt) > scenarioClock.getTime()) {
+        setGodotImportFeedback({ tone: 'danger', message: '回写已拒绝：数据时标已回退，原验证请求已过期，请重新生成信息流。' });
+        return;
+      }
       setGodotImportFeedback({
         tone: 'ok',
         message: `验证结果已绑定 ${parsed.requestId} / ${parsed.vesselId} 并完成指标回写。`,
@@ -5684,7 +5744,7 @@ export function App() {
             startedMinute: runtime.elapsedMinutes,
             completedAt: scenarioClockLabel,
             completedMinute: runtime.elapsedMinutes,
-            summary: `回写 ${parsed.recommendedSpeedKnots.toFixed(1)}kn / ${parsed.estimatedTravelMinutes.toFixed(0)}分 / 碳排 ${parsed.carbonDeltaTons.toFixed(1)}t`,
+            summary: `回写 ${parsed.recommendedSpeedKnots.toFixed(1)}kn / ${parsed.estimatedTravelMinutes.toFixed(0)}分 / 碳排 ${formatCarbonDeltaTons(parsed.carbonDeltaTons)}t`,
           },
         ]),
       }));
@@ -5696,23 +5756,30 @@ export function App() {
       return;
     }
 
+    const importGeneration = ++godotImportGenerationRef.current;
+    const requestAtReadStart = godotRequestRef.current;
     try {
       const text = await file.text();
+      if (importGeneration !== godotImportGenerationRef.current) return;
+      if (requestAtReadStart !== godotRequestRef.current) {
+        throw new Error('读取文件期间单船验证请求已改变，请重新选择与当前请求匹配的结果');
+      }
       const parsed = JSON.parse(text) as unknown;
       if (!isGodotValidationResult(parsed)) {
         throw new Error('结果字段不完整或包含无效数值');
       }
-      if (!generatedGodotRequest) {
+      if (!requestAtReadStart) {
         throw new Error('请先生成当前单船验证请求');
       }
       if (
-        parsed.requestId !== generatedGodotRequest.requestId ||
-        parsed.vesselId !== generatedGodotRequest.vesselId
+        parsed.requestId !== requestAtReadStart.requestId ||
+        parsed.vesselId !== requestAtReadStart.vesselId
       ) {
         throw new Error('结果与当前 requestId 或 vesselId 不匹配');
       }
-      applyGodotValidationResult(parsed);
+      godotResultReceiverRef.current(parsed);
     } catch (error) {
+      if (importGeneration !== godotImportGenerationRef.current) return;
       const message = error instanceof Error ? error.message : '结果文件无法解析';
       setGodotImportFeedback({ tone: 'danger', message: `导入已拒绝：${message}。` });
       setSandboxRuntime((runtime) => ({
@@ -5738,8 +5805,12 @@ export function App() {
             startedMinute: runtime.importedGodotResult
               ? runtime.phases.find((phase) => phase.id === 'metric-feedback')?.startedMinute ?? runtime.elapsedMinutes
               : 0,
-            completedAt: runtime.importedGodotResult ? scenarioClockLabel : undefined,
-            completedMinute: runtime.importedGodotResult ? runtime.elapsedMinutes : undefined,
+            completedAt: runtime.importedGodotResult
+              ? runtime.phases.find((phase) => phase.id === 'metric-feedback')?.completedAt
+              : undefined,
+            completedMinute: runtime.importedGodotResult
+              ? runtime.phases.find((phase) => phase.id === 'metric-feedback')?.completedMinute
+              : undefined,
             summary: runtime.importedGodotResult
               ? '拒绝不匹配结果；已验证指标回写保持不变'
               : sandboxPhaseDefinitions['metric-feedback'].initialSummary,
@@ -5747,7 +5818,7 @@ export function App() {
         ]),
       }));
     } finally {
-      if (godotResultInputRef.current) {
+      if (importGeneration === godotImportGenerationRef.current && godotResultInputRef.current) {
         godotResultInputRef.current.value = '';
       }
     }
@@ -5807,7 +5878,7 @@ export function App() {
         riskLabel: recoveryAdjustedRiskLabel,
         speedLabel: `${importedGodotResult.recommendedSpeedKnots.toFixed(1)}kn`,
         durationLabel: `${recoveryAdjustedTravelMinutes.toFixed(0)}分`,
-        carbonLabel: `${recoveryAdjustedCarbonTons > 0 ? '+' : ''}${recoveryAdjustedCarbonTons.toFixed(1)}t`,
+        carbonLabel: `${formatCarbonDeltaTons(recoveryAdjustedCarbonTons, true)}t`,
         strategyLabel:
           rlPolicyApplied && rlPolicyRecoveryTone === 'ok'
             ? '恢复通航并持续监测'
@@ -5828,7 +5899,7 @@ export function App() {
           description: `${microValidationReport?.safetyLabel ?? '结果回传'} / ${microValidationReport?.riskLabel ?? '未知风险'}`,
           tone: importedResultTone,
           affectedArea: selectedValidationResolvedRoute?.label ?? importedGodotResult.vesselId,
-          estimatedImpact: `推荐 ${importedGodotResult.recommendedSpeedKnots.toFixed(1)}kn / 预计 ${recoveryAdjustedTravelMinutes.toFixed(0)}分 / 碳排 ${recoveryAdjustedCarbonTons.toFixed(1)}t`,
+          estimatedImpact: `推荐 ${importedGodotResult.recommendedSpeedKnots.toFixed(1)}kn / 预计 ${recoveryAdjustedTravelMinutes.toFixed(0)}分 / 碳排 ${formatCarbonDeltaTons(recoveryAdjustedCarbonTons)}t`,
         },
         ...scenario.riskAlerts,
       ].slice(0, 4)
@@ -5837,7 +5908,7 @@ export function App() {
     ? {
         tone: importedResultTone,
         label: microValidationReport?.strategyLabel ?? '单船验证调度建议',
-        detail: `推荐航速 ${importedGodotResult.recommendedSpeedKnots.toFixed(1)}kn / 耗时 ${recoveryAdjustedTravelMinutes.toFixed(0)}分 / 碳排 ${recoveryAdjustedCarbonTons.toFixed(1)}t`,
+        detail: `推荐航速 ${importedGodotResult.recommendedSpeedKnots.toFixed(1)}kn / 耗时 ${recoveryAdjustedTravelMinutes.toFixed(0)}分 / 碳排 ${formatCarbonDeltaTons(recoveryAdjustedCarbonTons)}t`,
       }
     : rlPolicyApplied && rlPolicyInference
       ? {
@@ -5860,7 +5931,7 @@ export function App() {
   const godotSimulatorFrameSrc = `${GODOT_SIMULATOR_URL}?reload=${godotSimulatorReloadKey}`;
   const godotSimulatorStatusLabel =
     godotSimulatorStatus === 'available'
-      ? 'Web 仿真已挂载'
+      ? 'Web 导出可用'
       : godotSimulatorStatus === 'checking'
         ? '检测仿真导出'
         : '等待导出';
@@ -5915,7 +5986,7 @@ export function App() {
         ? `${importedGodotResult.recommendedSpeedKnots.toFixed(1)}kn`
         : `${resilienceAssessment.networkResilienceIndex.toFixed(1)}`,
       detail: importedGodotResult
-        ? `耗时 ${recoveryAdjustedTravelMinutes.toFixed(0)}分 / 碳排 ${recoveryAdjustedCarbonTons.toFixed(1)}t`
+        ? `耗时 ${recoveryAdjustedTravelMinutes.toFixed(0)}分 / 碳排 ${formatCarbonDeltaTons(recoveryAdjustedCarbonTons)}t`
         : `韧性 ${resilienceAssessment.networkResilienceIndex.toFixed(1)} / 拥堵 ${peakPortCongestion.congestionScore}%`,
       tone: importedGodotResult ? importedResultTone : resilienceAssessment.tone,
     },
@@ -6057,7 +6128,7 @@ export function App() {
           : portDataStatus === 'live'
           ? '生产实时'
           : portDataStatus === 'public'
-            ? '公开实证'
+            ? '公开校准模拟'
             : portDataStatus === 'connecting'
               ? '同步中'
               : '合成示例回退',
@@ -6089,7 +6160,9 @@ export function App() {
       id: 'ai-dispatch',
       label: '已训练策略检查点推理',
       shortLabel: '策略推理',
-      status: rlPolicyApplied ? 'completed' : phaseStatus('vessel-dispatch'),
+      status: rlPolicyApplied || (rlPolicyInference && rlInferenceStatus === 'completed')
+        ? 'completed'
+        : rlInferenceStatus === 'running' ? 'running' : 'pending',
       value: rlPolicyApplied && rlPolicyInference
         ? rlPolicyInference.selectedAction.label
         : rlInferenceStatus === 'running'
@@ -6176,7 +6249,10 @@ export function App() {
         policyApplied: rlPolicyApplied,
         recovery: policyRecovery,
         baselineBenchmark: rlBenchmark,
-        training: rlTraining,
+        training: {
+          ...rlTraining,
+          backend: { ...rlTraining.backend, authToken: '' },
+        },
         portBusinessRuntime: portBusinessEvidence,
       },
       godotValidation: {
@@ -6250,7 +6326,7 @@ export function App() {
       ? '查看回写指标'
     : generatedGodotRequest
       ? hasPreviewedGodotSimulator
-        ? '关闭视窗后本地回写'
+        ? '等待仿真结果回传'
         : '打开航行模拟器展示'
       : injectedEvents.length > 0
         ? rlPolicyApplied
@@ -6651,6 +6727,7 @@ export function App() {
     const controller = new AbortController();
     const requestId = `policy-inference-${Date.now()}-${rlInferenceRunId}`;
     setRlInferenceStatus('running');
+    setRlInferenceError('');
     setRlInferenceProgress(10);
     setRlPolicyInference(null);
     void submitRlPolicyInference(
@@ -6665,8 +6742,10 @@ export function App() {
       },
       controller.signal,
       rlTraining.backend.authToken,
+      rlTraining.backend.endpoint,
     )
       .then((result) => {
+        if (controller.signal.aborted) return;
         setRlPolicyInference(result);
         setRlInferenceProgress(100);
         setRlInferenceStatus('completed');
@@ -6675,13 +6754,13 @@ export function App() {
         if (controller.signal.aborted) return;
         setRlInferenceStatus('failed');
         setRlInferenceProgress(0);
-        console.error('RL policy inference failed', error);
+        setRlInferenceError(error instanceof Error ? error.message : '策略服务暂时不可用');
       });
 
     return () => {
       controller.abort();
     };
-  }, [rlInferenceRunId, rlTraining.backend.authToken, rlTraining.jobId, rlTraining.selectedAlgorithmId, rlTraining.status]);
+  }, [rlInferenceRunId, rlTraining.backend.authToken, rlTraining.backend.endpoint, rlTraining.jobId, rlTraining.selectedAlgorithmId, rlTraining.status]);
 
   const runRlPolicyInference = (type: RlDisturbanceType, intensity: number) => {
     if (rlTraining.status !== 'completed' || !rlTraining.jobId) {
@@ -6808,6 +6887,8 @@ export function App() {
   const rlPolicyTestTone: StatusTone =
     rlTraining.policyTest.status === 'completed'
       ? 'ok'
+      : rlTraining.policyTest.status === 'failed'
+        ? 'danger'
       : rlTraining.policyTest.status === 'running'
         ? activeRlPolicyTestCase.tone
         : isRlPolicyTestUnlocked
@@ -6816,6 +6897,8 @@ export function App() {
   const rlPolicyTestProgressLabel =
     rlTraining.policyTest.status === 'locked'
       ? '待解锁'
+      : rlTraining.policyTest.status === 'failed'
+        ? '测试失败'
       : `${rlTraining.policyTest.progressPercent.toFixed(1)}%`;
   const policyEvaluationMetrics = rlPolicyEvaluation?.metrics;
   const signedReduction = (value: number | undefined) =>
@@ -6889,7 +6972,8 @@ export function App() {
     const requestedObjectiveLabel = activeRlTrainingObjective.label;
     const requestId = xiaoyiAdviceRequestIdRef.current + 1;
     xiaoyiAdviceRequestIdRef.current = requestId;
-    if (scope !== 'all') setXiaoyiAdvisorScope(scope);
+    setXiaoyiAdvisorScope(scope);
+    setXiaoyiAdvisorError('');
     setXiaoyiAdvisorStatus('thinking');
     setXiaoyiRlAdvice(null);
     setXiaoyiAdviceObjectiveId(null);
@@ -6919,8 +7003,9 @@ export function App() {
       setXiaoyiRlAdvice(advice);
       setXiaoyiAdviceObjectiveId(requestedObjectiveId);
       setXiaoyiAdvisorStatus('ready');
-    } catch {
+    } catch (error) {
       if (requestId !== xiaoyiAdviceRequestIdRef.current) return;
+      setXiaoyiAdvisorError(error instanceof Error ? error.message : '顾问请求失败');
       setXiaoyiAdvisorStatus('failed');
     }
   };
@@ -6952,6 +7037,9 @@ export function App() {
       window.clearTimeout(xiaoyiApplyFeedbackTimerRef.current);
     }
     setXiaoyiApplyFeedback({ status: 'applying', scope, message: feedbackMessage, appliedAt: null });
+    invalidateRlTrainingRequests();
+    setRlTrainingJob(null);
+    setRlPolicyEvaluation(null);
     setSandboxRuntime((runtime) => {
       const nextParameters =
         applyAll || scope === 'parameters' || scope === 'progress'
@@ -6983,6 +7071,7 @@ export function App() {
               : runtime.rlTraining.activeSettingId,
           parameters: nextParameters,
           backend: nextBackend,
+          jobId: null,
           status: 'idle',
           progressPercent: 0,
           currentStageId: 'snapshot-build',
@@ -7060,11 +7149,13 @@ export function App() {
     const preset = getRlObjectivePreset(selectedObjective.id);
     if (!preset.supportedByAggregateEnvironment) return;
 
+    invalidateRlTrainingRequests();
     setSandboxRuntime((runtime) => ({
       ...runtime,
       rlTraining: {
         ...runtime.rlTraining,
         selectedObjectiveId: selectedObjective.id,
+        jobId: null,
         parameters: {
           ...runtime.rlTraining.parameters,
           rewardDelay: preset.weights.delay,
@@ -7102,6 +7193,7 @@ export function App() {
     setXiaoyiAdvisorScope('all');
   };
   const selectRlPolicyTestCase = (testCaseId: RlPolicyTestCaseId) => {
+    invalidateRlPolicyTestRequests();
     setSandboxRuntime((runtime) => ({
       ...runtime,
       rlTraining: {
@@ -7122,7 +7214,12 @@ export function App() {
     }));
   };
   const startRlPolicyTest = async () => {
-    if (rlTraining.status !== 'completed' || !rlTraining.jobId) return;
+    if (rlTraining.status !== 'completed' || !rlTraining.jobId ||
+      rlTraining.policyTest.status === 'running' || rlPolicyTestControllerRef.current) return;
+    const requestGeneration = ++rlPolicyTestRequestGenerationRef.current;
+    const controller = new AbortController();
+    rlPolicyTestControllerRef.current = controller;
+    const timeout = window.setTimeout(() => controller.abort(), 15_000);
     setRlPolicyEvaluation(null);
     setSandboxRuntime((runtime) => ({
       ...runtime,
@@ -7144,16 +7241,25 @@ export function App() {
         rlTraining.selectedAlgorithmId,
         rlTraining.policyTest.selectedCaseId,
         rlTraining.backend.authToken,
+        controller.signal,
+        rlTraining.backend.endpoint,
       );
+      if (requestGeneration !== rlPolicyTestRequestGenerationRef.current) return;
+      if (controller.signal.aborted) throw new Error('最终测试集评估超时，请重试');
+      if (evaluation.jobId !== rlTraining.jobId || evaluation.algorithmId !== rlTraining.selectedAlgorithmId ||
+        evaluation.testCaseId !== rlTraining.policyTest.selectedCaseId || !evaluation.trace.length) {
+        throw new Error('最终测试结果与当前任务、算法或测试场景不一致，或未包含回放记录');
+      }
       setRlPolicyEvaluation(evaluation);
     } catch (error) {
+      if (requestGeneration !== rlPolicyTestRequestGenerationRef.current) return;
       setSandboxRuntime((runtime) => ({
         ...runtime,
         rlTraining: {
           ...runtime.rlTraining,
           policyTest: {
             ...runtime.rlTraining.policyTest,
-            status: 'idle',
+            status: 'failed',
           },
           backend: {
             ...runtime.rlTraining.backend,
@@ -7162,9 +7268,15 @@ export function App() {
           },
         },
       }));
+    } finally {
+      window.clearTimeout(timeout);
+      if (requestGeneration === rlPolicyTestRequestGenerationRef.current) {
+        rlPolicyTestControllerRef.current = null;
+      }
     }
   };
   const resetRlPolicyTest = () => {
+    invalidateRlPolicyTestRequests();
     setRlPolicyEvaluation(null);
     setSandboxRuntime((runtime) => ({
       ...runtime,
@@ -7185,6 +7297,7 @@ export function App() {
     const selectedAlgorithm =
       rlAlgorithmOptions.find((algorithm) => algorithm.id === algorithmId) ?? rlAlgorithmOptions[0];
 
+    invalidateRlTrainingRequests();
     setRlTrainingJob(null);
     setRlPolicyEvaluation(null);
     setSandboxRuntime((runtime) => ({
@@ -7215,6 +7328,7 @@ export function App() {
     }));
   };
   const selectRlTrainingBaseline = (baselineId: RlTrainingBaselineId) => {
+    invalidateRlTrainingRequests();
     setSandboxRuntime((runtime) => ({
       ...runtime,
       rlTraining: {
@@ -7263,10 +7377,16 @@ export function App() {
     }));
   };
   const setRlBackendMode = (mode: RlBackendMode) => {
+    if (mode === rlTraining.backend.mode) return;
+    invalidateRlTrainingRequests();
     setSandboxRuntime((runtime) => ({
       ...runtime,
       rlTraining: {
         ...runtime.rlTraining,
+        jobId: null,
+        status: 'idle',
+        progressPercent: 0,
+        policyTest: createInitialRlPolicyTestState(),
         trainingRequest: null,
         backend: {
           ...runtime.rlTraining.backend,
@@ -7280,21 +7400,36 @@ export function App() {
     }));
   };
   const updateRlBackendField = (field: RlBackendEditableField, value: string) => {
+    if (value === rlTraining.backend[field]) return;
+    const resetsJob = field !== 'projectName';
+    if (resetsJob) invalidateRlTrainingRequests();
+    else invalidateRlBackendCheck();
     setSandboxRuntime((runtime) => ({
       ...runtime,
       rlTraining: {
         ...runtime.rlTraining,
+        ...(resetsJob ? {
+          jobId: null,
+          status: 'idle' as const,
+          progressPercent: 0,
+          policyTest: createInitialRlPolicyTestState(),
+        } : {}),
         trainingRequest: null,
         backend: {
           ...runtime.rlTraining.backend,
           [field]: value,
           status: 'disconnected',
-          lastMessage: '后台接入参数已修改，等待重新测试连接。',
+          lastMessage: resetsJob ? '后台接入参数已修改，旧任务已解除绑定，等待重新测试连接并训练。' : '项目名称已修改，等待重新测试连接。',
         },
       },
     }));
   };
   const testRlBackendConnection = async () => {
+    invalidateRlBackendCheck();
+    const requestGeneration = rlBackendCheckGenerationRef.current;
+    const controller = new AbortController();
+    rlBackendCheckControllerRef.current = controller;
+    const timeout = window.setTimeout(() => controller.abort(), 5000);
     const backend = rlTraining.backend;
     setSandboxRuntime((runtime) => ({
       ...runtime,
@@ -7312,37 +7447,34 @@ export function App() {
       if (backend.mode === 'websocket') {
         await new Promise<void>((resolve, reject) => {
           const socket = new WebSocket(backend.websocketUrl);
-          const timeout = window.setTimeout(() => {
+          let settled = false;
+          const finish = (error?: Error) => {
+            if (settled) return;
+            settled = true;
+            controller.signal.removeEventListener('abort', abort);
             socket.close();
-            reject(new Error('WebSocket 握手超时'));
-          }, 5000);
-          socket.addEventListener('open', () => {
-            window.clearTimeout(timeout);
-            socket.close(1000, 'connectivity-check');
-            resolve();
-          });
-          socket.addEventListener('error', () => {
-            window.clearTimeout(timeout);
-            reject(new Error('WebSocket 握手失败'));
-          });
+            if (error) reject(error);
+            else resolve();
+          };
+          const abort = () => finish(new Error('WebSocket 握手已取消或超时'));
+          controller.signal.addEventListener('abort', abort, { once: true });
+          socket.addEventListener('open', () => finish());
+          socket.addEventListener('error', () => finish(new Error('WebSocket 握手失败')));
+          socket.addEventListener('close', () => finish(new Error('WebSocket 在握手完成前断开')));
         });
       } else {
-        const endpoint = new URL(backend.endpoint, window.location.origin);
-        endpoint.pathname =
-          backend.mode === 'ray-service'
-            ? '/api/version'
-            : endpoint.pathname.endsWith('/api/rl/jobs')
-              ? '/api/rl/health'
-            : endpoint.pathname.replace(/\/(?:start|benchmark)\/?$/, '/health');
-        const controller = new AbortController();
-        const timeout = window.setTimeout(() => controller.abort(), 5000);
+        const endpoint = backend.mode === 'ray-service'
+          ? new URL('/api/version', new URL(backend.endpoint, window.location.origin))
+          : resolveRlServiceEndpoint(backend.endpoint, 'health');
         const response = await fetch(endpoint, {
           headers: backend.authToken ? { Authorization: `Bearer ${backend.authToken}` } : undefined,
           signal: controller.signal,
-        }).finally(() => window.clearTimeout(timeout));
+        });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
       }
 
+      if (requestGeneration !== rlBackendCheckGenerationRef.current) return;
+      if (controller.signal.aborted) throw new Error('连接检测超时');
       setSandboxRuntime((runtime) => ({
         ...runtime,
         rlTraining: {
@@ -7355,6 +7487,7 @@ export function App() {
         },
       }));
     } catch (error) {
+      if (requestGeneration !== rlBackendCheckGenerationRef.current) return;
       setSandboxRuntime((runtime) => ({
         ...runtime,
         rlTraining: {
@@ -7366,17 +7499,26 @@ export function App() {
           },
         },
       }));
+    } finally {
+      window.clearTimeout(timeout);
+      if (requestGeneration === rlBackendCheckGenerationRef.current) rlBackendCheckControllerRef.current = null;
     }
   };
   const disconnectRlBackend = () => {
+    invalidateRlTrainingRequests();
     setSandboxRuntime((runtime) => ({
       ...runtime,
       rlTraining: {
         ...runtime.rlTraining,
+        jobId: null,
+        status: 'idle',
+        progressPercent: 0,
+        trainingRequest: null,
+        policyTest: createInitialRlPolicyTestState(),
         backend: {
           ...runtime.rlTraining.backend,
           status: 'disconnected',
-          lastMessage: '后台训练服务已断开，保留当前参数但不推送。',
+          lastMessage: '后台训练服务已断开，旧任务已解除绑定，保留当前参数。',
         },
       },
     }));
@@ -7395,6 +7537,11 @@ export function App() {
     }));
   };
   const startRlTraining = async () => {
+    if (rlTrainingSubmissionRef.current !== null || rlTraining.status === 'queued' || rlTraining.status === 'running') return;
+    const requestGeneration = ++rlTrainingRequestGenerationRef.current;
+    rlTrainingSubmissionRef.current = requestGeneration;
+    invalidateRlPolicyTestRequests();
+    invalidateRlBackendCheck();
     const request = buildRlTrainingRequestContract(rlTraining);
     const backend = rlTraining.backend;
     setSandboxRuntime((runtime) => ({
@@ -7444,6 +7591,16 @@ export function App() {
         backend.authToken,
         controller.signal,
       ).finally(() => window.clearTimeout(timeout));
+      if (requestGeneration !== rlTrainingRequestGenerationRef.current) {
+        if (job.status === 'queued' || job.status === 'running') {
+          cancelDetachedRlTrainingJob(job.jobId, backend.authToken, backend.endpoint);
+        }
+        return;
+      }
+      if (controller.signal.aborted) {
+        if (job.status === 'queued' || job.status === 'running') cancelDetachedRlTrainingJob(job.jobId, backend.authToken, backend.endpoint);
+        throw new Error('训练任务提交超时，请检查后端任务状态后重试');
+      }
       setRlTrainingJob(job);
       setSandboxRuntime((runtime) => ({
         ...runtime,
@@ -7460,6 +7617,7 @@ export function App() {
         },
       }));
     } catch (error) {
+      if (requestGeneration !== rlTrainingRequestGenerationRef.current) return;
       setSandboxRuntime((runtime) => ({
         ...runtime,
         rlTraining: {
@@ -7472,12 +7630,12 @@ export function App() {
           },
         },
       }));
+    } finally {
+      if (requestGeneration === rlTrainingRequestGenerationRef.current) rlTrainingSubmissionRef.current = null;
     }
   };
   const resetRlTraining = () => {
-    if (rlTraining.jobId && (rlTraining.status === 'queued' || rlTraining.status === 'running')) {
-      void cancelRlTrainingJob(rlTraining.jobId, rlTraining.backend.authToken);
-    }
+    invalidateRlTrainingRequests();
     setRlBenchmark(null);
     setRlTrainingJob(null);
     setRlPolicyEvaluation(null);
@@ -7673,10 +7831,6 @@ export function App() {
     setGodotSimulatorReloadKey((value) => value + 1);
   };
 
-  const openGodotSimulatorStandalone = () => {
-    window.open(GODOT_SIMULATOR_URL, '_blank', 'noopener,noreferrer');
-  };
-
   const toggleGodotSimulator = () => {
     const nextOpen = !isGodotSimulatorOpen;
     if (nextOpen) {
@@ -7688,6 +7842,24 @@ export function App() {
     }
     setHasPreviewedGodotSimulator(true);
     setIsGodotSimulatorOpen(nextOpen);
+  };
+
+  const startNativeGodotValidation = async () => {
+    if (!generatedGodotRequest || nativeGodot.busy) return;
+    setIsGodotSimulatorOpen(false);
+    setInspectorPanel(null);
+    setHasPreviewedGodotSimulator(true);
+    setGodotImportFeedback(null);
+    setSandboxRuntime((runtime) => ({
+      ...runtime,
+      importedGodotResult: null,
+      activeDemoCaseId: null,
+      phases: patchSandboxPhases(runtime.phases, [
+        { id: 'micro-validation', status: 'running', startedAt: scenarioClockLabel, startedMinute: runtime.elapsedMinutes, completedAt: undefined, completedMinute: undefined, summary: '正在将单船数据传送至独立模拟器，等待真实验证结果。' },
+        { id: 'metric-feedback', status: 'pending', startedAt: pendingPhaseStartLabel, startedMinute: 0, completedAt: undefined, completedMinute: undefined, summary: '等待独立模拟器回写。' },
+      ]),
+    }));
+    await nativeGodot.start();
   };
 
   const setMapView = (modeId: MapViewMode) => {
@@ -8398,6 +8570,8 @@ export function App() {
       <section
         className={`map-stage${mapSurfaceMode === 'satellite-live' ? ' map-stage--satellite-live' : ' map-stage--simulation'}${isSimulationMapDragging ? ' map-stage--dragging' : ''}`}
         aria-label={`${scenario.regionLabel ?? scenario.name}沙盘地图`}
+        aria-hidden={activeModule === 'evidence'}
+        inert={activeModule === 'evidence'}
         onPointerCancel={stopSimulationMapDrag}
         onPointerDown={handleSimulationMapPointerDown}
         onPointerMove={handleSimulationMapPointerMove}
@@ -8457,8 +8631,6 @@ export function App() {
               <span>模拟潮流 {scenario.weather.currentSpeedKnots.toFixed(1)} kn</span>
               <em>{scenario.vesselMarkers.length} 艘动画验证船</em>
             </div>
-          </>
-        )}
 
         {(scenario.mapLabels ?? []).map((label) => (
           <div
@@ -9445,6 +9617,8 @@ export function App() {
             </table>
           </section>
         )}
+          </>
+        )}
 
       </section>
 
@@ -9542,7 +9716,7 @@ export function App() {
             </div>
             <div className="rl-decision-cockpit__model">
               <strong>{rlPolicyInference?.model.policyId ?? '等待真实训练检查点'}</strong>
-              <span>{rlInferenceStatus === 'running' ? `检查点策略推理 ${rlInferenceProgress.toFixed(2)}%` : rlPolicyApplied ? '策略已进入沙盘回放' : rlInferenceStatus === 'completed' ? '推理完成 · 等待采用' : '策略服务待命'}</span>
+              <span>{rlInferenceStatus === 'running' ? `检查点策略推理 ${rlInferenceProgress.toFixed(2)}%` : rlPolicyApplied ? '策略已进入沙盘回放' : rlInferenceStatus === 'completed' ? (rlPolicyInference?.admission?.status === 'admitted' ? '推理完成 · 等待采用' : '推理完成 · 门禁拒绝采用') : rlInferenceStatus === 'failed' ? '推理失败 · 可重试' : '策略服务待命'}</span>
             </div>
             <div className="rl-decision-cockpit__header-actions">
               <button aria-label="打开策略训练中心" onClick={openRlTrainingWindow} type="button">
@@ -9595,7 +9769,7 @@ export function App() {
                 ]).slice(0, 6).map((item) => (
                   <span key={item.id}>
                     <small>{item.label}</small>
-                    <strong>{item.raw}{item.unit}</strong>
+                    <strong>{Number(item.raw.toFixed(2))}{item.unit}</strong>
                     <i><b style={{ width: `${clampNumber(item.normalized * 100, 0, 100)}%` }} /></i>
                     <em>x={item.normalized.toFixed(3)}</em>
                   </span>
@@ -9649,6 +9823,7 @@ export function App() {
                     <small>拥堵 {forecast.congestionPercent.toFixed(1)}% · 延误 {forecast.delayMinutes}分 · 恢复 {forecast.recoveryMinutes}分 · 碳 {forecast.carbonDeltaTons > 0 ? '+' : ''}{forecast.carbonDeltaTons.toFixed(1)}t</small>
                   </article>
                 ))}
+                {rlInferenceStatus === 'failed' && <p role="alert">推理失败：{rlInferenceError || '请先完成训练并确认检查点可用'}。可重新预测或打开训练中心。</p>}
                 {rlInferenceStatus === 'running' && <p>正在执行 32 次策略集成与情景 rollout，概率分布将在推理完成后刷新。</p>}
               </div>
             </section>
@@ -9779,7 +9954,7 @@ export function App() {
               <button aria-label="刷新 Godot 仿真视窗" onClick={refreshGodotSimulator} type="button">
                 <RefreshCw size={13} />
               </button>
-              <button aria-label="独立打开 Godot 仿真页" onClick={openGodotSimulatorStandalone} type="button">
+              <button aria-label="独立打开模拟器并传送数据" disabled={!generatedGodotRequest || nativeGodot.busy} onClick={() => void startNativeGodotValidation()} type="button">
                 <ExternalLink size={13} />
               </button>
               <button aria-label="关闭 Godot 仿真视窗" onClick={() => setIsGodotSimulatorOpen(false)} type="button">
@@ -9855,6 +10030,7 @@ export function App() {
                 className="rl-xiaoyi-global-button"
                 data-xiaoyi-action="rl-xiaoyi-configure"
                 data-xiaoyi-state={xiaoyiAdvisorStatus}
+                data-xiaoyi-revision={xiaoyiRlAdvice?.generatedAt ?? ''}
                 disabled={xiaoyiAdvisorStatus === 'thinking'}
                 onClick={() => void askXiaoyiForRlTraining('all')}
                 type="button"
@@ -10874,7 +11050,7 @@ export function App() {
                   {xiaoyiAdvisorStatus === 'thinking'
                     ? '正在读取优化目标、沙盘压力和训练约束…'
                     : xiaoyiAdvisorStatus === 'failed'
-                      ? '顾问请求暂时不可用，请重试；当前训练参数未被修改。'
+                      ? `顾问请求暂时不可用：${xiaoyiAdvisorError}。请重试；当前训练参数未被修改。`
                       : xiaoyiRlAdvice
                         ? xiaoyiRlAdvice.operatorSummary
                         : `你只需要选择“${activeRlTrainingObjective.label}”，其余算法和参数可以交给我。`}
@@ -11070,6 +11246,7 @@ export function App() {
           <div className="carbon-foot">
             <span>
               <BilingualText text="当前小时" />
+              <small>{carbonLatestTrend.hour}</small>
               <strong>
                 <RollingMetricValue
                   value={isOperationalSceneTelemetryPending ? '--' : String(carbonLatestTrend.value)}
@@ -11475,8 +11652,7 @@ export function App() {
                     <span>
                       <small><BilingualText text="碳排变化" /></small>
                       <strong>
-                        {recoveryAdjustedCarbonTons > 0 ? '+' : ''}
-                        {recoveryAdjustedCarbonTons.toFixed(1)}<em>t</em>
+                        {formatCarbonDeltaTons(recoveryAdjustedCarbonTons, true)}<em>t</em>
                       </strong>
                     </span>
                   </div>
@@ -11493,7 +11669,7 @@ export function App() {
                     {importedGodotResult ? (
                       <small>
                         {recoveryAdjustedRiskLabel} / 耗时 {recoveryAdjustedTravelMinutes.toFixed(0)}分 / 碳排{' '}
-                        {recoveryAdjustedCarbonTons.toFixed(1)}t
+                        {formatCarbonDeltaTons(recoveryAdjustedCarbonTons)}t
                       </small>
                     ) : (
                       <small>
@@ -11503,7 +11679,7 @@ export function App() {
                       </small>
                     )}
                   </div>
-                  <div className={`micro-validation-actions${godotImportFeedback ? ' micro-validation-actions--with-feedback' : ''}`}>
+                  <div className="micro-validation-actions micro-validation-actions--native">
                     <div className="micro-validation-action-row">
                       <button
                         className="control-button control-button--primary micro-validation-button"
@@ -11524,22 +11700,24 @@ export function App() {
                         <BilingualText text="生成信息流" />
                       </button>
                       <button
+                        className="control-button control-button--primary micro-validation-button"
+                        disabled={!generatedGodotRequest || nativeGodot.busy}
+                        onClick={() => void startNativeGodotValidation()}
+                        title="自动传送单船数据到本机模拟器，独立窗口验证后自动回写"
+                        type="button"
+                      >
+                        <ExternalLink size={16} />
+                        <BilingualText text="独立模拟器验证" />
+                      </button>
+                      <button
                         className={`control-button micro-validation-button${isGodotSimulatorOpen ? ' control-button--active' : ''}`}
-                        disabled={!generatedGodotRequest}
+                        disabled={!generatedGodotRequest || nativeGodot.busy}
                         onClick={toggleGodotSimulator}
+                        title="在浏览器加载完整场景；首次初始化可能较慢"
                         type="button"
                       >
                         <Expand size={16} />
-                        <BilingualText text="航行模拟器" />
-                      </button>
-                      <button
-                        className="control-button control-button--primary micro-validation-button"
-                        disabled={!generatedGodotRequest || Boolean(importedGodotResult)}
-                        onClick={handleLocalValidationAndFeedback}
-                        type="button"
-                      >
-                        <RefreshCw size={16} />
-                        <BilingualText text="本地验证回写" />
+                        <BilingualText text="内嵌预览" />
                       </button>
                       <button
                         className="control-button micro-validation-button"
@@ -11558,6 +11736,25 @@ export function App() {
                         ref={godotResultInputRef}
                         type="file"
                       />
+                    </div>
+                    <div className="native-validation-status" aria-label="独立模拟器状态" data-job-id={nativeGodot.job?.id} data-request-id={nativeGodot.job?.requestId} data-state={nativeGodot.busy ? 'running' : nativeGodot.job?.status ?? 'idle'}>
+                      <p role="status" className={nativeGodot.error ? 'native-validation-error' : undefined}>
+                        {nativeGodot.error || nativeGodot.message || '单船数据自动传送，独立窗口验证后自动回写。'}
+                      </p>
+                      <div>
+                        {(nativeGodot.busy || nativeGodot.job?.windowOpen) && (
+                          <button type="button" onClick={() => void nativeGodot.cancel()}>{nativeGodot.busy ? '取消独立验证' : '关闭独立模拟器'}</button>
+                        )}
+                        {nativeGodot.availability?.available === false && (
+                          <button type="button" onClick={() => void nativeGodot.refreshAvailability()}>重新检查本机模拟器</button>
+                        )}
+                        <button
+                          type="button"
+                          disabled={!generatedGodotRequest || Boolean(importedGodotResult) || nativeGodot.busy}
+                          onClick={handleLocalValidationAndFeedback}
+                          title="使用本地规则估算，不运行 Godot 物理场景"
+                        >快速估算回写</button>
+                      </div>
                     </div>
                     {godotImportFeedback && (
                       <p

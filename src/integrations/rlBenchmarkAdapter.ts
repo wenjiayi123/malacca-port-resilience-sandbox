@@ -1,3 +1,5 @@
+import { resolveRlServiceEndpoint } from './rlServiceEndpoint.ts';
+
 export type RlBaselineAlgorithmId =
   | 'q-learning'
   | 'sarsa'
@@ -237,7 +239,7 @@ export const createRlTrainingJob = async (
   request: unknown,
   authToken = '',
   signal?: AbortSignal,
-) => checkedJson<RlTrainingJobSnapshot>(await fetch(endpoint, {
+) => checkedJson<RlTrainingJobSnapshot>(await fetch(resolveRlServiceEndpoint(endpoint), {
   method: 'POST',
   headers: authorizedHeaders(authToken, true),
   body: JSON.stringify(request),
@@ -248,15 +250,17 @@ export const fetchRlTrainingJob = async (
   jobId: string,
   authToken = '',
   signal?: AbortSignal,
-) => checkedJson<RlTrainingJobSnapshot>(await fetch(`/api/rl/jobs/${encodeURIComponent(jobId)}`, {
+  endpoint = '/api/rl/jobs',
+) => checkedJson<RlTrainingJobSnapshot>(await fetch(resolveRlServiceEndpoint(endpoint, 'jobs', jobId), {
   headers: authorizedHeaders(authToken),
   signal,
 }));
 
-export const cancelRlTrainingJob = async (jobId: string, authToken = '') =>
-  checkedJson<RlTrainingJobSnapshot>(await fetch(`/api/rl/jobs/${encodeURIComponent(jobId)}`, {
+export const cancelRlTrainingJob = async (jobId: string, authToken = '', endpoint = '/api/rl/jobs') =>
+  checkedJson<RlTrainingJobSnapshot>(await fetch(resolveRlServiceEndpoint(endpoint, 'jobs', jobId), {
     method: 'DELETE',
     headers: authorizedHeaders(authToken),
+    signal: AbortSignal.timeout(8_000),
   }));
 
 export const evaluateRlTrainingJob = async (
@@ -264,12 +268,15 @@ export const evaluateRlTrainingJob = async (
   algorithmId: RlBaselineAlgorithmId,
   testCaseId: RlPolicyEvaluationResponse['testCaseId'],
   authToken = '',
+  signal?: AbortSignal,
+  endpoint = '/api/rl/jobs',
 ) => checkedJson<RlPolicyEvaluationResponse>(await fetch(
-  `/api/rl/jobs/${encodeURIComponent(jobId)}/evaluate`,
+  resolveRlServiceEndpoint(endpoint, 'jobs', jobId, 'evaluate'),
   {
     method: 'POST',
     headers: authorizedHeaders(authToken, true),
     body: JSON.stringify({ algorithmId, testCaseId }),
+    signal,
   },
 ));
 

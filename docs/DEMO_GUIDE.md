@@ -9,8 +9,12 @@ pnpm demo:check
 pnpm demo:web
 ```
 
-默认演示地址为 <http://127.0.0.1:5180>。`demo:check` 会验证 Node、pnpm、依赖与 Web 构建；
+默认演示地址为 <http://127.0.0.1:5174>。`demo:check` 会验证 Node、pnpm、依赖与 Web 构建；
 Godot 是可选微观验证子系统，没有配置时不会阻断 Web 沙盘。
+
+桌面启动器不读取终端的环境配置。启动与环境检查脚本会查找 PATH、Homebrew 和本机已有的
+Codex 缓存运行环境，并验证 Node.js 至少为 24；也可用 `MALACCA_NODE_BIN` 指定 Node 的绝对路径。
+启动日志会显示选中的运行环境。无需重新打包桌面应用，直接重试即可使用修复后的脚本。
 
 ## 可选 Godot 桥接
 
@@ -34,6 +38,6 @@ iframe；否则界面会显示重建说明，避免把缺失二进制伪装成�
 
 ## Demo flow
 
-Run `pnpm demo:web` and open <http://127.0.0.1:5180>. The optional Godot bridge requires explicit
+Run `pnpm demo:web` and open <http://127.0.0.1:5174>. The optional Godot bridge requires explicit
 `GODOT_PROJECT` and `GODOT_BIN` paths. Generated Godot binaries remain local and are not part of this source
 distribution.

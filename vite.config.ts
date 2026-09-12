@@ -6,10 +6,13 @@ import { portCommunityPlugin } from './server/portCommunityPlugin.ts';
 import { vesselTrafficSafetyPlugin } from './server/vesselTrafficSafetyPlugin.ts';
 import { productionAuthorityPlugin } from './server/productionAuthorityPlugin.ts';
 import { portBusinessRlPlugin } from './server/portBusinessRlPlugin.ts';
+import { godotWebBridgePlugin } from './server/godotWebBridgePlugin.ts';
+import { nativeGodotValidationPlugin } from './server/nativeGodotValidationPlugin.ts';
 
 export default defineConfig(({ mode }) => {
   const localEnvironment = loadEnv(mode, process.cwd(), '');
   for (const key of [
+    'GODOT_BIN',
     'MAPTILER_API_KEY',
     'AISSTREAM_API_KEY',
     'AISSTREAM_WEBSOCKET_URL',
@@ -33,6 +36,8 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
+      godotWebBridgePlugin(),
+      nativeGodotValidationPlugin(),
       portBusinessRlPlugin(),
       productionAuthorityPlugin(),
       vesselTrafficSafetyPlugin(),

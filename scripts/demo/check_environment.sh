@@ -17,23 +17,9 @@ echo "Godot binary: ${GODOT_BIN}"
 echo "Web URL: http://${HOST}:${PORT}/"
 echo
 
-if command -v node >/dev/null 2>&1; then
-  echo "[OK] node $(node --version)"
-else
-  echo "[FAIL] node is not available"
-  exit 1
-fi
-
-if command -v pnpm >/dev/null 2>&1; then
-  PNPM_CMD=(pnpm)
-elif command -v corepack >/dev/null 2>&1; then
-  PNPM_CMD=(corepack pnpm)
-elif command -v npx >/dev/null 2>&1; then
-  PNPM_CMD=(npx --yes pnpm@11.9.0)
-else
-  echo "[FAIL] pnpm, Corepack and npx are unavailable"
-  exit 1
-fi
+source "${SCRIPT_DIR}/resolve_web_runtime.sh"
+resolve_web_runtime
+echo "[OK] node $(node --version): ${MALACCA_NODE_BIN}"
 echo "[OK] pnpm $("${PNPM_CMD[@]}" --version)"
 
 if [[ -f "package.json" && -d "node_modules" ]]; then

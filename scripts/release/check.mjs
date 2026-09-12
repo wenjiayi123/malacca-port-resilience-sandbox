@@ -11,6 +11,7 @@ try {
   errors.push('公开发布隐私扫描失败');
 }
 for (const verifier of [
+  'scripts/operations/verifyUiRuntimeAcceptance.ts',
   'scripts/integration/verifyOperatorDataReadiness.ts',
   'scripts/integration/verifyTopTierHardeningEvidence.ts',
   'scripts/rl/verifyPortBusinessChampion.ts',

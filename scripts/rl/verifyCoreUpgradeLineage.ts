@@ -1,3 +1,4 @@
+import { isVerifiedRuntimeSourceExtension } from '../../server/runtimeCompatibilityEvidence.ts';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { sha256, validateCoreModelReport, type CoreModelReport } from '../../server/coreOperationsModelRegistry.ts';
@@ -11,11 +12,15 @@ export const readVerifiedUpgradeLineage=async()=>{
   validateCoreModelReport(report);
   if(!report.upgrade || !Object.keys(report.upgrade.sourceFiles).length)throw new Error('upgrade source evidence missing');
   for(const [file,digest]of Object.entries(report.historicalPreservation))if(sha256(await readFile(file))!==digest)throw new Error(`historical artifact changed:${file}`);
-  for(const [file,digest]of Object.entries(report.upgrade.sourceFiles))if(sha256(await readFile(file))!==digest)throw new Error(`upgrade source changed:${file}`);
+  for (const [file, expected] of Object.entries(report.upgrade.sourceFiles)) {
+    const actual = sha256(await readFile(file));
+    if (actual !== expected && !await isVerifiedRuntimeSourceExtension(CORE_UPGRADE_REPORT, file, expected, actual)) throw new Error(`upgrade source changed:${file}`);
+  }
   return report;
 };
 export const isVerifiedCoreSourceExtension=async(archivedReport:string,file:string,expected:string,actual:string)=>{
   try {
+    if (await isVerifiedRuntimeSourceExtension(archivedReport, file, expected, actual)) return true;
     const r=await readVerifiedUpgradeLineage();
     const reportPath=path.relative(process.cwd(),path.resolve(archivedReport));
     return Boolean(r.historicalPreservation[reportPath]&&r.changedSources[file]?.historicalDigests.includes(expected)&&r.changedSources[file].currentDigest===actual&&r.upgrade?.sourceFiles[file]===actual);

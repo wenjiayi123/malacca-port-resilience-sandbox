@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "godot-web-export-manifest.v1",
+  "generatedAt": "2026-09-12T10:00:59.713918+00:00",
+  "engineVersion": "4.7.1.stable.official.a13da4feb",
+  "exportPreset": "Malacca Web Simulator",
+  "source": {
+    "gitSha": "dc0624f5ee3b0bcbeb21f5c610b670bc8bb3778f",
+    "gitTree": "5cb8c1d54cf46d51565fcd70855e1291a7089ad6",
+    "commitDate": "2026-09-07T14:29:05+08:00",
+    "dirty": false,
+    "keyFiles": {
+      "project.godot": "135d482f0c9be3a5a719c8a625c3ff96f93e39a7c686883c333be8aa9ff288b2",
+      "main.tscn": "d7d80d769abb891c2a9519e9cb7a1c56d2b8f32a213e7edefabe78e03c371161",
+      "scripts/integration/malacca_validation_bridge.gd": "ccea0d891aeb526c8f30cf9c0387cee6be2c2371ac6e8de4c1f9f116c5abe72a",
+      "scripts/audio/ship_ambient_audio.gd": "42e2f7e6d966d407365be5dbf5449c121f659de9aac88e888b43d0bc1dba89bd",
+      "export_presets.cfg": "b96bbea15168617ecc044807ed9127d48f353ed6efd688109f560ba34221c4cb"
+    }
+  },
+  "sourceIsolatedBeforeImport": true,
+  "webCompatibility": {
+    "executionScope": "isolated-source-copy",
+    "patches": [
+      {
+        "id": "procedural-ambient-audio-stream-v1",
+        "file": "scripts/audio/ship_ambient_audio.gd",
+        "beforeSha256": "42e2f7e6d966d407365be5dbf5449c121f659de9aac88e888b43d0bc1dba89bd",
+        "afterSha256": "1c8726d990eba0ef85ca9a8cbb9387c4b2c4fd80fc34956b4e27a3f38f3e30df",
+        "reason": "The four AudioStreamGenerator channels require Stream playback; Web Sample playback cannot generate their frames."
+      },
+      {
+        "id": "terrain-aware-coordinate-embedding-v1",
+        "file": "scripts/integration/malacca_validation_bridge.gd",
+        "beforeSha256": "ccea0d891aeb526c8f30cf9c0387cee6be2c2371ac6e8de4c1f9f116c5abe72a",
+        "afterSha256": "76ae67f992b2713ac168f375bbf200c8e0d4b1223c7dd1426c99f891f864e2c1",
+        "reason": "Embed the unchanged route direction, length and progress into a safe corridor using current scene terrain, before adding the original risk obstacles."
+      },
+      {
+        "id": "terrain-aware-coordinate-mapper-v1",
+        "file": "scripts/integration/malacca_web_coordinate_mapper.gd",
+        "beforeSha256": null,
+        "afterSha256": "58f06878e5bec810a3589f8cda2b8929f8d6449b9cccb4e1859ddda5603a35ce"
+      }
+    ]
+  },
+  "coordinateValidation": {
+    "file": "coordinate-validation.json",
+    "sha256": "612cbe0cb8b8654ad6cb644cba87110abc6ddf0fc6a885ff8c582c721192d512",
+    "caseCount": 3,
+    "headlessImmediateFinalization": false,
+    "mappingInvariantChecks": 10,
+    "requestFixtureSha256": "491c71cbec26fd3c8ded593b8f9f377c02d149f32a7a1961dac33916d2c095c9",
+    "verifierSha256": "165b0ae17ffe081344426ff66f452fe4413ac3c7f9e0b0b28ae4e0ec5a26c46b"
+  },
+  "artifacts": {
+    "index.html": {
+      "bytes": 5469,
+      "sha256": "da03af4b099a67d7b5e4ad6560f8be101a3da12e0fb1fa59b79279ed3c655c25"
+    },
+    "index.js": {
+      "bytes": 279815,
+      "sha256": "68586d6daafc93c6e697b3fb258976874aa7459b8931165ebb1dc3c9614cc42c"
+    },
+    "index.pck": {
+      "bytes": 588169244,
+      "sha256": "8b461d67a225d19fef03afb13770adce89e68486344756e0fa9b84eae3e3e473"
+    },
+    "index.wasm": {
+      "bytes": 39513091,
+      "sha256": "35116f68540ac41acf7d71ea457added91b5e960a9cca3e2acc72918eaf01277"
+    }
+  },
+  "authority": {
+    "simulationMode": true,
+    "productionAuthority": false
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "id": "05a60dad-6445-43a3-95d9-4606ef9a8de4",
+  "requestId": "malacca-demo-normal-transit-20260101023000-acc2bdf4-85fc-406c-afdb-77376d52388c",
+  "vesselId": "vessel-001",
+  "status": "cancelled",
+  "createdAt": "2026-09-12T10:28:54.450Z",
+  "updatedAt": "2026-09-12T10:29:07.641Z",
+  "windowOpen": false,
+  "sourceGitSha": "dc0624f5ee3b0bcbeb21f5c610b670bc8bb3778f",
+  "pckSha256": "8b461d67a225d19fef03afb13770adce89e68486344756e0fa9b84eae3e3e473"
+}

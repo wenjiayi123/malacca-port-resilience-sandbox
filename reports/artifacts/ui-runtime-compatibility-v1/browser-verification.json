@@ -1,0 +1,1361 @@
+{
+  "schemaVersion": "manual-browser-ui-audit.v1",
+  "generatedAt": "2026-09-12T09:45:40.100735+00:00",
+  "method": "Codex CUA real browser clicks, rendered DOM and screenshots; downloaded JSON parsed from filesystem",
+  "viewports": [
+    {
+      "width": 1280,
+      "height": 720
+    },
+    {
+      "width": 390,
+      "height": 844
+    },
+    {
+      "width": 1920,
+      "height": 1080
+    }
+  ],
+  "coverage": {
+    "mainModules": 6,
+    "evidenceTabs": 10,
+    "expandedPanels": 8,
+    "demoPresets": 5,
+    "injectedEvents": 4,
+    "backendScenarios": 8,
+    "regulatoryScenarios": 4,
+    "staticNativeButtonTemplates": 140,
+    "staticCustomClickTargets": 21,
+    "extraPointerTargets": 4,
+    "staticInventoryScope": "Inventory recorded before the standalone native launch UI was added. Counts are static templates/event bindings, not individually clicked or passed controls; conditional and repeated instances may overlap."
+  },
+  "corePlan": {
+    "proposalId": "core-734fbdbe33d40663c88d",
+    "receiptId": "core-receipt-77c761a0de816164",
+    "modelAlgorithm": "factorized-fitted-policy-iteration",
+    "approval": "approved_for_sandbox",
+    "executed": true,
+    "rolledBack": true,
+    "staleSnapshotRejected": true
+  },
+  "training": {
+    "jobId": "rl-20260912090921-e55c9fb0",
+    "rlAlgorithms": 4,
+    "episodesPerAlgorithm": 120,
+    "tuningTrials": 1,
+    "mpcComparison": true,
+    "closedLoop": {
+      "steps": 57,
+      "progressPercent": 100,
+      "meanReward": 3.419
+    },
+    "stress": {
+      "meanReward": 3.378,
+      "delayHoursBefore": 0.34,
+      "delayHoursAfter": 0.11,
+      "resetDuringPlayback": true
+    },
+    "weather": {
+      "meanReward": 3.252,
+      "expectedSafetyRiskPercent": 7.57
+    }
+  },
+  "downloads": [
+    {
+      "filename": "malacca-closure-report-draft-incomplete-2026-09-12T09-34-29-282Z.json",
+      "bytes": 137974,
+      "sha256": "d10013d13cd5d4af7ddc06fe140d57d6f9c88045236590708eca3e255c351827",
+      "protocolVersion": "malacca-closure-report.v1",
+      "completionStatus": "DRAFT_INCOMPLETE",
+      "godotValidation": {
+        "request": {
+          "requestId": "malacca-validation-20260102040000-vessel-001",
+          "vesselId": "vessel-001",
+          "vesselName": "MXS Aurora",
+          "imo": "IMO 9834012",
+          "category": "container",
+          "routeId": "main-route-north",
+          "channelId": "malacca-main",
+          "origin": {
+            "portId": "penang",
+            "portName": "槟城港",
+            "geo": {
+              "lat": 5.4164,
+              "lon": 100.3213
+            }
+          },
+          "destination": {
+            "portId": "singapore",
+            "portName": "新加坡港",
+            "geo": {
+              "lat": 1.2644,
+              "lon": 103.8223
+            }
+          },
+          "speedProfile": {
+            "initialKnots": 11.1,
+            "targetKnots": 11.1,
+            "minSafeKnots": 7.2,
+            "maxSafeKnots": 16.9
+          },
+          "headingDeg": 89,
+          "progressPercent": 56.8,
+          "riskEvents": [
+            {
+              "id": "risk-weather-sea-state",
+              "type": "extreme-weather",
+              "label": "海况与能见度约束",
+              "affectedArea": "西北入口至新加坡主通道",
+              "severity": "ok",
+              "startMinute": 0,
+              "expectedDurationMinutes": 120,
+              "recommendedAction": "降低目标航速并扩大安全距离"
+            }
+          ],
+          "dispatchStrategyIds": [
+            "divert-to-tanjung-pelepas",
+            "slow-steaming-eastbound",
+            "off-peak-klang-arrival"
+          ],
+          "createdAt": "2026-01-01T20:00:00.000Z"
+        },
+        "result": {
+          "averageSpeedKnots": 10.74,
+          "carbonDeltaTons": 0,
+          "carbonModel": {
+            "co2TonsPerFuelTon": 3.114,
+            "hotelLoadKw": 12,
+            "measured": false,
+            "name": "cubic_propulsion_sfoc_v1",
+            "referencePropulsionPowerKw": 180,
+            "referenceSpeedKnots": 12,
+            "specificFuelConsumptionKgPerKwh": 0.205
+          },
+          "collisionCount": 0,
+          "delayDeltaMinutes": 0.02,
+          "estimatedTravelMinutes": 45.27,
+          "groundingCount": 0,
+          "loadedScene": {
+            "riskZoneCount": 1,
+            "routePointCount": 2,
+            "temporaryObstacleCount": 0
+          },
+          "minClearanceMeters": -22.58,
+          "reachedDestination": false,
+          "recommendedSpeedKnots": 7.2,
+          "requestId": "malacca-validation-20260102040000-vessel-001",
+          "riskEventResolvedCount": 0,
+          "riskLevel": "critical",
+          "safePass": false,
+          "simulatedDurationSeconds": 2,
+          "status": "failed",
+          "summary": "验证未通过：航行过程中出现碰撞、搁浅或安全间距不足。",
+          "vesselId": "vessel-001"
+        }
+      },
+      "missingSteps": [
+        {
+          "id": "event-injection",
+          "label": "事件注入",
+          "status": "pending"
+        }
+      ],
+      "credentialRedacted": true,
+      "stage": "intermediate_before_final_closure_status_fix"
+    },
+    {
+      "filename": "core-operations-decision-executed_simulation_only-core-734fbdbe33d40663c88d.json",
+      "bytes": 25179,
+      "sha256": "2441c83f0c002b3cf7a9e58d222c488279252a62364f61eec935a2a0a4c03b44",
+      "protocolVersion": "core-operations-decision-report.v1",
+      "completionStatus": "EXECUTED_SIMULATION_ONLY",
+      "proposalId": "core-734fbdbe33d40663c88d",
+      "authority": {
+        "simulation_mode": true,
+        "live_data_verified": false,
+        "dispatch_allowed": false,
+        "production_authority": false,
+        "human_approval_required": true,
+        "direct_navigation_control": false,
+        "direct_equipment_control": false,
+        "regulatory_authority": false,
+        "independent_safety_interlock_authoritative": true
+      }
+    },
+    {
+      "filename": "core-operations-decision-rolled_back_simulation_only-core-734fbdbe33d40663c88d.json",
+      "bytes": 25193,
+      "sha256": "d409adae4a06ba3b179f8d0f64a1f5e573eb673b488e95255ed329822aeda6ca",
+      "protocolVersion": "core-operations-decision-report.v1",
+      "completionStatus": "ROLLED_BACK_SIMULATION_ONLY",
+      "proposalId": "core-734fbdbe33d40663c88d",
+      "authority": {
+        "simulation_mode": true,
+        "live_data_verified": false,
+        "dispatch_allowed": false,
+        "production_authority": false,
+        "human_approval_required": true,
+        "direct_navigation_control": false,
+        "direct_equipment_control": false,
+        "regulatory_authority": false,
+        "independent_safety_interlock_authoritative": true
+      }
+    },
+    {
+      "filename": "port-business-decision-approved_simulation_only-business-61a6982415e6c48452c5.json",
+      "bytes": 14979,
+      "sha256": "858acc9d5e812ab0d209b6e216ae5336a16035ae7762839dd26338b9af96b8e0",
+      "protocolVersion": "port-business-decision-report.v1",
+      "completionStatus": "APPROVED_SIMULATION_ONLY",
+      "proposalId": "business-61a6982415e6c48452c5",
+      "authority": {
+        "simulation_mode": true,
+        "public_data_anchored": true,
+        "terminal_measurements_available": false,
+        "live_data_verified": false,
+        "dispatch_allowed": false,
+        "production_authority": false,
+        "human_approval_required": true,
+        "official_release_exogenous": true,
+        "emergency_control_exogenous": true
+      }
+    },
+    {
+      "filename": "malacca-closure-report-draft-incomplete-2026-09-12T09-44-58-577Z.json",
+      "bytes": 138155,
+      "sha256": "32b941ff424a7c31c2c05f348c0c3e5e166c15491b905fe555362fe23d43678f",
+      "protocolVersion": "malacca-closure-report.v1",
+      "completionStatus": "DRAFT_INCOMPLETE",
+      "godotValidation": {
+        "request": {
+          "requestId": "malacca-validation-20260101154500-vessel-001-60eb7c23-095c-48d9-b8ea-fd58fb9d959d",
+          "vesselId": "vessel-001",
+          "vesselName": "MXS Aurora",
+          "imo": "IMO 9834012",
+          "category": "container",
+          "routeId": "main-route-north",
+          "channelId": "malacca-main",
+          "origin": {
+            "portId": "penang",
+            "portName": "槟城港",
+            "geo": {
+              "lat": 5.4164,
+              "lon": 100.3213
+            }
+          },
+          "destination": {
+            "portId": "singapore",
+            "portName": "新加坡港",
+            "geo": {
+              "lat": 1.2644,
+              "lon": 103.8223
+            }
+          },
+          "speedProfile": {
+            "initialKnots": 11.2,
+            "targetKnots": 11.2,
+            "minSafeKnots": 7.3,
+            "maxSafeKnots": 16.6
+          },
+          "headingDeg": 87.4,
+          "progressPercent": 88.2,
+          "riskEvents": [
+            {
+              "id": "risk-malacca-main",
+              "type": "collision-risk",
+              "label": "马六甲主航道通航风险",
+              "affectedArea": "西北入口至新加坡主通道",
+              "severity": "warning",
+              "startMinute": 0,
+              "expectedDurationMinutes": 68,
+              "recommendedAction": "新加坡港分流至丹戎帕拉帕斯港"
+            }
+          ],
+          "dispatchStrategyIds": [
+            "divert-to-tanjung-pelepas",
+            "reroute-east-dumai-risk",
+            "slow-steaming-eastbound"
+          ],
+          "createdAt": "2026-01-01T07:45:00.000Z"
+        },
+        "result": {
+          "averageSpeedKnots": 11.62,
+          "carbonDeltaTons": 0,
+          "carbonModel": {
+            "co2TonsPerFuelTon": 3.114,
+            "hotelLoadKw": 12,
+            "measured": false,
+            "name": "cubic_propulsion_sfoc_v1",
+            "referencePropulsionPowerKw": 180,
+            "referenceSpeedKnots": 12,
+            "specificFuelConsumptionKgPerKwh": 0.205
+          },
+          "collisionCount": 0,
+          "delayDeltaMinutes": 0,
+          "estimatedTravelMinutes": 54.4,
+          "groundingCount": 0,
+          "loadedScene": {
+            "riskZoneCount": 1,
+            "routePointCount": 2,
+            "temporaryObstacleCount": 2
+          },
+          "minClearanceMeters": -14.91,
+          "reachedDestination": false,
+          "recommendedSpeedKnots": 7.3,
+          "requestId": "malacca-validation-20260101154500-vessel-001-60eb7c23-095c-48d9-b8ea-fd58fb9d959d",
+          "riskEventResolvedCount": 0,
+          "riskLevel": "critical",
+          "safePass": false,
+          "simulatedDurationSeconds": 2,
+          "status": "failed",
+          "summary": "验证未通过：航行过程中出现碰撞、搁浅或安全间距不足。",
+          "vesselId": "vessel-001"
+        }
+      },
+      "missingSteps": [
+        {
+          "id": "event-injection",
+          "label": "事件注入",
+          "status": "pending"
+        },
+        {
+          "id": "ai-dispatch",
+          "label": "已训练策略检查点推理",
+          "status": "pending"
+        }
+      ],
+      "credentialRedacted": true,
+      "stage": "intermediate_after_closure_status_fix_before_coordinate_fix",
+      "geometryFinding": "The native failed result is preserved; initial position intersects current terrain. This proves bridge/report transport but does not validate intended normal or risky scenario behavior."
+    }
+  ],
+  "limitations": [
+    "Not all parameter combinations or device sizes",
+    "No authorized live AIS or field dispatch",
+    "Audible output cannot be certified from logs alone",
+    "Native Godot acceptance covers an approximately two-second validation window; it does not certify full-route completion, verified geography, or field safety.",
+    "Finite deterministic terrain-embedding search may reject a feasible narrow corridor; it does not claim a globally optimal placement.",
+    "Only the five earlier report downloads are verified on disk. A later Web export attempt is recorded separately as an unconfirmed download, not as completed file delivery.",
+    "Final external-close UI synchronization used the owned-job API to simulate an external exit; an actual OS X-button click was not performed in that check."
+  ],
+  "status": "completed_with_documented_simulation_and_coverage_boundaries",
+  "mapLibre641BrowserRegression": {
+    "status": "passed_rendered_browser_regression",
+    "version": "6.4.1",
+    "baseUrl": "http://127.0.0.1:4186/",
+    "method": "Root agent CUA browser observation after upgrade",
+    "satelliteTexturesLoaded": true,
+    "terrain3DLoaded": true,
+    "portPopup": {
+      "name": "巴生港",
+      "latitude": "2.99970",
+      "longitude": "101.39280"
+    },
+    "browserWarnErrorCount": 0,
+    "finalGlobalGateStatus": "passed",
+    "narrowViewport": {
+      "width": 390,
+      "height": 844,
+      "canvasWidth": 390,
+      "canvasHeight": 580,
+      "documentClientWidth": 390,
+      "documentScrollWidth": 390,
+      "horizontalOverflow": false,
+      "sentinel2ImageryLoaded": true,
+      "terrain3DLoaded": true,
+      "resizedToContainer": true,
+      "browserWarnErrorCount": 0
+    },
+    "restoredViewport": {
+      "width": 1280,
+      "height": 720,
+      "simulationMapRestored": true
+    }
+  },
+  "godotAudioExportBeforeCoordinateFix": {
+    "status": "bridge_and_audio_verified_coordinate_mapping_defect_confirmed",
+    "requestId": "malacca-validation-20260101154500-vessel-001-60eb7c23-095c-48d9-b8ea-fd58fb9d959d",
+    "result": {
+      "averageSpeedKnots": 11.62,
+      "carbonDeltaTons": 0,
+      "carbonModel": {
+        "co2TonsPerFuelTon": 3.114,
+        "hotelLoadKw": 12,
+        "measured": false,
+        "name": "cubic_propulsion_sfoc_v1",
+        "referencePropulsionPowerKw": 180,
+        "referenceSpeedKnots": 12,
+        "specificFuelConsumptionKgPerKwh": 0.205
+      },
+      "collisionCount": 0,
+      "delayDeltaMinutes": 0,
+      "estimatedTravelMinutes": 54.4,
+      "groundingCount": 0,
+      "loadedScene": {
+        "riskZoneCount": 1,
+        "routePointCount": 2,
+        "temporaryObstacleCount": 2
+      },
+      "minClearanceMeters": -14.91,
+      "reachedDestination": false,
+      "recommendedSpeedKnots": 7.3,
+      "requestId": "malacca-validation-20260101154500-vessel-001-60eb7c23-095c-48d9-b8ea-fd58fb9d959d",
+      "riskEventResolvedCount": 0,
+      "riskLevel": "critical",
+      "safePass": false,
+      "simulatedDurationSeconds": 2,
+      "status": "failed",
+      "summary": "验证未通过：航行过程中出现碰撞、搁浅或安全间距不足。",
+      "vesselId": "vessel-001"
+    },
+    "browserWarnErrorCount": 0,
+    "audioEvidence": "Four generators explicitly Stream; nonzero finite sample buffers verified in Godot; no browser sample warnings; audible loudness not independently measured",
+    "manifest": "reports/artifacts/ui-runtime-compatibility-v1/godot-audio-export-before-coordinate-fix-manifest.json",
+    "auditStage": "intermediate_before_coordinate_fix",
+    "geometryFinding": {
+      "confirmed": true,
+      "initialClearanceMeters": -14.91,
+      "terrainObstacle": "GroundedPlate_05_CaveCutLandRoot",
+      "normalAndRiskScenarioAcceptance": "pending_coordinate_fix"
+    },
+    "manifestSha256": "6316c32b6acd14703d11a79e4254bf85cf917b2ecfbb8fe055c9c95c250b6d5c",
+    "pckSha256": "754c3b8e7f9c15a84ab8e4dea421ddf15d6d319092db8e912cddb37ca202f825",
+    "exportGeneratedAt": "2026-09-12T09:35:21.786816+00:00"
+  },
+  "timelineDisplayRegression": {
+    "status": "passed_behavior_and_rendered_browser_regression",
+    "observedIssues": [
+      "Completed phase retained pending start label",
+      "Initial event sensing used default 2024 timestamp while current telemetry was 2026"
+    ],
+    "fixScope": [
+      "Only set a missing phase start timestamp when pending transitions to completed without an explicit start",
+      "Preserve existing timestamps",
+      "Calibrate initial event sensing to the first current telemetry clock before user interactions",
+      "Reset initializes phases directly with the current baseScenario clock, without waiting for telemetry polling",
+      "Initial telemetry calibration and reset both use formatScenarioDateTime so timestamps match the +08:00 header clock",
+      "Before native startup, clear the prior demo or estimated result and phase completion; only the matching actual result can finish the micro-validation and feedback stages"
+    ],
+    "behaviorTestFile": "tests/appReportImportRuntime.test.ts",
+    "behaviorTestsPassed": 11,
+    "addedAssertion": "Accepted import completion sets a missing startedAt to completedAt",
+    "addedAssertions": [
+      "Accepted import completion sets a missing startedAt to completedAt",
+      "Actual reset handler immediately initializes the event phase using the current baseScenario clock"
+    ],
+    "browserChecks": {
+      "method": "Root agent CUA actual final App operations",
+      "firstSynchronizedEventTime": "2026-01-04 15:00:00",
+      "afterResetImmediateEventTime": "2026-01-04 15:00:00",
+      "default2024TimeAbsentAfterReset": true,
+      "rawUtcIsoAbsent": true,
+      "trainingWindowClosedBeforeReset": true
+    }
+  },
+  "godotFinalCoordinateExport": {
+    "status": "native_pck_regression_and_browser_normal_passed",
+    "manifest": "reports/artifacts/ui-runtime-compatibility-v1/godot-export-manifest.json",
+    "manifestSha256": "c9a3a11cb1c8e720c6619600db2a24123ed18d31b461de87ada4801d5aa0a6fd",
+    "exportGeneratedAt": "2026-09-12T10:00:59.713918+00:00",
+    "engineVersion": "4.7.1.stable.official.a13da4feb",
+    "source": {
+      "gitSha": "dc0624f5ee3b0bcbeb21f5c610b670bc8bb3778f",
+      "gitTree": "5cb8c1d54cf46d51565fcd70855e1291a7089ad6",
+      "commitDate": "2026-09-07T14:29:05+08:00",
+      "dirty": false,
+      "keyFiles": {
+        "project.godot": "135d482f0c9be3a5a719c8a625c3ff96f93e39a7c686883c333be8aa9ff288b2",
+        "main.tscn": "d7d80d769abb891c2a9519e9cb7a1c56d2b8f32a213e7edefabe78e03c371161",
+        "scripts/integration/malacca_validation_bridge.gd": "ccea0d891aeb526c8f30cf9c0387cee6be2c2371ac6e8de4c1f9f116c5abe72a",
+        "scripts/audio/ship_ambient_audio.gd": "42e2f7e6d966d407365be5dbf5449c121f659de9aac88e888b43d0bc1dba89bd",
+        "export_presets.cfg": "b96bbea15168617ecc044807ed9127d48f353ed6efd688109f560ba34221c4cb"
+      }
+    },
+    "webCompatibility": {
+      "executionScope": "isolated-source-copy",
+      "patches": [
+        {
+          "id": "procedural-ambient-audio-stream-v1",
+          "file": "scripts/audio/ship_ambient_audio.gd",
+          "beforeSha256": "42e2f7e6d966d407365be5dbf5449c121f659de9aac88e888b43d0bc1dba89bd",
+          "afterSha256": "1c8726d990eba0ef85ca9a8cbb9387c4b2c4fd80fc34956b4e27a3f38f3e30df",
+          "reason": "The four AudioStreamGenerator channels require Stream playback; Web Sample playback cannot generate their frames."
+        },
+        {
+          "id": "terrain-aware-coordinate-embedding-v1",
+          "file": "scripts/integration/malacca_validation_bridge.gd",
+          "beforeSha256": "ccea0d891aeb526c8f30cf9c0387cee6be2c2371ac6e8de4c1f9f116c5abe72a",
+          "afterSha256": "76ae67f992b2713ac168f375bbf200c8e0d4b1223c7dd1426c99f891f864e2c1",
+          "reason": "Embed the unchanged route direction, length and progress into a safe corridor using current scene terrain, before adding the original risk obstacles."
+        },
+        {
+          "id": "terrain-aware-coordinate-mapper-v1",
+          "file": "scripts/integration/malacca_web_coordinate_mapper.gd",
+          "beforeSha256": null,
+          "afterSha256": "58f06878e5bec810a3589f8cda2b8929f8d6449b9cccb4e1859ddda5603a35ce"
+        }
+      ]
+    },
+    "artifactChecks": {
+      "public/godot-simulator": {
+        "index.html": {
+          "bytes": 5469,
+          "sha256": "da03af4b099a67d7b5e4ad6560f8be101a3da12e0fb1fa59b79279ed3c655c25",
+          "matchesManifest": true
+        },
+        "index.js": {
+          "bytes": 279815,
+          "sha256": "68586d6daafc93c6e697b3fb258976874aa7459b8931165ebb1dc3c9614cc42c",
+          "matchesManifest": true
+        },
+        "index.pck": {
+          "bytes": 588169244,
+          "sha256": "8b461d67a225d19fef03afb13770adce89e68486344756e0fa9b84eae3e3e473",
+          "matchesManifest": true
+        },
+        "index.wasm": {
+          "bytes": 39513091,
+          "sha256": "35116f68540ac41acf7d71ea457added91b5e960a9cca3e2acc72918eaf01277",
+          "matchesManifest": true
+        },
+        "export-manifest.json": {
+          "sha256": "c9a3a11cb1c8e720c6619600db2a24123ed18d31b461de87ada4801d5aa0a6fd",
+          "matchesAuditManifest": true
+        }
+      },
+      "dist/godot-simulator": {
+        "index.html": {
+          "bytes": 5469,
+          "sha256": "da03af4b099a67d7b5e4ad6560f8be101a3da12e0fb1fa59b79279ed3c655c25",
+          "matchesManifest": true
+        },
+        "index.js": {
+          "bytes": 279815,
+          "sha256": "68586d6daafc93c6e697b3fb258976874aa7459b8931165ebb1dc3c9614cc42c",
+          "matchesManifest": true
+        },
+        "index.pck": {
+          "bytes": 588169244,
+          "sha256": "8b461d67a225d19fef03afb13770adce89e68486344756e0fa9b84eae3e3e473",
+          "matchesManifest": true
+        },
+        "index.wasm": {
+          "bytes": 39513091,
+          "sha256": "35116f68540ac41acf7d71ea457added91b5e960a9cca3e2acc72918eaf01277",
+          "matchesManifest": true
+        },
+        "export-manifest.json": {
+          "sha256": "c9a3a11cb1c8e720c6619600db2a24123ed18d31b461de87ada4801d5aa0a6fd",
+          "matchesAuditManifest": true
+        }
+      }
+    },
+    "nativeValidation": {
+      "path": "reports/artifacts/ui-runtime-compatibility-v1/godot-coordinate-validation.json",
+      "sha256": "612cbe0cb8b8654ad6cb644cba87110abc6ddf0fc6a885ff8c582c721192d512",
+      "passed": true,
+      "headlessImmediateFinalization": false,
+      "mappingInvariantChecks": 10,
+      "cases": [
+        {
+          "requestId": "coordinate-check-normal",
+          "vesselId": "vessel-001",
+          "status": "passed",
+          "safePass": true,
+          "riskLevel": "low",
+          "minClearanceMeters": 228.8,
+          "simulatedDurationSeconds": 2.11,
+          "reachedDestination": false,
+          "geographicCalibrationVerified": false,
+          "riskObstaclesAppliedAfterMapping": true,
+          "temporaryObstacleCount": 0
+        },
+        {
+          "requestId": "coordinate-check-original-risk",
+          "vesselId": "vessel-001",
+          "status": "degraded",
+          "safePass": false,
+          "riskLevel": "critical",
+          "minClearanceMeters": 10.44,
+          "simulatedDurationSeconds": 2.06,
+          "reachedDestination": false,
+          "geographicCalibrationVerified": false,
+          "riskObstaclesAppliedAfterMapping": true,
+          "temporaryObstacleCount": 2
+        },
+        {
+          "requestId": "coordinate-check-injected-closure",
+          "vesselId": "vessel-001",
+          "status": "failed",
+          "safePass": false,
+          "riskLevel": "critical",
+          "minClearanceMeters": -1.65,
+          "simulatedDurationSeconds": 2.01,
+          "reachedDestination": true,
+          "geographicCalibrationVerified": false,
+          "riskObstaclesAppliedAfterMapping": true,
+          "temporaryObstacleCount": 1
+        }
+      ]
+    },
+    "independentReview": {
+      "manifest": "reports/artifacts/ui-runtime-compatibility-v1/godot-coordinate-independent-review/manifest.json",
+      "manifestSha256": "e4c783c1c6b4d35a1fde6a5627e542e6cba503375d2d9462c9878060e0f367da",
+      "scope": "Isolated Godot helper and bridge probes; separate from the final exported PCK and browser acceptance.",
+      "beforeFix": {
+        "file": "results-before-fix.json",
+        "checks": 19,
+        "passed": 17,
+        "failed": [
+          "fallback_destination_matches_full_segment",
+          "mapping_failure_does_not_reuse_prior_collision_counts"
+        ]
+      },
+      "afterFix": {
+        "file": "results.json",
+        "checks": 19,
+        "passed": 19,
+        "failed": []
+      },
+      "limitations": [
+        "Finite grid search can miss a narrow feasible corridor.",
+        "This is simulation terrain embedding, not verified geographic calibration.",
+        "Final exported PCK and browser acceptance are separate evidence."
+      ]
+    },
+    "browserRegression": {
+      "normalCase": {
+        "method": "Root agent CUA rendered final export and real native bridge return",
+        "requestId": "malacca-demo-normal-transit-20260104150000-edebdbeb-7cd3-4774-bcb0-dd4727bfd0b1",
+        "status": "passed",
+        "browserWarnErrorCount": 0,
+        "newSceneScreenshotInspected": true
+      },
+      "closureExportAttempt": {
+        "filename": "malacca-closure-report-draft-incomplete-2026-09-12T10-07-43-665Z.json",
+        "completionStatusShown": "DRAFT_INCOMPLETE",
+        "completedStepsShown": 7,
+        "totalStepsShown": 8,
+        "missingStepShown": "ai-dispatch",
+        "localDownloadVerified": false,
+        "note": "Export UI was invoked, but file has not been found in Downloads. Do not count this as a parsed/downloaded artifact."
+      }
+    }
+  },
+  "finalChecks": {
+    "status": "passed_on_final_frozen_sources",
+    "pnpmCheck": {
+      "command": "pnpm check",
+      "exitCode": 0,
+      "testCount": 195,
+      "failCount": 0,
+      "buildSeconds": 3.03,
+      "log": "/tmp/malacca-ui-native-final-check-20260912.log",
+      "archivedLog": {
+        "path": "reports/artifacts/ui-runtime-compatibility-v1/pnpm-check.txt",
+        "bytes": 21414,
+        "sha256": "902f566b8f0ac1d5044ea04b1ec343db55d3321a5e20cd337b37b67abe10eb54"
+      },
+      "sha256": "902f566b8f0ac1d5044ea04b1ec343db55d3321a5e20cd337b37b67abe10eb54"
+    },
+    "compatibility": {
+      "path": "reports/ui-runtime-compatibility-v1.json",
+      "generatedAt": "2026-09-12T10:41:42.717Z",
+      "sha256": "90947432df7fa79c5446eece4bbc444a8b6a755207105355231ebc18319b1ae4"
+    },
+    "currentAcceptance": {
+      "path": "reports/ui-runtime-acceptance-v1.json",
+      "generatedAt": "2026-09-12T10:42:48.930Z",
+      "sha256": "d8ea87a13f0103e7851c5766e9f5be0f415f745bfe28e38a4d3951f203e547d1",
+      "sourceFingerprintCount": 175,
+      "allCurrentSourceHashesVerified": true,
+      "allPreservedArtifactHashesVerified": true,
+      "activeModel": {
+        "reportPath": "reports/core-operations-rl-champion-v2.json",
+        "sha256": "9ecec7dffb11a18ae76b8b2cecd5ae658eeecef12c2b0e9637bc3d19f680cf4d",
+        "datasetFingerprint": "f18ed5fb0c271279ddd6b0c6de49fb1010f35beabd46c8772d1b695fc84f9b28",
+        "selection": "active",
+        "algorithmId": "factorized-fitted-policy-iteration",
+        "retrained": false
+      },
+      "operationalAcceptance": {
+        "path": "reports/artifacts/ui-runtime-compatibility-v1/operational-current.json",
+        "sha256": "032297ae796ebf6cd2b2c6e713e73e8fa7e448ac7a8ec3d789ae0fe23e12e435",
+        "generatedFrom": "scripts/operations/runOperationalAcceptance.ts",
+        "isolatedOutput": true
+      }
+    },
+    "releaseCheck": {
+      "command": "pnpm release:check",
+      "exitCode": 0,
+      "log": "/tmp/malacca-ui-native-final-release-20260912.log",
+      "archivedLog": {
+        "path": "reports/artifacts/ui-runtime-compatibility-v1/pnpm-release-check.txt",
+        "bytes": 24135,
+        "sha256": "8197c967ea42009890c8c7f4cf197eaac0e52e8738423895d427136c6b8bb739"
+      },
+      "sha256": "8197c967ea42009890c8c7f4cf197eaac0e52e8738423895d427136c6b8bb739",
+      "knownVulnerabilities": 0,
+      "verifiedMarkers": [
+        "PUBLIC_PRIVACY_SCAN:PASS",
+        "UI_RUNTIME_ACCEPTANCE:PASS:195_TESTS:ACTIVE_V2:IMMUTABLE_HISTORY",
+        "CORE_RUNTIME_BUNDLE:PASS:ACTIVE_V2:SOURCE_HASHES_VERIFIED",
+        "Project integrity check passed."
+      ]
+    },
+    "godotPublicAndDistArtifactsRehashedAgainstFinalManifest": true,
+    "independentReviewManifestArtifactHashesVerified": true
+  },
+  "updatedAt": "2026-09-12T10:46:34.658992+00:00",
+  "checksBeforeNativeLaunchOptimization": {
+    "status": "check_passed_release_privacy_fixture_failed_before_new_changes",
+    "pnpmCheckLog": "/tmp/malacca-ui-check-final-complete-20260912.log",
+    "supersededPassingCheckLog": "/tmp/malacca-ui-check-coordinate-final-20260912.log",
+    "supersededReason": "Two timeline display expressions changed after that build; the earlier 168-pass run is not final fingerprint evidence",
+    "currentAcceptance": {
+      "path": "reports/ui-runtime-acceptance-v1.json",
+      "generatedAt": "2026-09-12T10:05:18.267Z",
+      "sha256": "58fb7168603e147bcbe6fc7aaf3eafd23f25392f453b69d1d23eeac5e2f056d4",
+      "sourceFingerprintCount": 165,
+      "currentSourceHashesVerified": true,
+      "activeModel": {
+        "reportPath": "reports/core-operations-rl-champion-v2.json",
+        "sha256": "9ecec7dffb11a18ae76b8b2cecd5ae658eeecef12c2b0e9637bc3d19f680cf4d",
+        "datasetFingerprint": "f18ed5fb0c271279ddd6b0c6de49fb1010f35beabd46c8772d1b695fc84f9b28",
+        "selection": "active",
+        "algorithmId": "factorized-fitted-policy-iteration",
+        "retrained": false
+      },
+      "operationalAcceptance": {
+        "path": "reports/artifacts/ui-runtime-compatibility-v1/operational-current.json",
+        "sha256": "aa135765e341664db1a6827a4e96c610f95958466e375e1e14b8304b4acd7a66",
+        "generatedFrom": "scripts/operations/runOperationalAcceptance.ts",
+        "isolatedOutput": true
+      }
+    },
+    "releaseCheck": "failed",
+    "pnpmCheckExitCode": 0,
+    "pnpmCheckTestCount": 168,
+    "pnpmCheckFailCount": 0,
+    "buildSeconds": 3.62,
+    "pnpmCheckLogSha256": "530d6c55f4e72a1e318d1d393354330ad4adbafd4d09ef4db57d531eed962fc8",
+    "compatibility": {
+      "path": "reports/ui-runtime-compatibility-v1.json",
+      "generatedAt": "2026-09-12T10:04:01.210Z",
+      "sha256": "3239fb48c2eea8f642a16caf79eed55054bd5e0fdca7d12335fa3cd922864dde"
+    },
+    "releaseCheckLog": "/tmp/malacca-ui-release-final-complete-20260912.log",
+    "stage": "superseded_before_requested_native_launch_optimization",
+    "releaseFailure": {
+      "gate": "public_privacy_scan",
+      "source": "tests/godotExportTransaction.test.ts:30",
+      "cause": "Fictitious fixture email matched the privacy scanner",
+      "fixture": "redacted nonproduction test fixture address",
+      "requiredCorrection": "Use fixture@localhost test metadata; do not weaken privacy scan",
+      "passedBeforeFailure": [
+        "Historical benchmark evidence",
+        "Core operations evidence",
+        "Dependency audit with zero vulnerabilities"
+      ]
+    }
+  },
+  "nextScope": {
+    "userRequest": "Reduce slow embedded simulator startup; sending request data to the standalone simulator is permitted",
+    "status": "completed_with_native_start_result_close_cancel_and_display_regression",
+    "implementation": "Local native Godot backend and App entrypoint/result return; embedded Web preview and explicitly named quick estimate remain separately selectable",
+    "requiresFinalAcceptanceRerun": true
+  },
+  "nativeGodotBrowserRegression": {
+    "status": "passed_normal_risk_close_cancel_layout_carbon_and_external_close_sync",
+    "baseUrl": "http://127.0.0.1:4186/",
+    "method": "Root agent CUA actual button operations, rendered UI and visible native window; JSON artifacts read and hashes checked",
+    "nativeLaunch": {
+      "button": "独立模拟器验证",
+      "jobId": "3cb60dc7-a8c5-4824-95b4-c7effd597659",
+      "requestId": "malacca-demo-normal-transit-20260101023000-acc2bdf4-85fc-406c-afdb-77376d52388c",
+      "vesselId": "vessel-001",
+      "jobStatus": "completed",
+      "physicsStatus": "passed",
+      "createdAt": "2026-09-12T10:25:04.055Z",
+      "completedAt": "2026-09-12T10:25:19.007Z",
+      "jobStartToResultSeconds": 14.952,
+      "jobStartToSceneReadySeconds": 11.893,
+      "simulatedDurationSeconds": 2.13,
+      "minClearanceMeters": 89.43,
+      "webIframeCount": 0,
+      "overviewNavigationWorkedWhileLaunching": true,
+      "sourceGitSha": "dc0624f5ee3b0bcbeb21f5c610b670bc8bb3778f",
+      "pckSha256": "8b461d67a225d19fef03afb13770adce89e68486344756e0fa9b84eae3e3e473",
+      "receipt": {
+        "path": "reports/artifacts/ui-runtime-compatibility-v1/native-browser-normal.json",
+        "bytes": 2874,
+        "sha256": "2ae4eb07f1d8efe562de04a2ffc4aef486ec7543202a0bc57008a4a7f9fe17f8"
+      },
+      "timing": {
+        "path": "reports/artifacts/ui-runtime-compatibility-v1/native-browser-normal-timing.json",
+        "bytes": 184,
+        "sha256": "dd1e14f2ef7720a407abb7e2054c20a4b597ba0ab10ad3733500537bf2e9877f"
+      },
+      "screenshot": {
+        "path": "reports/artifacts/ui-runtime-compatibility-v1/native-browser-normal.png",
+        "bytes": 1421576,
+        "sha256": "67e3ff6b372e4ed2bec6374d4ee957c55a10533f8b36b32517437a47bab5d6c6"
+      }
+    },
+    "closeCompletedWindow": {
+      "receipt": {
+        "path": "reports/artifacts/ui-runtime-compatibility-v1/native-browser-normal-closed.json",
+        "bytes": 2971,
+        "sha256": "4054a94e6c6d3d1dab06aa24b0594d1f5b5808048b5f40eb684dc59983fa6ee7"
+      },
+      "jobId": "3cb60dc7-a8c5-4824-95b4-c7effd597659",
+      "status": "completed",
+      "windowOpen": false,
+      "resultRetainedAndUnchanged": true
+    },
+    "cancelRunningWindow": {
+      "receipt": {
+        "path": "reports/artifacts/ui-runtime-compatibility-v1/native-browser-cancelled.json",
+        "bytes": 456,
+        "sha256": "1ce525955fdef9bcdc8d04dd217565baa2732b0773454512de19663c1a65eb25"
+      },
+      "jobId": "05a60dad-6445-43a3-95d9-4606ef9a8de4",
+      "requestId": "malacca-demo-normal-transit-20260101023000-acc2bdf4-85fc-406c-afdb-77376d52388c",
+      "status": "cancelled",
+      "windowOpen": false,
+      "resultAbsent": true,
+      "latestNoResultCancellationMessageBrowserCheck": "verified_in_finalCancelRunningWindow"
+    },
+    "independentApiLifecycleReview": {
+      "manifest": {
+        "path": "reports/artifacts/ui-runtime-compatibility-v1/native-independent-review/manifest.json",
+        "bytes": 2715,
+        "sha256": "83590e08f61a0f56b49b020bf03b4f05cb54ee4efe528da3d158dae973fadf46"
+      },
+      "checks": 19,
+      "passed": 19,
+      "headlessOnly": true,
+      "historicalFailuresPreserved": true,
+      "artifactHashesVerified": true
+    },
+    "frontEndBehaviorTests": {
+      "files": [
+        "tests/nativeGodotValidationAdapter.test.ts",
+        "tests/nativeGodotValidationRuntime.test.ts"
+      ],
+      "passed": 22,
+      "coverage": [
+        "Full request POST and same-origin Bearer",
+        "Eight-second network timeout and 120-second overall deadline",
+        "Duplicate launch lock and one-second poll",
+        "Current request/vessel/job identity and validated terminal results",
+        "Late creation and completion after reset/unmount",
+        "Cancel owned active job only",
+        "Preserve completed result and window until explicit close or next validation",
+        "Keep original token for owned job after settings change",
+        "Cancel acknowledgement cannot restore old request state",
+        "Busy remains true while closing",
+        "Completed window monitoring every five seconds, 30-minute cap, three consecutive errors, immutable result and no repeated callback; request change/restart/cancel/dispose stops the prior monitor"
+      ]
+    },
+    "limitations": [
+      "One local browser-native normal timing sample; not a cross-device speed benchmark",
+      "Native Godot loads the already validated local PCK; original simulator project remains unchanged",
+      "The approximately two-second simulation window does not prove whole-route or field safety",
+      "Native API is only available through the local same-origin service and configured engine"
+    ],
+    "riskCase": {
+      "method": "Root agent CUA actual accident-closure request and native window result",
+      "jobId": "b1f913dc-eb31-444a-ac69-5c9204238a51",
+      "requestId": "malacca-demo-accident-closure-20260102080000-b9eaf99d-94b0-4416-8d48-6ccfd82e839a",
+      "vesselId": "vessel-004",
+      "jobStatus": "completed",
+      "jobStartToResultSeconds": 16.008,
+      "result": {
+        "averageSpeedKnots": 9.28,
+        "carbonDeltaTons": -0.0002,
+        "carbonModel": {
+          "co2TonsPerFuelTon": 3.114,
+          "hotelLoadKw": 12,
+          "measured": false,
+          "name": "cubic_propulsion_sfoc_v1",
+          "referencePropulsionPowerKw": 180,
+          "referenceSpeedKnots": 12,
+          "specificFuelConsumptionKgPerKwh": 0.205
+        },
+        "collisionCount": 0,
+        "delayDeltaMinutes": -0.03,
+        "estimatedTravelMinutes": 53.6,
+        "groundingCount": 0,
+        "loadedScene": {
+          "coordinateMapping": {
+            "baseBoxCount": 32,
+            "baseRockCount": 6,
+            "boundaryHalfExtent": 780,
+            "candidateCount": 2546,
+            "geographicCalibrationVerified": false,
+            "gridDivisions": 48,
+            "mappedDestination": {
+              "x": 497.361022949219,
+              "y": -140.734939575195,
+              "z": -187.320007324219
+            },
+            "mappedStart": {
+              "x": 335.394378662109,
+              "y": -140.734939575195,
+              "z": -65.206298828125
+            },
+            "marginMeters": 55.6,
+            "mode": "translated",
+            "offset": {
+              "x": 329.207702636719,
+              "z": 0
+            },
+            "ok": true,
+            "originalDestination": {
+              "x": 168.153335571289,
+              "y": -140.734939575195,
+              "z": -187.320007324219
+            },
+            "originalProgressPercent": 64.3,
+            "originalStart": {
+              "x": 6.18666648864746,
+              "y": -140.734939575195,
+              "z": -65.206298828125
+            },
+            "reason": "base_terrain_segment_clear",
+            "riskObstaclesAppliedAfterMapping": true,
+            "routeLengthMeters": 202.842208862305,
+            "schemaVersion": "godot-web-coordinate-mapping.v1",
+            "selection": "minimum_translation_among_deterministic_candidates",
+            "translationMeters": 329.207702636719
+          },
+          "riskZoneCount": 1,
+          "routePointCount": 2,
+          "temporaryObstacleCount": 1
+        },
+        "minClearanceMeters": 18.92,
+        "reachedDestination": false,
+        "recommendedSpeedKnots": 6,
+        "requestId": "malacca-demo-accident-closure-20260102080000-b9eaf99d-94b0-4416-8d48-6ccfd82e839a",
+        "riskEventResolvedCount": 0,
+        "riskLevel": "critical",
+        "safePass": false,
+        "simulatedDurationSeconds": 2.01,
+        "status": "degraded",
+        "summary": "验证降级通过：未发生碰撞，但安全间距偏低，需要继续限速或绕行。",
+        "vesselId": "vessel-004"
+      },
+      "pageResultCorrectlyBound": true,
+      "microValidationAndFeedbackPhasesCompleted": true,
+      "receipt": {
+        "path": "reports/artifacts/ui-runtime-compatibility-v1/native-browser-risk.json",
+        "bytes": 2862,
+        "sha256": "27a4a43e87cb34f4cf2da49392bd0a8ee643be9af7ff69ef8eeb0234a371b449"
+      },
+      "timing": {
+        "path": "reports/artifacts/ui-runtime-compatibility-v1/native-browser-risk-timing.json",
+        "bytes": 184,
+        "sha256": "d0e2553ce7488467d0910757cd6baa2542e5f6449a23601ea569c00cb2e5cf01"
+      },
+      "screenshot": {
+        "path": "reports/artifacts/ui-runtime-compatibility-v1/native-browser-risk.png",
+        "bytes": 1274694,
+        "sha256": "afaf63de94320d2765e4e9caa3797599c3cc3666de8e311f380e1dee7f564a73"
+      },
+      "afterClose": {
+        "receipt": {
+          "path": "reports/artifacts/ui-runtime-compatibility-v1/native-browser-risk-closed.json",
+          "bytes": 2863,
+          "sha256": "8c9c88e692520e0d1f535f317f46cc4984d10149b5f0c34ae9aaa4175f0547de"
+        },
+        "status": "completed",
+        "windowOpen": false,
+        "resultRetainedAndUnchanged": true
+      }
+    },
+    "finalCancelRunningWindow": {
+      "receipt": {
+        "path": "reports/artifacts/ui-runtime-compatibility-v1/native-browser-cancelled-final.json",
+        "bytes": 456,
+        "sha256": "112adf1cd7c153864fe3098fb73b77252b3f4a388ee6847de2d8d5d571bb0fac"
+      },
+      "jobId": "3d38268a-1ee0-4ec2-b4f2-a52c058c1f21",
+      "requestId": "malacca-demo-normal-transit-20260102133000-7709b14e-5801-4994-b27d-7fa5ff0bdd34",
+      "status": "cancelled",
+      "windowOpen": false,
+      "resultAbsent": true,
+      "renderedMessage": "本次独立验证已取消，未生成验证结果。",
+      "browserWarnErrorCount": 0
+    },
+    "statusLayout": {
+      "method": "Root agent CUA rendered DOM measurement",
+      "display": "flex",
+      "statusHeightPixels": 44,
+      "actionAreaHeightPixels": 187,
+      "overflow": "auto",
+      "overlapObserved": false
+    },
+    "completedWindowMonitoring": {
+      "status": "passed_behavior_and_actual_external_close_browser_regression",
+      "pollSeconds": 5,
+      "maximumMinutes": 30,
+      "consecutiveFailureStopThreshold": 3,
+      "preservesCompletedResult": true,
+      "repeatsResultCallback": false
+    },
+    "carbonDisplay": {
+      "status": "passed_behavior_and_actual_small_value_browser_regression",
+      "fractionalDigitsBelowPointOneTon": 4,
+      "normalMagnitudeFractionalDigits": 1,
+      "trailingZerosRemovedForSmallValues": true,
+      "roundedNegativeZeroNormalized": true,
+      "rawJsonValuesUnchanged": true
+    },
+    "finalNormalAndExternalClose": {
+      "method": "Root agent CUA final normal button run and rendered display; owned-job API close simulates an external exit without clicking the OS X button",
+      "receipt": {
+        "path": "reports/artifacts/ui-runtime-compatibility-v1/native-browser-final-normal.json",
+        "bytes": 2874,
+        "sha256": "ba526a761fc18fd6e71bfdf14a1c4e797d115c543fdfb0a295f32f5a56d75fab"
+      },
+      "externalCloseReceipt": {
+        "path": "reports/artifacts/ui-runtime-compatibility-v1/native-browser-external-close.json",
+        "bytes": 2875,
+        "sha256": "e24bfd27a7371a34326e95e5a56ac1bdf30facebb26cfeab4f2715be4e1e9805"
+      },
+      "jobId": "25371e1d-b968-4f91-95b5-a584566aac2d",
+      "requestId": "malacca-demo-normal-transit-20260103093000-71607ec5-f2c9-44b5-8f40-2a9f30382dcc",
+      "vesselId": "vessel-001",
+      "jobStartToResultSeconds": 15.517,
+      "result": {
+        "averageSpeedKnots": 13.88,
+        "carbonDeltaTons": 0.0008,
+        "carbonModel": {
+          "co2TonsPerFuelTon": 3.114,
+          "hotelLoadKw": 12,
+          "measured": false,
+          "name": "cubic_propulsion_sfoc_v1",
+          "referencePropulsionPowerKw": 180,
+          "referenceSpeedKnots": 12,
+          "specificFuelConsumptionKgPerKwh": 0.205
+        },
+        "collisionCount": 0,
+        "delayDeltaMinutes": 0.02,
+        "estimatedTravelMinutes": 0.85,
+        "groundingCount": 0,
+        "loadedScene": {
+          "coordinateMapping": {
+            "baseBoxCount": 32,
+            "baseRockCount": 6,
+            "boundaryHalfExtent": 780,
+            "candidateCount": 2546,
+            "geographicCalibrationVerified": false,
+            "gridDivisions": 48,
+            "mappedDestination": {
+              "x": 565.898803710938,
+              "y": -140.734939575195,
+              "z": -218.953964233398
+            },
+            "mappedStart": {
+              "x": 332.498809814453,
+              "y": -140.734939575195,
+              "z": 73.2238235473633
+            },
+            "marginMeters": 57,
+            "mode": "translated",
+            "offset": {
+              "x": 397.745483398438,
+              "z": -31.6339569091797
+            },
+            "ok": true,
+            "originalDestination": {
+              "x": 168.153335571289,
+              "y": -140.734939575195,
+              "z": -187.320007324219
+            },
+            "originalProgressPercent": 22,
+            "originalStart": {
+              "x": -65.2466659545898,
+              "y": -140.734939575195,
+              "z": 104.857780456543
+            },
+            "reason": "base_terrain_segment_clear",
+            "riskObstaclesAppliedAfterMapping": true,
+            "routeLengthMeters": 373.956451416016,
+            "schemaVersion": "godot-web-coordinate-mapping.v1",
+            "selection": "minimum_translation_among_deterministic_candidates",
+            "translationMeters": 399.00146484375
+          },
+          "riskZoneCount": 0,
+          "routePointCount": 2,
+          "temporaryObstacleCount": 0
+        },
+        "minClearanceMeters": 104.81,
+        "reachedDestination": false,
+        "recommendedSpeedKnots": 14.2,
+        "requestId": "malacca-demo-normal-transit-20260103093000-71607ec5-f2c9-44b5-8f40-2a9f30382dcc",
+        "riskEventResolvedCount": 0,
+        "riskLevel": "low",
+        "safePass": true,
+        "simulatedDurationSeconds": 2.02,
+        "status": "passed",
+        "summary": "验证通过：外部船舶参数已适配到 Godot，当前验证窗口内未触发碰撞或搁浅。",
+        "vesselId": "vessel-001"
+      },
+      "renderedCarbonCard": "+0.0008t",
+      "renderedPhaseCarbon": "0.0008t",
+      "webIframeCount": 0,
+      "afterExternalClose": {
+        "status": "completed",
+        "windowOpen": false,
+        "resultRetainedAndUnchanged": true,
+        "renderedMessage": "独立窗口已关闭，已有验证结果已保留。",
+        "closeButtonCount": 0,
+        "automaticallyObservedByPage": true
+      },
+      "browserWarnErrorCount": 0
+    },
+    "hudInterpretation": {
+      "taskProgress100Percent": "Current target waypoint index divided by waypoint segment count, not distance traveled or proof of arrival",
+      "riskScreenshotRemainingDistanceMetersApprox": 68.5,
+      "riskScreenshotEta": "00:15",
+      "rawRiskReceiptReachedDestination": false,
+      "safetyClear": "Immediate collision alarm state, not the validation clearance gate",
+      "originalHudAndPckPreserved": true
+    }
+  },
+  "artifactInventory": {
+    "algorithm": "sha256",
+    "excludes": [
+      "reports/artifacts/ui-runtime-compatibility-v1/browser-verification.json"
+    ],
+    "files": {
+      "godot-audio-export-before-coordinate-fix-manifest.json": {
+        "bytes": 2155,
+        "sha256": "6316c32b6acd14703d11a79e4254bf85cf917b2ecfbb8fe055c9c95c250b6d5c"
+      },
+      "godot-coordinate-independent-review/manifest.json": {
+        "bytes": 1616,
+        "sha256": "e4c783c1c6b4d35a1fde6a5627e542e6cba503375d2d9462c9878060e0f367da"
+      },
+      "godot-coordinate-independent-review/probe.gd": {
+        "bytes": 5420,
+        "sha256": "95061801cc5005ed8e16aba0ed4524782266c2883f1abd1f2ec529c539d7527d"
+      },
+      "godot-coordinate-independent-review/results-before-fix.json": {
+        "bytes": 4812,
+        "sha256": "c84460249199e190de08d81ed720da4254f3f1d99598796854bf9b7dade3e50f"
+      },
+      "godot-coordinate-independent-review/results.json": {
+        "bytes": 4811,
+        "sha256": "c59b7b2a62a3ca9139363db9cc48f9c120935197941007c655505aea8367ff9d"
+      },
+      "godot-coordinate-validation.json": {
+        "bytes": 6751,
+        "sha256": "612cbe0cb8b8654ad6cb644cba87110abc6ddf0fc6a885ff8c582c721192d512"
+      },
+      "godot-export-manifest.json": {
+        "bytes": 3349,
+        "sha256": "c9a3a11cb1c8e720c6619600db2a24123ed18d31b461de87ada4801d5aa0a6fd"
+      },
+      "godot-mapper-independent-results-before-fix.json": {
+        "bytes": 4812,
+        "sha256": "c84460249199e190de08d81ed720da4254f3f1d99598796854bf9b7dade3e50f"
+      },
+      "godot-mapper-independent-results.json": {
+        "bytes": 4811,
+        "sha256": "c59b7b2a62a3ca9139363db9cc48f9c120935197941007c655505aea8367ff9d"
+      },
+      "godot-native-headless-acceptance.json": {
+        "bytes": 6471,
+        "sha256": "dd17068f857fbc393a361894510e57962129b76cd3bc972e28def3f049f8d6cd"
+      },
+      "godot-native-independent-cancel-race-after-fix.json": {
+        "bytes": 193,
+        "sha256": "252f5777ba5f1a5e197771c773fe168b093fe15897de35e4cc7a394e0c2095a9"
+      },
+      "godot-native-independent-cancel-race-before-fix.json": {
+        "bytes": 191,
+        "sha256": "db094e2cc260107705e3588822e8420759c72de0c58a6c10133fa88fb77da459"
+      },
+      "godot-native-independent-dispose-race-after-fix.json": {
+        "bytes": 198,
+        "sha256": "6c3b1ca2962dfa8cf635b3390685f734a4e31b67ddb99ee1a493b156dcda2f37"
+      },
+      "godot-native-independent-dispose-race-before-fix.json": {
+        "bytes": 216,
+        "sha256": "5601c812e6aff2c3816b8872e87aa53c9599d2b1f81def1cdb5b2696a4b856ad"
+      },
+      "godot-native-independent-final-review.json": {
+        "bytes": 1442,
+        "sha256": "c7dcdfbc7467a5ce5e4d491a71c3d028ffe60ab08096100efc235dc18441c244"
+      },
+      "godot-native-visible-acceptance.json": {
+        "bytes": 6683,
+        "sha256": "2998a0bc90baab348c01d81aca6b3b610f13f4bbe19794702f9fe873d703ea38"
+      },
+      "godot-native-visible-scene.png": {
+        "bytes": 1206752,
+        "sha256": "2cc1ff2d0270a64f20ce7b2697ce21132743306ebcef99f9f85f9294ec0131cf"
+      },
+      "native-browser-cancelled-final.json": {
+        "bytes": 456,
+        "sha256": "112adf1cd7c153864fe3098fb73b77252b3f4a388ee6847de2d8d5d571bb0fac"
+      },
+      "native-browser-cancelled.json": {
+        "bytes": 456,
+        "sha256": "1ce525955fdef9bcdc8d04dd217565baa2732b0773454512de19663c1a65eb25"
+      },
+      "native-browser-external-close.json": {
+        "bytes": 2875,
+        "sha256": "e24bfd27a7371a34326e95e5a56ac1bdf30facebb26cfeab4f2715be4e1e9805"
+      },
+      "native-browser-final-normal.json": {
+        "bytes": 2874,
+        "sha256": "ba526a761fc18fd6e71bfdf14a1c4e797d115c543fdfb0a295f32f5a56d75fab"
+      },
+      "native-browser-normal-closed.json": {
+        "bytes": 2971,
+        "sha256": "4054a94e6c6d3d1dab06aa24b0594d1f5b5808048b5f40eb684dc59983fa6ee7"
+      },
+      "native-browser-normal-timing.json": {
+        "bytes": 184,
+        "sha256": "dd1e14f2ef7720a407abb7e2054c20a4b597ba0ab10ad3733500537bf2e9877f"
+      },
+      "native-browser-normal.json": {
+        "bytes": 2874,
+        "sha256": "2ae4eb07f1d8efe562de04a2ffc4aef486ec7543202a0bc57008a4a7f9fe17f8"
+      },
+      "native-browser-normal.png": {
+        "bytes": 1421576,
+        "sha256": "67e3ff6b372e4ed2bec6374d4ee957c55a10533f8b36b32517437a47bab5d6c6"
+      },
+      "native-browser-risk-closed.json": {
+        "bytes": 2863,
+        "sha256": "8c9c88e692520e0d1f535f317f46cc4984d10149b5f0c34ae9aaa4175f0547de"
+      },
+      "native-browser-risk-timing.json": {
+        "bytes": 184,
+        "sha256": "d0e2553ce7488467d0910757cd6baa2542e5f6449a23601ea569c00cb2e5cf01"
+      },
+      "native-browser-risk.json": {
+        "bytes": 2862,
+        "sha256": "27a4a43e87cb34f4cf2da49392bd0a8ee643be9af7ff69ef8eeb0234a371b449"
+      },
+      "native-browser-risk.png": {
+        "bytes": 1274694,
+        "sha256": "afaf63de94320d2765e4e9caa3797599c3cc3666de8e311f380e1dee7f564a73"
+      },
+      "native-independent-review/README.md": {
+        "bytes": 1311,
+        "sha256": "dd518cd14cd9f97ddaaa52f186882a7fa75acebdfad6badc0acceb8c20492ba8"
+      },
+      "native-independent-review/cancel-race-after-fix.json": {
+        "bytes": 193,
+        "sha256": "252f5777ba5f1a5e197771c773fe168b093fe15897de35e4cc7a394e0c2095a9"
+      },
+      "native-independent-review/cancel-race-before-fix.json": {
+        "bytes": 191,
+        "sha256": "db094e2cc260107705e3588822e8420759c72de0c58a6c10133fa88fb77da459"
+      },
+      "native-independent-review/dispose-race-after-fix.json": {
+        "bytes": 198,
+        "sha256": "6c3b1ca2962dfa8cf635b3390685f734a4e31b67ddb99ee1a493b156dcda2f37"
+      },
+      "native-independent-review/dispose-race-before-fix.json": {
+        "bytes": 234,
+        "sha256": "f46f2e1718ca9757aa3e4e767dcea9a599a5bb5dafa2421ce716465f3d3b8655"
+      },
+      "native-independent-review/final-review.json": {
+        "bytes": 1442,
+        "sha256": "c7dcdfbc7467a5ce5e4d491a71c3d028ffe60ab08096100efc235dc18441c244"
+      },
+      "native-independent-review/manifest.json": {
+        "bytes": 2715,
+        "sha256": "83590e08f61a0f56b49b020bf03b4f05cb54ee4efe528da3d158dae973fadf46"
+      },
+      "native-independent-review/native-api-lifecycle-probe.mjs": {
+        "bytes": 6541,
+        "sha256": "d8321fde1151b8a5d724dc09cdffd7831f9847cfef29af599cdf394d5b098ed9"
+      },
+      "native-independent-review/raw-result.json": {
+        "bytes": 2031,
+        "sha256": "a887d1cae074a10629ea13153ca759988f7046e7e66e81a3d72d17d4afa946ec"
+      },
+      "native-independent-review/receipt.json": {
+        "bytes": 585,
+        "sha256": "0ae1450ab32ed7f4035e4b6839fa616f84fd1b5c8d3ef96d434988768c30ac8e"
+      },
+      "native-independent-review/request.json": {
+        "bytes": 747,
+        "sha256": "5a46bec686c6b85de8bb8b99d47e36d1cc2125a27ed3c588972a06bcc37ca7d5"
+      },
+      "native-independent-review/timing.gd": {
+        "bytes": 2094,
+        "sha256": "0d5ce6500bd29dcb4ba2a8074eb824422eb6fb6fe5aa65913aec74bf53d6556a"
+      },
+      "native-independent-review/timing.json": {
+        "bytes": 466,
+        "sha256": "8c4ecf559c223caafb4eb278d1d8f46b926962e01858e3969e4a6db79029f80a"
+      },
+      "operational-current.json": {
+        "bytes": 12055,
+        "sha256": "032297ae796ebf6cd2b2c6e713e73e8fa7e448ac7a8ec3d789ae0fe23e12e435"
+      },
+      "pnpm-check.txt": {
+        "bytes": 21414,
+        "sha256": "902f566b8f0ac1d5044ea04b1ec343db55d3321a5e20cd337b37b67abe10eb54"
+      },
+      "pnpm-release-check.txt": {
+        "bytes": 24135,
+        "sha256": "8197c967ea42009890c8c7f4cf197eaac0e52e8738423895d427136c6b8bb739"
+      },
+      "sources/scripts/rl/verifyCoreUpgradeLineage.ts.snapshot": {
+        "bytes": 1611,
+        "sha256": "b11521294db8a90341dcb7b5450dde9d0c7b58ca67db85f6437ebb6965642b4e"
+      },
+      "sources/server/coreOperationsModelRegistry.ts.snapshot": {
+        "bytes": 7578,
+        "sha256": "6a8fb9b3c40e4d9c6a8c1e78d2bbdf9c4c66d8332b3cae4eba4f6489700ae30c"
+      },
+      "sources/server/operationalSimulator.ts.snapshot": {
+        "bytes": 81019,
+        "sha256": "b0ace880877ec8e1cd5b341781d01760a6da7609f8a8fc68462300b1026d5118"
+      },
+      "sources/server/publicEvidencePlugin.ts.snapshot": {
+        "bytes": 72092,
+        "sha256": "ee06a324f9e655b489fb928ee9940bd67b3a5781c5802a30d6213e23870dcec0"
+      },
+      "sources/src/App.tsx.snapshot": {
+        "bytes": 491507,
+        "sha256": "9a0912b4b32ccd782fbb459b407543dbc2b0d1fd37bdcc44fdb76091fe62941f"
+      },
+      "sources/src/components/OperationalEvidenceCenter.tsx.snapshot": {
+        "bytes": 58472,
+        "sha256": "887ba6d76644218edd08ecb560ad6c57034d2a895ba3c7c00380d86bb3402e4b"
+      },
+      "sources/src/integrations/coreOperationsRlAdapter.ts.snapshot": {
+        "bytes": 6281,
+        "sha256": "366bc78bab793efc932b5940e14bb09dfa3be7f34fe46c9d22c42404aa2adf73"
+      },
+      "sources/src/integrations/operationsControlAdapter.ts.snapshot": {
+        "bytes": 13337,
+        "sha256": "c910b85ae4caff795d3ff4473bbbc395c5854791980af782679162f829357ced"
+      }
+    }
+  },
+  "finalLocalState": {
+    "method": "Root final read-only git and native/status verification",
+    "originalSimulatorGitStatusClean": true,
+    "nativeApiUrl": "http://127.0.0.1:4186/api/godot/native/status",
+    "available": true,
+    "engineVersion": "4.7.1.stable.official.a13da4feb",
+    "sourceGitSha": "dc0624f5ee3b0bcbeb21f5c610b670bc8bb3778f",
+    "activeJobIdAbsent": true,
+    "allTestNativeWindowsClosed": true,
+    "pageRetainsNormalResult": true,
+    "gitDiffCheckPassed": true,
+    "remotePublishPerformed": false
+  }
+}

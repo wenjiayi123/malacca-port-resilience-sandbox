@@ -1,5 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { readFile, stat } from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
+import { stat } from 'node:fs/promises';
+import { pipeline } from 'node:stream/promises';
 import path from 'node:path';
 import { createOperatorIntegrationMiddleware } from './operatorIntegrationPlugin.ts';
 import { createPortCommunityMiddleware } from './portCommunityPlugin.ts';
@@ -9,6 +11,9 @@ import { createPortBusinessRlMiddleware } from './portBusinessRlPlugin.ts';
 import { createPublicEvidenceMiddleware } from './publicEvidencePlugin.ts';
 import { ensureRlTrainingJobsRestored } from './rlTrainingJobs.ts';
 import { validateRuntimeSecurityConfiguration } from './runtimeSecurity.ts';
+import { createGodotWebBridgeMiddleware } from './godotWebBridgePlugin.ts';
+import { NativeGodotValidationService } from './nativeGodotValidation.ts';
+import { createNativeGodotValidationMiddleware } from './nativeGodotValidationPlugin.ts';
 
 const host = process.env.HOST || '127.0.0.1';
 const port = Number(process.env.PORT || 4173);
@@ -28,6 +33,7 @@ const mimeTypes: Record<string, string> = {
   '.jpeg': 'image/jpeg',
   '.webp': 'image/webp',
   '.wasm': 'application/wasm',
+  '.pck': 'application/octet-stream',
   '.woff2': 'font/woff2',
 };
 
@@ -41,7 +47,7 @@ const setStaticSecurityHeaders = (response: ServerResponse) => {
   response.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   response.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://api.maptiler.com; font-src 'self' data:; connect-src 'self' https://api.maptiler.com; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'",
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://api.maptiler.com https://tiles.openfreemap.org https://tiles.maps.eox.at https://tiles.mapterhorn.com; font-src 'self' data:; connect-src 'self' https://api.maptiler.com https://tiles.openfreemap.org https://tiles.maps.eox.at https://tiles.mapterhorn.com; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'",
   );
 };
 
@@ -72,18 +78,24 @@ const staticResponse = async (request: IncomingMessage, response: ServerResponse
     filePath = path.join(distributionDirectory, 'index.html');
   }
   try {
-    const body = await readFile(filePath);
+    const metadata = await stat(filePath);
+    if (!metadata.isFile()) throw new Error('Static resource is not a file');
     setStaticSecurityHeaders(response);
     response.statusCode = 200;
     response.setHeader('Content-Type', mimeTypes[path.extname(filePath).toLowerCase()] ?? 'application/octet-stream');
     response.setHeader('Cache-Control', filePath.includes(`${path.sep}assets${path.sep}`)
       ? 'public, max-age=31536000, immutable'
       : 'no-cache');
-    response.setHeader('Content-Length', String(body.length));
-    response.end(request.method === 'HEAD' ? undefined : body);
+    response.setHeader('Content-Length', String(metadata.size));
+    if (request.method === 'HEAD') response.end();
+    else await pipeline(createReadStream(filePath), response);
   } catch {
-    response.statusCode = 404;
-    response.end('Not Found');
+    if (response.headersSent) response.destroy();
+    else {
+      response.statusCode = 404;
+      response.removeHeader('Content-Length');
+      response.end('Not Found');
+    }
   }
 };
 
@@ -95,10 +107,14 @@ const vesselTrafficSafetyMiddleware = createVesselTrafficSafetyMiddleware();
 const productionAuthorityMiddleware = createProductionAuthorityMiddleware();
 const portBusinessRlMiddleware = createPortBusinessRlMiddleware();
 const apiMiddleware = createPublicEvidenceMiddleware();
+const godotWebBridgeMiddleware = createGodotWebBridgeMiddleware(path.join(distributionDirectory, 'godot-simulator'));
+const nativeGodotService = new NativeGodotValidationService();
+const nativeGodotMiddleware = createNativeGodotValidationMiddleware(nativeGodotService);
 const server = createServer(async (request, response) => {
   const startedAt = performance.now();
   try {
-    await portBusinessRlMiddleware(request, response, () => undefined);
+    await nativeGodotMiddleware(request, response, () => undefined);
+    if (!response.writableEnded) await portBusinessRlMiddleware(request, response, () => undefined);
     if (!response.writableEnded) await productionAuthorityMiddleware(request, response, () => undefined);
     if (!response.writableEnded) await vesselTrafficSafetyMiddleware(request, response, () => undefined);
     if (!response.writableEnded) await portCommunityMiddleware(request, response, () => undefined);
@@ -109,6 +125,7 @@ const server = createServer(async (request, response) => {
       response.setHeader('Content-Type', 'application/json; charset=utf-8');
       response.end(JSON.stringify({ status: 'error', message: 'API route not found' }));
     }
+    if (!response.writableEnded) await godotWebBridgeMiddleware(request, response, () => undefined);
     if (!response.writableEnded) await staticResponse(request, response);
     log('info', 'http_request', {
       method: request.method,
@@ -135,8 +152,9 @@ server.listen(port, host, () => log('info', 'server_started', {
   authentication: runtimeSecurity.token ? 'bearer-enabled' : 'local-only-no-token',
 }));
 
-const shutdown = (signal: string) => {
+const shutdown = async (signal: string) => {
   log('info', 'server_shutdown', { signal });
+  await nativeGodotService.dispose();
   server.close((error) => {
     if (error) log('error', 'server_shutdown_failed', { message: error.message });
     process.exit(error ? 1 : 0);

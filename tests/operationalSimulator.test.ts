@@ -75,6 +75,15 @@ test('simulator changes continuously without unconstrained randomness', () => {
   assert.deepEqual(replay.kpis, next.kpis);
 });
 
+test('event log and hourly carbon use the same local simulation clock across a UTC date boundary', () => {
+  const simulator = new PortOperationsSimulator({ seed: 11, startedAtMs: 0, wallTickMs: 5_000 });
+  const snapshot = simulator.snapshot(10_000);
+  const localTime = new Date(Date.parse(snapshot.event_time) + 8 * 60 * 60_000).toISOString();
+  assert.equal(snapshot.telemetry.eventLog[0].time, localTime.slice(11, 19));
+  assert.equal(snapshot.scenario.carbon.hourlyTrend.at(-1)?.hour, `${localTime.slice(11, 13)}时`);
+  assert.notEqual(snapshot.telemetry.eventLog[0].time, snapshot.event_time.slice(11, 19));
+});
+
 test('normal simulator remains physically bounded during a two-week continuous run', () => {
   const wallTickMs = 5_000;
   const simulator = new PortOperationsSimulator({ seed: 240520, startedAtMs: 0, wallTickMs });

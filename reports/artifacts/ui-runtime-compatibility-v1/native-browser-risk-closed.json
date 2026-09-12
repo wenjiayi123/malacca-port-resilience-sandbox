@@ -1,0 +1,86 @@
+{
+  "id": "b1f913dc-eb31-444a-ac69-5c9204238a51",
+  "requestId": "malacca-demo-accident-closure-20260102080000-b9eaf99d-94b0-4416-8d48-6ccfd82e839a",
+  "vesselId": "vessel-004",
+  "status": "completed",
+  "createdAt": "2026-09-12T10:35:06.998Z",
+  "updatedAt": "2026-09-12T10:35:50.171Z",
+  "windowOpen": false,
+  "sourceGitSha": "dc0624f5ee3b0bcbeb21f5c610b670bc8bb3778f",
+  "pckSha256": "8b461d67a225d19fef03afb13770adce89e68486344756e0fa9b84eae3e3e473",
+  "result": {
+    "averageSpeedKnots": 9.28,
+    "carbonDeltaTons": -0.0002,
+    "carbonModel": {
+      "co2TonsPerFuelTon": 3.114,
+      "hotelLoadKw": 12,
+      "measured": false,
+      "name": "cubic_propulsion_sfoc_v1",
+      "referencePropulsionPowerKw": 180,
+      "referenceSpeedKnots": 12,
+      "specificFuelConsumptionKgPerKwh": 0.205
+    },
+    "collisionCount": 0,
+    "delayDeltaMinutes": -0.03,
+    "estimatedTravelMinutes": 53.6,
+    "groundingCount": 0,
+    "loadedScene": {
+      "coordinateMapping": {
+        "baseBoxCount": 32,
+        "baseRockCount": 6,
+        "boundaryHalfExtent": 780,
+        "candidateCount": 2546,
+        "geographicCalibrationVerified": false,
+        "gridDivisions": 48,
+        "mappedDestination": {
+          "x": 497.361022949219,
+          "y": -140.734939575195,
+          "z": -187.320007324219
+        },
+        "mappedStart": {
+          "x": 335.394378662109,
+          "y": -140.734939575195,
+          "z": -65.206298828125
+        },
+        "marginMeters": 55.6,
+        "mode": "translated",
+        "offset": {
+          "x": 329.207702636719,
+          "z": 0
+        },
+        "ok": true,
+        "originalDestination": {
+          "x": 168.153335571289,
+          "y": -140.734939575195,
+          "z": -187.320007324219
+        },
+        "originalProgressPercent": 64.3,
+        "originalStart": {
+          "x": 6.18666648864746,
+          "y": -140.734939575195,
+          "z": -65.206298828125
+        },
+        "reason": "base_terrain_segment_clear",
+        "riskObstaclesAppliedAfterMapping": true,
+        "routeLengthMeters": 202.842208862305,
+        "schemaVersion": "godot-web-coordinate-mapping.v1",
+        "selection": "minimum_translation_among_deterministic_candidates",
+        "translationMeters": 329.207702636719
+      },
+      "riskZoneCount": 1,
+      "routePointCount": 2,
+      "temporaryObstacleCount": 1
+    },
+    "minClearanceMeters": 18.92,
+    "reachedDestination": false,
+    "recommendedSpeedKnots": 6,
+    "requestId": "malacca-demo-accident-closure-20260102080000-b9eaf99d-94b0-4416-8d48-6ccfd82e839a",
+    "riskEventResolvedCount": 0,
+    "riskLevel": "critical",
+    "safePass": false,
+    "simulatedDurationSeconds": 2.01,
+    "status": "degraded",
+    "summary": "验证降级通过：未发生碰撞，但安全间距偏低，需要继续限速或绕行。",
+    "vesselId": "vessel-004"
+  }
+}

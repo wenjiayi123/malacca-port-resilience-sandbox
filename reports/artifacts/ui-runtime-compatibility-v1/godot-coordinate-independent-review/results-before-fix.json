@@ -1,0 +1,225 @@
+[
+	{
+		"detail": {
+			"baseBoxCount": 0,
+			"baseRockCount": 0,
+			"boundaryHalfExtent": 100.0,
+			"candidateCount": 1,
+			"gridDivisions": 48,
+			"mappedDestination": {
+				"x": 30.0,
+				"y": -140.0,
+				"z": 9.0
+			},
+			"mappedStart": {
+				"x": -20.0,
+				"y": -140.0,
+				"z": 3.0
+			},
+			"marginMeters": 2.0,
+			"mode": "original",
+			"offset": {
+				"x": 0.0,
+				"z": 0.0
+			},
+			"ok": true,
+			"originalDestination": {
+				"x": 30.0,
+				"y": -140.0,
+				"z": 9.0
+			},
+			"originalStart": {
+				"x": -20.0,
+				"y": -140.0,
+				"z": 3.0
+			},
+			"reason": "base_terrain_segment_clear",
+			"routeLengthMeters": 50.358715057373,
+			"schemaVersion": "godot-web-coordinate-mapping.v1",
+			"selection": "minimum_translation_among_deterministic_candidates",
+			"translationMeters": 0.0
+		},
+		"name": "original_clear_segment",
+		"pass": true
+	},
+	{
+		"detail": {
+			"baseBoxCount": 1,
+			"baseRockCount": 0,
+			"boundaryHalfExtent": 100.0,
+			"candidateCount": 2546,
+			"gridDivisions": 48,
+			"mappedDestination": {
+				"x": 40.0,
+				"y": 0.0,
+				"z": -12.1223955154419
+			},
+			"mappedStart": {
+				"x": -40.0,
+				"y": 0.0,
+				"z": -12.1223955154419
+			},
+			"marginMeters": 2.0,
+			"mode": "translated",
+			"offset": {
+				"x": 0.0,
+				"z": -12.1223955154419
+			},
+			"ok": true,
+			"originalDestination": {
+				"x": 40.0,
+				"y": 0.0,
+				"z": 0.0
+			},
+			"originalStart": {
+				"x": -40.0,
+				"y": 0.0,
+				"z": 0.0
+			},
+			"reason": "base_terrain_segment_clear",
+			"routeLengthMeters": 80.0,
+			"schemaVersion": "godot-web-coordinate-mapping.v1",
+			"selection": "minimum_translation_among_deterministic_candidates",
+			"translationMeters": 12.1223955154419
+		},
+		"name": "thin_midpoint_box_requires_translation",
+		"pass": true
+	},
+	{
+		"detail": null,
+		"name": "translation_preserves_direction_length_progress",
+		"pass": true
+	},
+	{
+		"detail": null,
+		"name": "circle_tangent_requires_translation",
+		"pass": true
+	},
+	{
+		"detail": null,
+		"name": "box_tangent_is_intersection",
+		"pass": true
+	},
+	{
+		"detail": null,
+		"name": "box_parallel_disjoint",
+		"pass": true
+	},
+	{
+		"detail": null,
+		"name": "box_zero_length_inside",
+		"pass": true
+	},
+	{
+		"detail": null,
+		"name": "box_zero_length_outside",
+		"pass": true
+	},
+	{
+		"detail": null,
+		"name": "boundary_exact_margin_is_feasible",
+		"pass": true
+	},
+	{
+		"detail": null,
+		"name": "route_too_long_fails",
+		"pass": true
+	},
+	{
+		"detail": null,
+		"name": "no_solution_fails",
+		"pass": true
+	},
+	{
+		"detail": null,
+		"name": "invalid_geometry_fails",
+		"pass": true
+	},
+	{
+		"detail": null,
+		"name": "nonfinite_endpoint_fails",
+		"pass": true
+	},
+	{
+		"detail": {
+			"destination": "(344.0, -140.7349, -44.0)",
+			"expectedDestination": "(296,-140.73494,4)",
+			"start": "(248.0, -140.7349, 52.0)"
+		},
+		"name": "fallback_destination_matches_full_segment",
+		"pass": false
+	},
+	{
+		"detail": null,
+		"name": "risk_obstacles_translate_once_channel-closure",
+		"pass": true
+	},
+	{
+		"detail": null,
+		"name": "risk_obstacles_translate_once_collision-risk",
+		"pass": true
+	},
+	{
+		"detail": null,
+		"name": "risk_obstacles_translate_once_port-paralysis",
+		"pass": true
+	},
+	{
+		"detail": null,
+		"name": "risk_obstacles_translate_once_extreme-weather",
+		"pass": true
+	},
+	{
+		"detail": {
+			"averageSpeedKnots": 0.0,
+			"carbonDeltaTons": 0.0,
+			"carbonModel": {
+				"co2TonsPerFuelTon": 3.114,
+				"hotelLoadKw": 12.0,
+				"measured": false,
+				"name": "cubic_propulsion_sfoc_v1",
+				"referencePropulsionPowerKw": 180.0,
+				"referenceSpeedKnots": 12.0,
+				"specificFuelConsumptionKgPerKwh": 0.205
+			},
+			"collisionCount": 4,
+			"delayDeltaMinutes": 0.0,
+			"estimatedTravelMinutes": 0.0,
+			"groundingCount": 2,
+			"loadedScene": {
+				"coordinateMapping": {
+					"candidateCount": 0,
+					"geographicCalibrationVerified": false,
+					"gridDivisions": 48,
+					"mode": "unavailable",
+					"offset": {
+						"x": 0.0,
+						"z": 0.0
+					},
+					"ok": false,
+					"originalProgressPercent": 0.0,
+					"reason": "invalid_or_insufficient_navigation_boundary",
+					"riskObstaclesAppliedAfterMapping": true,
+					"schemaVersion": "godot-web-coordinate-mapping.v1",
+					"selection": "minimum_translation_among_deterministic_candidates"
+				},
+				"riskZoneCount": 0,
+				"routePointCount": 0,
+				"temporaryObstacleCount": 0
+			},
+			"minClearanceMeters": 0.0,
+			"reachedDestination": false,
+			"recommendedSpeedKnots": 6.0,
+			"requestId": "unavailable",
+			"riskEventResolvedCount": 0,
+			"riskLevel": "critical",
+			"safePass": false,
+			"simulatedDurationSeconds": 0.0,
+			"status": "failed",
+			"summary": "无法在当前真实地形内安全嵌入完整验证航段；未执行航行。",
+			"vesselId": "probe"
+		},
+		"name": "mapping_failure_does_not_reuse_prior_collision_counts",
+		"pass": false
+	}
+]

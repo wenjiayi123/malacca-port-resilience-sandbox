@@ -1,4 +1,5 @@
 import type { PortOperationsSnapshot } from './operationsControlAdapter';
+import { validateDecisionReport } from './decisionReportValidation.ts';
 
 export type PortBusinessActionId =
   | 'hold-plan'
@@ -151,8 +152,17 @@ const headers = (authToken = '', extra: Record<string, string> = {}) => ({
 });
 
 const parseResponse = async <T>(response: Response): Promise<T> => {
-  const payload = await response.json().catch(() => ({})) as { message?: string };
-  if (!response.ok) throw new Error(payload.message ?? `HTTP ${response.status}`);
+  const payload: unknown = await response.json().catch(() => {
+    throw new Error(`后端返回非 JSON 响应（HTTP ${response.status}），请检查 API 连接`);
+  });
+  if (!response.ok) {
+    const message = payload && typeof payload === 'object' && 'message' in payload
+      ? String(payload.message) : `HTTP ${response.status}`;
+    throw new Error(message);
+  }
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    throw new Error('后端响应格式无效，请重新读取证据');
+  }
   return payload as T;
 };
 
@@ -294,4 +304,8 @@ export const fetchPortBusinessDecisionReport = (proposalId: string, authToken = 
   fetch(`/api/rl/business/proposals/${encodeURIComponent(proposalId)}/report`, {
     cache: 'no-store',
     headers: headers(authToken),
-  }).then((response) => parseResponse<PortBusinessDecisionReport>(response));
+    signal: AbortSignal.timeout(15_000),
+  }).then((response) => parseResponse<unknown>(response)).then((report) => {
+    validateDecisionReport(report, proposalId, 'port-business');
+    return report as PortBusinessDecisionReport;
+  });

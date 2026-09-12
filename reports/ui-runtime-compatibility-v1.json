@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "ui-runtime-compatibility.v1",
+  "generatedAt": "2026-09-12T10:41:42.717Z",
+  "baselineCommit": "bacb580bda5295f0c3e3d87cd0549643c84969ad",
+  "preservedArtifacts": {
+    "reports/core-operations-rl-champion-v1.json": "5bf798cc296afb6d31152bd2c9ea13e2e7d21e9f11f8d28dc0458a495947fd85",
+    "reports/core-operations-rl-champion-v1.md": "a0e093679e66cf0b7f95ff1ce5d5b2d68c153bd0267e8d97e196232d090db269",
+    "reports/port-business-rl-champion-v3.json": "3515a1e9e1a25eb6920ababeaa0f87b37f150a2513c295cecc489f9e1beebabc",
+    "reports/port-business-rl-champion-v3.md": "55b3f17bea32ceaa1eda0596c9000f4a39f61c11a5771de695b853c48dd8281a",
+    "reports/rl-benchmark-balanced-resilience.json": "6f5174f1ea407a96fb1940c80f74a61e33e0286748242b4c3533b0d6b5a34257",
+    "reports/rl-benchmark-balanced-resilience-calibrated-v2.json": "80090ea355e829921eb10b25c241a096d0d905f741f352f33416331f9e95b322",
+    "reports/regulatory-resilience-v1.json": "4bbe3afc6086341621571e84e648b03169da9bfb2fad7d7c7f5945fa871afa07",
+    "reports/regulatory-resilience-v2.json": "be337a7d354478a1098b161a1a0301b6fca3f55fd819a8e2582dc9cde7b18ce0",
+    "reports/top-tier-hardening-evidence-v2.json": "7971f92a927ff21b433e95678924209058cdfbde84991cdcec29be829368e11d",
+    "reports/operational-closure-acceptance-v2.json": "f0ce9cece3e274a32e7365561f89deea789626da02ee404d2099a35e738d984a",
+    "reports/core-operations-rl-champion-v2.json": "9ecec7dffb11a18ae76b8b2cecd5ae658eeecef12c2b0e9637bc3d19f680cf4d",
+    "reports/core-operations-rl-champion-v2.md": "42b15fe04ee0cec32d6184202560116f2bb167a2b078ba5721232f0492546312",
+    "reports/core-operations-active.json": "0c45b419a0763fa633a077ccba4f6ba6ae096c20a82efa7b991341fea708d64c",
+    "reports/operational-closure-acceptance-v2.md": "9e08b85b08a2c9bca8dee0da7da64bd0d408a3a03600058f4aefd31a07ffddf7",
+    "reports/dependency-security-upgrade-v1.json": "d5fedf9c520bd8f95c47d7e78bdc21019a14ce14114a7efd52174e50aafe9a13",
+    "data/rl/mpa_vessel_arrivals_monthly.csv": "1135cd3ceac593a70b1407e40fc38fb36e06f3da4823418b50ddd3bcc5a9f12a"
+  },
+  "changes": {
+    "src/components/OperationalEvidenceCenter.tsx": {
+      "baselineArtifact": "reports/artifacts/ui-runtime-compatibility-v1/sources/src/components/OperationalEvidenceCenter.tsx.snapshot",
+      "baselineSha256": "887ba6d76644218edd08ecb560ad6c57034d2a895ba3c7c00380d86bb3402e4b",
+      "currentSha256": "2c1e9bce56836a340ded6caf9980f5fca48a4761f03a8fd2fbc853e43f90fdea",
+      "reason": "Reject stale reads and reports; retain independently visible endpoint errors; preserve approval/execution transitions."
+    },
+    "src/integrations/coreOperationsRlAdapter.ts": {
+      "baselineArtifact": "reports/artifacts/ui-runtime-compatibility-v1/sources/src/integrations/coreOperationsRlAdapter.ts.snapshot",
+      "baselineSha256": "366bc78bab793efc932b5940e14bb09dfa3be7f34fe46c9d22c42404aa2adf73",
+      "currentSha256": "03a1cb10847695b0ae7d37f151087d5e016a80a4ef08d339a21f599f525a288d",
+      "reason": "Reject malformed transport responses; policy request fields and endpoint semantics remain unchanged."
+    },
+    "server/coreOperationsModelRegistry.ts": {
+      "baselineArtifact": "reports/artifacts/ui-runtime-compatibility-v1/sources/server/coreOperationsModelRegistry.ts.snapshot",
+      "baselineSha256": "6a8fb9b3c40e4d9c6a8c1e78d2bbdf9c4c66d8332b3cae4eba4f6489700ae30c",
+      "currentSha256": "b55ac97ebd79552bcd5ad77cb36a0115c6040953f2817fe59990ab23b498ec02",
+      "reason": "Admit only this verified source extension; preserve pinned model/dataset and automatic rollback checks."
+    },
+    "scripts/rl/verifyCoreUpgradeLineage.ts": {
+      "baselineArtifact": "reports/artifacts/ui-runtime-compatibility-v1/sources/scripts/rl/verifyCoreUpgradeLineage.ts.snapshot",
+      "baselineSha256": "b11521294db8a90341dcb7b5450dde9d0c7b58ca67db85f6437ebb6965642b4e",
+      "currentSha256": "6e72d2f7e798da3bc4a67b2b83e74bafeecdf4515646938b4359ec9db45f6f6e",
+      "reason": "Compose the prior immutable model lineage with the explicitly bounded UI compatibility extension."
+    },
+    "src/App.tsx": {
+      "baselineArtifact": "reports/artifacts/ui-runtime-compatibility-v1/sources/src/App.tsx.snapshot",
+      "baselineSha256": "9a0912b4b32ccd782fbb459b407543dbc2b0d1fd37bdcc44fdb76091fe62941f",
+      "currentSha256": "7a4c604c4ddff9424b8344a07e909bbe47bb11ea25dba4438539cda5683bb61e",
+      "reason": "Correlate Godot results and advisor/training responses; repair UI controls and local-time labels without changing learned policies."
+    },
+    "src/integrations/operationsControlAdapter.ts": {
+      "baselineArtifact": "reports/artifacts/ui-runtime-compatibility-v1/sources/src/integrations/operationsControlAdapter.ts.snapshot",
+      "baselineSha256": "c910b85ae4caff795d3ff4473bbbc395c5854791980af782679162f829357ced",
+      "currentSha256": "e8021506cf8350ac7b53bdc93e9749169735011aa61beb84157cefda96a4ff86",
+      "reason": "Reject malformed JSON transport responses while preserving backend gate messages."
+    },
+    "server/operationalSimulator.ts": {
+      "baselineArtifact": "reports/artifacts/ui-runtime-compatibility-v1/sources/server/operationalSimulator.ts.snapshot",
+      "baselineSha256": "b0ace880877ec8e1cd5b341781d01760a6da7609f8a8fc68462300b1026d5118",
+      "currentSha256": "6474d38458a7e4d0492d8436841564c3b797295cc4f038e3fa12c6cc4257fd5c",
+      "reason": "Only render eventLog.time through existing Malaysia-time formatting; the validator enforces exact single-expression equivalence."
+    },
+    "server/publicEvidencePlugin.ts": {
+      "baselineArtifact": "reports/artifacts/ui-runtime-compatibility-v1/sources/server/publicEvidencePlugin.ts.snapshot",
+      "baselineSha256": "ee06a324f9e655b489fb928ee9940bd67b3a5781c5802a30d6213e23870dcec0",
+      "currentSha256": "4c83311d3e58ecd04599e820a6c4dd27f85dac0633b32731a6cc6d88dd1970b9",
+      "reason": "Only complete advisor prompt setting identifiers and existing tuning/reward fields; exact string substitutions are enforced."
+    }
+  },
+  "verificationSources": {
+    "server/runtimeCompatibilityEvidence.ts": "8bd408162232df3cb8fc2e312cc4d9964ffb0d6dd46072fcdff1df8ff617391e",
+    "scripts/operations/buildUiRuntimeCompatibility.ts": "26de85c4ec933d2516e444ab5030cb023400054dd1ab5e29abeda8915223fa39",
+    "tests/runtimeCompatibilityEvidence.test.ts": "27ed9f29b2610d448e3a8430a4a9d5866907f369b4f45b4f9d77c9d15db02a12"
+  },
+  "authority": {
+    "simulationMode": true,
+    "liveDataVerified": false,
+    "productionAuthority": false,
+    "dispatchAllowed": false
+  }
+}

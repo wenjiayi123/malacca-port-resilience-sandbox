@@ -1,0 +1,259 @@
+$ pnpm check && pnpm benchmark:rl:verify && pnpm benchmark:public-data:verify && pnpm benchmark:regulatory:verify && pnpm benchmark:port-business:verify && pnpm benchmark:core-operations:verify && pnpm acceptance:operations:verify && pnpm security:audit && node scripts/release/check.mjs
+$ pnpm lint && pnpm test && pnpm build
+$ eslint .
+$ node --experimental-strip-types --experimental-specifier-resolution=node --test tests/*.test.ts
+✔ complete offline evidence admits only an offline champion and keeps field deployment closed (12.042371ms)
+✔ safety violations, distribution shift and final-test reuse reject the candidate (0.987073ms)
+✔ runtime safety shield substitutes hold-plan when data, traffic or physical envelopes are unsafe (1.446385ms)
+✔ closure download records current evidence and marks missing workflow steps as a draft (25.321447ms)
+✔ a completed closure report remains complete and excludes API credentials (22.083608ms)
+✔ starting native physics clears a previous demo result before waiting for the real result (8.509584ms)
+✔ invalid JSON and mismatched Godot results retain the existing accepted result and its completion time (32.347768ms)
+✔ a file read that finishes after the current Godot request changes cannot restore its old result (3.047665ms)
+✔ a valid matching Godot file updates all result phases and clears the file input (3.270253ms)
+✔ a superseded slow Godot file cannot replace the newer accepted file or its feedback (3.229047ms)
+✔ a simulator clock reset rejects a result issued against the former timeline (2.317706ms)
+✔ Godot completion does not claim that an unrun checkpoint inference is complete (74.435778ms)
+✔ two validation requests in the same simulation tick cannot accept one another results (52.189451ms)
+✔ reset uses the loaded scenario clock immediately without waiting for a telemetry poll (92.36576ms)
+✔ the default reproducible seed fits the actual rendered input range (8.850235ms)
+✔ rapid duplicate training clicks create only one backend job (7.003245ms)
+✔ resetRlTraining prevents a late created job from reattaching and cancels the detached backend run (17.907166ms)
+✔ selectRlAlgorithm prevents a late created job from reattaching and cancels the detached backend run (2.912452ms)
+✔ selectRlTrainingObjective prevents a late created job from reattaching and cancels the detached backend run (4.126778ms)
+✔ selectRlTrainingBaseline prevents a late created job from reattaching and cancels the detached backend run (16.258377ms)
+✔ a late failure from a reset submission cannot mark the new training failed (35.971302ms)
+✔ changing service while submitting cancels a late job at its original endpoint (5.114657ms)
+✔ reset reports a failed backend cancellation without an unhandled rejection (3.240109ms)
+✔ policy testing rejects repeated clicks until the first evaluation finishes (7.324985ms)
+✔ resetting a pending policy test aborts the request and discards its late result (2.86026ms)
+✔ changing the policy test case keeps a late old evaluation away from the new replay (4.087194ms)
+✔ changing training objective detaches a completed checkpoint and invalidates an in-flight test (5.798443ms)
+✔ policy responses for another job fail visibly instead of presenting unrelated metrics (11.839696ms)
+✔ a queued timer from an earlier policy replay cannot advance a reset and restarted test (2.848643ms)
+✔ an evaluation that resolves after the timeout is still rejected (6.274081ms)
+✔ disconnectRlBackend prevents an obsolete HTTP handshake from reconnecting the backend (5.681204ms)
+✔ setRlBackendMode prevents an obsolete HTTP handshake from reconnecting the backend (2.623328ms)
+✔ updateRlBackendField prevents an obsolete HTTP handshake from reconnecting the backend (23.067868ms)
+✔ a stale backend error cannot overwrite a newer successful handshake (18.096907ms)
+✔ disconnecting cancels a pending WebSocket handshake and settles the request (3.239358ms)
+✔ native carbon displays retain small signed deltas, normalize rounded zero and keep ordinary precision (55.809648ms)
+✔ core operations contract covers ten unique heads and keeps production authority closed (10.349681ms)
+✔ factorized learner consumes every observation and performs real multi-head updates (1074.968593ms)
+✔ each unsafe domain choice is projected independently without weakening other heads (181.807753ms)
+✔ runtime tensor is backed by simulator fields and core control changes audited sandbox state (137.697843ms)
+✔ stored five-seed champion serves a ten-head fail-closed runtime decision (1637.676721ms)
+✔ ridge fit is finite on collinear features and approximates known returns (6.715697ms)
+✔ scenario completeness does not turn engineered provenance into measured data (330.838938ms)
+✔ serving and offline admission share votes, range gates and missing-data fallback (4054.132502ms)
+✔ registry rejects invalid observation order, nonfinite weights and unqualified fitted policies (32.630131ms)
+✔ atomic activation pins model and dataset, and a changed model rolls back to prior hash (60.771946ms)
+✔ all engineering variants of a public source month stay in one chronological split (91.853644ms)
+✔ the MapLibre security extension preserves v1 evidence and rejects downgraded or unrelated dependency edits (1056.892703ms)
+✔ Godot export failure preserves the active bundle and successful publication backs it up with source provenance (6186.86612ms)
+✔ Godot result validation accepts completed safe, degraded and failed outcomes with signed deltas (3.497469ms)
+✔ Godot result validation rejects unfinished, malformed and internally inconsistent results (3.415806ms)
+✔ Godot availability rejects an HTTP 200 SPA fallback without issuing asset requests (28.582573ms)
+✔ Godot availability checks a complete multiline export and all three declared core resources (25.394946ms)
+✔ Godot availability rejects missing, HTML fallback, empty and truncated artifact responses (14.946069ms)
+✔ Godot availability permits correctly typed compressed assets and rejects invalid export configurations (4.054118ms)
+✔ Godot availability bounds a real stalled HTTP request and preserves caller cancellation (123.455463ms)
+✔ Godot response patches preserve export bytes and give only the required bootstrap and result reader access (13.538751ms)
+✔ Godot file bridge rejects foreign frames and correlates terminal results without fabricating or replaying them (30.393983ms)
+✔ Godot user directory discovery refuses ambiguous saved projects and accepts the matching export title (8.55836ms)
+✔ engineering profile is structurally usable but cannot claim operator calibration (3.305333ms)
+✔ coupled twin preserves berth exclusivity, yard mass balance and energy accounting (92.728561ms)
+✔ under-keel-clearance gate stops unsafe channel movement (1.530649ms)
+✔ same profile, initial state and controls produce the same deterministic snapshot digest (1.759722ms)
+✔ native validation uses fixed owned paths, validates the exact PCK, and collects a result even when the child exits immediately (1731.246215ms)
+✔ native busy, cancellation, mismatch, and service disposal cannot cross jobs or leave an owned process running (2674.084284ms)
+✔ native API blocks external and rebinding requests and bounds JSON input before starting a process (962.245129ms)
+✔ native endpoints submit the complete request once and encode only the owned job id (197.126031ms)
+✔ completed native jobs preserve genuine failed or degraded physics results and reject malformed results (5.099903ms)
+✔ native adapter displays backend errors and rejects SPA fallback or unsupported status (11.015186ms)
+✔ native transport has a bounded eight-second timeout and preserves caller cancellation (38.958166ms)
+✔ native controller prevents double POST, polls once a second and awaits one genuine terminal result (17.018054ms)
+✔ native physics failure is completed evidence while launch failure is an infrastructure error (2.409205ms)
+✔ missing or unavailable native support never submits or silently falls back to Web (1.14588ms)
+✔ request switch cancels only the owned active job, rejects late results even before effect synchronization (2.132505ms)
+✔ late creation after reset is closed, including an already-completed window, and never imported (2.081558ms)
+✔ unmount cancels an owned running job but preserves a completed visible window (1.761994ms)
+✔ closing a completed window retains its completed result without a second callback (22.177316ms)
+✔ a late cancel acknowledgement cannot restore an old job after the request changes (1.119972ms)
+✔ native wait stops at 120 seconds and rejects results arriving after the deadline (1.612711ms)
+✔ wrong job identity and malformed native results never reach the App callback (1.298191ms)
+✔ a foreign job returned by polling is rejected and only the owned job is cancelled (0.964233ms)
+✔ poll failure cancels only this run and gives an actionable error (1.299439ms)
+✔ a token change does not replace the credential needed to poll and close an owned job (1.491928ms)
+✔ a completed job already closed reports the real window state and needs no monitor (0.64926ms)
+✔ completed window monitoring notices the native X button without re-importing or changing settled evidence (5.396614ms)
+✔ window-monitor errors preserve completed results, recover when possible, and stop after three failures (2.326491ms)
+✔ completed window monitoring has a 30-minute deadline and ignores a late response after it (1.184033ms)
+✔ cancel, request switch, restart, and dispose abort completed-window monitoring without stale updates (3.235825ms)
+✔ evidence refresh exposes independent endpoint failures, labels retained telemetry and recovers (1437.543216ms)
+✔ a superseded refresh cannot restore pre-action telemetry after a scenario injection (380.741019ms)
+✔ core lifecycle invalidates exported reports and prevents execution after execution or rollback (233.283688ms)
+✔ a failed handoff regeneration cannot reuse the previous ready result (214.08922ms)
+✔ operational adapters reject malformed successful responses and preserve server gate errors (104.153569ms)
+✔ business and core report adapters bind proposal identity and reject malformed or contradictory completion evidence (18.118849ms)
+✔ core-operations download publishes validated JSON only after a successful click and always releases its URL (397.239264ms)
+✔ port-business download publishes validated JSON only after a successful click and always releases its URL (349.233182ms)
+✔ deterministic simulator emits complete field lineage and obeys physical envelopes (173.498954ms)
+✔ simulator changes continuously without unconstrained randomness (43.539625ms)
+✔ event log and hourly carbon use the same local simulation clock across a UTC date boundary (8.533612ms)
+✔ normal simulator remains physically bounded during a two-week continuous run (313.301403ms)
+✔ grounded handoff report cites the current snapshot and does not impersonate a model (27.302436ms)
+✔ decision loop enforces dual approval, idempotency, receipts, rollback and audit hashes (42.691434ms)
+✔ data loss and simulator shutdown fail closed before recommendation or execution (37.834145ms)
+✔ six signed operator sources atomically release a complete read-only shadow snapshot (109.704874ms)
+✔ gateway rejects tampering, missing fields, unit mismatch and stale evidence (3.597291ms)
+✔ gateway accepts exact replay idempotently and blocks sequence rollback (1.925413ms)
+✔ checked-in operator source template parses but remains fail-closed (9.07673ms)
+✔ fully reviewed test manifest reaches only the operator authorization gate (1.913829ms)
+✔ manifest rejects duplicate adapters and writable purposes (1.705535ms)
+✔ port business contract has unique full observations, bounded advisory actions and external authority boundaries (3.612468ms)
+✔ public anchored dataset is deterministic, chronologically sealed and explicitly augmented (529.332607ms)
+✔ operator replacement package fails closed when a required business field is missing (191.858705ms)
+✔ safety projector masks authority-sensitive and resource-infeasible actions (227.427203ms)
+✔ business applicability imposes a post-intervention cooldown (197.317322ms)
+✔ non-RL demand model is trained only on training records and beats seasonal naive on validation replay (158.453577ms)
+✔ all declared observations reach the policy and real TD updates change stored weights (498.112109ms)
+✔ trained policy evaluation executes through the safety mask with no hard violations (432.000042ms)
+✔ generated public dataset source remains the checked-in MPA snapshot (2.743647ms)
+✔ runtime service exposes the admitted offline champion without production authority (7.762927ms)
+✔ runtime proposal assessment returns an auditable safety projection and non-dispatching fallback (104.930635ms)
+✔ champion runtime consumes all observations, exposes ensemble uncertainty and always fails closed to production (79.719688ms)
+✔ port call contract normalizes a valid DCSA-aligned event subset (8.34765ms)
+✔ port call contract rejects ambiguous timestamps and invalid vessel identifiers (3.50809ms)
+✔ community gateway accepts signed port-call events and exposes explicit standards projections (105.963833ms)
+✔ five authoritative clearance sources are preserved as exogenous receipts without dispatch authority (6.512388ms)
+✔ community gateway blocks tampering, stale messages, role impersonation and idempotency conflict (19.482707ms)
+✔ same-profile public evidence keeps the baseline Malacca topology (6.052751ms)
+✔ same-profile runtime patches channels and routes without dropping topology (3.722096ms)
+✔ explicit topology replacement supports a Shanghai snapshot with no live vessels (0.456932ms)
+✔ topology replacement fails closed when port nodes are absent (1.128558ms)
+✔ terminal operations contract fails closed when Shanghai operational evidence is incomplete (4.455212ms)
+✔ complete terminal operations fields enable every shared algorithm action and objective (1.822548ms)
+✔ operator manifest validates field mappings and reaches terminal training readiness (4.355282ms)
+✔ operator manifest rejects declared fields without mappings (8.431035ms)
+✔ authorized terminal manifest resolves into the existing five-method training dataset (138.859927ms)
+✔ two identity-bound human approvals and an independent fresh interlock pass the policy gate only (111.640488ms)
+✔ tampered identity bindings, self-approval and missing MFA fail closed (11.204913ms)
+✔ unsafe, stale or bypassed OT interlock blocks release even with valid human approvals (8.96703ms)
+✔ production HTTP serves map resources and completes the isolated operational button contract (3875.620889ms)
+✔ AISStream parser preserves real coordinates, time, identity and quality flags (11.567455ms)
+✔ AISStream parser rejects positions outside the configured Malacca region (1.193338ms)
+✔ AISStream parser labels a missing provider event time instead of inventing verified time (0.747529ms)
+✔ live AIS gateway fails closed when disconnected or cached positions become stale (1.521797ms)
+✔ live AIS gateway verifies fresh positions only after the backend websocket is connected (165.578498ms)
+✔ regulatory supplement is additive and preserves the original five actions (4.267674ms)
+✔ regulatory holds propagate statefully and repeated reads do not create phantom ticks (17.947339ms)
+✔ durable store atomically versions state and verifies its hash journal (295.57888ms)
+✔ corrupt primary state fails over to the independently checksummed previous generation (147.89677ms)
+✔ fencing numbers stop a stale leader from writing after lease turnover (101.533776ms)
+✔ reliability readiness separates local software controls from observed site SLO evidence (1.047704ms)
+✔ policy admission accepts a decisive non-regressing action (20.624472ms)
+✔ policy admission abstains on near-uniform low-confidence output (1.032491ms)
+✔ policy admission rejects a confident action that regresses carbon (0.7979ms)
+✔ RL service URLs preserve gateway prefixes, origin, query and encoded job IDs (23.478415ms)
+✔ create, poll, evaluate, cancel, health and inference all use the configured HTTP service (226.932446ms)
+✔ malformed inference numbers and nested UI records fail before rendering (25.475511ms)
+✔ public dataset is chronological and separates training, validation, and final test rows (120.913389ms)
+✔ multi-port datasets require an explicit port and reject duplicate timestamps (68.695368ms)
+✔ capacity proxy is calibrated on training records without future-demand leakage (48.546189ms)
+✔ public aggregate actions stay inside the conservative intervention envelope (0.998235ms)
+✔ objective presets resolve to distinct normalized reward functions (0.932528ms)
+✔ four RL algorithms update parameters and MPC stays a control baseline (776.694175ms)
+✔ evaluation trace uses held-out timestamps and trained inference returns a real action (277.310209ms)
+✔ completed checkpoints carry integrity metadata and restore in a fresh process (1903.790789ms)
+✔ the UI compatibility extension preserves the active v2 model and only extends reported source bindings (1275.305073ms)
+✔ compatibility verification rejects altered UI, model bytes, learning sources and broader simulator changes (994.696042ms)
+✔ remote listeners fail closed without a strong API token (3.914495ms)
+✔ loopback development is allowed without a token (2.106978ms)
+✔ bounded integer environment settings reject unsafe values (0.726849ms)
+✔ complete test fixture validates the evaluator but cannot become field acceptance (90.682723ms)
+✔ cryptographically signed field evidence can close site delivery but never grants dispatch itself (18.309308ms)
+✔ tampered KPI evidence, missing signoffs and a short shadow window fail closed (4.182027ms)
+✔ every native button has an action and every custom click target has a keyboard contract (817.185237ms)
+✔ Xiaoyi action registry covers every declared step with an observable verification contract (54.249548ms)
+✔ Xiaoyi resolver keeps handoff, regulatory evidence, RL configuration, policy test and report export routes distinct (2.713334ms)
+✔ changing the selected training algorithm detaches stale jobs before the next run (5.213238ms)
+✔ Xiaoyi training advice matches the six-factor reward contract (1.761748ms)
+✔ policy inference labels remain algorithm-neutral and render signed business deltas (9.839137ms)
+✔ compact interview viewport keeps map-view and fullscreen controls operable (7.762579ms)
+✔ closure exports disclose incomplete workflows and simulated approval identity (5.277543ms)
+✔ business champion and production-readiness gates are connected to the primary UI and report pipeline (6.395824ms)
+✔ multi-source fusion detects a head-on critical encounter and keeps action advisory-only (15.315706ms)
+✔ single-source pairs are labelled insufficient information instead of authoritative collision advice (0.821709ms)
+✔ conflicting and stale sensor data fail closed (19.50003ms)
+✔ all 24 visible Xiaoyi action labels resolve to their registered action (11.015828ms)
+✔ opening settings and event injection declares idempotent state verification (3.594634ms)
+✔ a cancelled Xiaoyi operation never locates another action target (5.168281ms)
+✔ fresh advice verification rejects old ready and waits for the new response revision (4.449064ms)
+✔ backend failure stops verification with visible error details (3.075005ms)
+✔ cancellation interrupts pending backend verification before success is reported (2.690042ms)
+✔ all advisor profiles return all six reward components and reset throughput for the selected objective (4.562786ms)
+✔ external advisor rejects invalid parameters and retains valid throughput advice (3.507829ms)
+✔ external validation feedback recommendations map to the actual training setting ID (1.098951ms)
+✔ advisor adapter binds valid response to scope and uses a bounded cancellable signal (63.458125ms)
+✔ malformed advisor responses are rejected before the training UI consumes them (4.990866ms)
+ℹ tests 195
+ℹ suites 0
+ℹ pass 195
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6766.314197
+$ tsc -b && vite build
+vite v8.1.5 building client environment for production...
+[2Ktransforming...✓ 1801 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                      0.54 kB │ gzip:   0.35 kB
+dist/assets/maplibre-gl-worker-lrHd6qRo.js         470.24 kB
+dist/assets/LiveSatelliteMap-CKRTiAqP.css           82.86 kB │ gzip:  10.71 kB
+dist/assets/index-DQQgaH7o.css                     266.19 kB │ gzip:  47.04 kB
+dist/assets/OperationalEvidenceCenter-C2E4a7_q.js   47.97 kB │ gzip:  12.57 kB
+dist/assets/index-C_G93FoQ.js                      544.53 kB │ gzip: 162.56 kB
+dist/assets/LiveSatelliteMap-CKYMiNKh.js           977.53 kB │ gzip: 255.61 kB
+
+✓ built in 4.21s
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+$ node --experimental-strip-types --experimental-specifier-resolution=node scripts/rl/verifyBenchmarkReport.ts
+WARN archived environment fingerprint differs from current candidate: package.json
+WARN archived environment fingerprint differs from current candidate: pnpm-lock.yaml
+WARN archived source path migrated to current implementation: scripts/rl/runRLBaselineBenchmark.ts
+WARN archived combined fingerprint intentionally differs after dependency/version update; report was not rewritten
+Archived benchmark evidence verified without rewriting: reports/rl-benchmark-balanced-resilience-calibrated-v2.json
+$ node --experimental-strip-types --experimental-specifier-resolution=node scripts/rl/verifyPublicDatasetComparison.ts
+WARN archived environment fingerprint differs from current candidate: package.json
+WARN archived environment fingerprint differs from current candidate: pnpm-lock.yaml
+WARN archived comparison fingerprint intentionally differs after dependency/version update; report was not rewritten
+Archived public dataset comparison verified without rewriting.
+$ node --experimental-strip-types --experimental-specifier-resolution=node scripts/rl/verifyRegulatoryResilienceBenchmark.ts
+Malacca regulatory resilience v1/v2 evidence verified; old artifacts unchanged.
+$ node --experimental-strip-types --experimental-specifier-resolution=node scripts/rl/verifyPortBusinessChampion.ts
+PORT_BUSINESS_CHAMPION_EVIDENCE:PASS:linear-dyna-q:curriculum-520
+$ node scripts/operations/verifyOperationalReleaseV2.mjs --core
+CORE_OPERATIONS_CHAMPION_EVIDENCE:PASS:factorized-linear-dyna-q:curriculum-360:10/10
+CORE_OPERATIONS_RL_V2:PASS:5/5_CONVERGENCE:DEPLOYED_ENSEMBLE:MONTH_GROUPED:IMMUTABLE_HISTORY
+OPERATIONAL_ENVIRONMENT_EXTENSION:PASS:ARCHIVED_MANIFESTS:CURRENT_HASHES_VERIFIED
+DEPENDENCY_SECURITY_UPGRADE_V2:PASS:MAPLIBRE_6.4.1:IMMUTABLE_V1_HISTORY
+$ node scripts/operations/verifyOperationalReleaseV2.mjs
+Operational closure acceptance v2 verified with immutable v1, regulatory, and core-RL lineage.
+OPERATIONAL_ENVIRONMENT_EXTENSION:PASS:ARCHIVED_MANIFESTS:CURRENT_HASHES_VERIFIED
+DEPENDENCY_SECURITY_UPGRADE_V2:PASS:MAPLIBRE_6.4.1:IMMUTABLE_V1_HISTORY
+$ pnpm audit --audit-level=moderate
+No known vulnerabilities found
+PUBLIC_PRIVACY_SCAN:PASS
+UI_RUNTIME_ACCEPTANCE:PASS:195_TESTS:ACTIVE_V2:IMMUTABLE_HISTORY
+Operator data readiness evidence verified.
+Top-tier hardening evidence v2 verified with immutable v1 and core-RL lineage.
+PORT_BUSINESS_CHAMPION_EVIDENCE:PASS:linear-dyna-q:curriculum-520
+CORE_RUNTIME_BUNDLE:PASS:ACTIVE_V2:SOURCE_HASHES_VERIFIED
+Project integrity check passed.

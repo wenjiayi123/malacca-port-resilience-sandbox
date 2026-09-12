@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['dist', 'node_modules', '.godot', 'exports', 'public/godot-simulator'],
+    ignores: ['dist', 'node_modules', '.godot', '.runtime', 'exports', 'public/godot-simulator'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

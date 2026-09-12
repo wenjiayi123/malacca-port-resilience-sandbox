@@ -1,0 +1,7 @@
+{
+  "trigger": "dispose while start is waiting for configuration; harmless ${NATIVE_REVIEW_FIXTURE_ENGINE} fixture executable",
+  "rejectedAfterDispose": false,
+  "returnedStatus": "launching",
+  "registeredJobs": 1,
+  "pass": false
+}

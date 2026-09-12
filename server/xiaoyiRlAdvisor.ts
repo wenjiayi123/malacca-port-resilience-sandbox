@@ -1,3 +1,5 @@
+import { getRlObjectivePreset } from '../shared/rlObjectivePresets.ts';
+
 export interface XiaoyiRlAdvisorRequest {
   objectiveId?: string;
   objectiveLabel?: string;
@@ -61,11 +63,25 @@ const baseParameters = {
   maxEpisodes: 600,
   wallClockHours: 1,
   seed: 240520,
+  tuningTrials: 3,
   rewardDelay: 0.28,
   rewardCongestion: 0.24,
   rewardCarbon: 0.18,
   rewardSafety: 0.2,
   rewardResilience: 0.1,
+  rewardThroughput: 0.18,
+};
+
+const validParameter = (key: string, value: unknown): value is number => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return false;
+  if (key.startsWith('reward')) return value >= 0 && value <= 1;
+  if (key === 'learningRate') return value >= 0.01 && value <= 0.5;
+  if (key === 'discountGamma') return value >= 0.7 && value <= 0.999;
+  if (key === 'wallClockHours') return value >= 0.05 && value <= 24;
+  if (key === 'maxEpisodes') return Number.isInteger(value) && value >= 120 && value <= 5000;
+  if (key === 'tuningTrials') return Number.isInteger(value) && value >= 1 && value <= 5;
+  if (key === 'seed') return Number.isInteger(value) && value >= 0 && value <= 2_147_483_647;
+  return false;
 };
 
 const algorithmLabels: Record<XiaoyiRlAdvisorResponse['recommendation']['algorithmId'], string> = {
@@ -95,7 +111,7 @@ const settingIds = [
   'congestion-delay',
   'carbon-reward',
   'dispatch-action',
-  'validation-feedback',
+  'micro-validation',
 ] as const;
 
 const policyTestCaseIds = [
@@ -127,7 +143,8 @@ export const parseXiaoyiRlExternalDecision = (answer?: string): XiaoyiRlExternal
     if (isAllowedValue(candidate.baselineId, baselineIds)) {
       decision.baselineId = candidate.baselineId;
     }
-    if (isAllowedValue(candidate.settingId, settingIds)) decision.settingId = candidate.settingId;
+    const settingId = candidate.settingId === 'validation-feedback' ? 'micro-validation' : candidate.settingId;
+    if (isAllowedValue(settingId, settingIds)) decision.settingId = settingId;
     if (isAllowedValue(candidate.backendMode, backendModes)) decision.backendMode = candidate.backendMode;
     if (typeof candidate.backendEndpoint === 'string' && candidate.backendEndpoint.trim()) {
       decision.backendEndpoint = candidate.backendEndpoint.trim().slice(0, 240);
@@ -150,7 +167,7 @@ export const parseXiaoyiRlExternalDecision = (answer?: string): XiaoyiRlExternal
     if (isRecord(candidate.parameters)) {
       decision.parameters = Object.entries(candidate.parameters).reduce<Record<string, number>>(
         (parameters, [key, value]) => {
-          if (key in baseParameters && typeof value === 'number' && Number.isFinite(value)) {
+          if (Object.hasOwn(baseParameters, key) && validParameter(key, value)) {
             parameters[key] = value;
           }
           return parameters;
@@ -158,7 +175,8 @@ export const parseXiaoyiRlExternalDecision = (answer?: string): XiaoyiRlExternal
         {},
       );
     }
-    if (!decision.algorithmId && !decision.baselineId && !Object.keys(decision.parameters ?? {}).length) {
+    if (!decision.algorithmId && !decision.baselineId && !decision.settingId && !decision.backendMode &&
+      !decision.backendEndpoint && !decision.policyTestCaseId && !Object.keys(decision.parameters ?? {}).length) {
       return undefined;
     }
     return decision;
@@ -267,7 +285,9 @@ export const buildXiaoyiRlAdvisorResponse = (
   external?: { connected: boolean; answer?: string; decision?: XiaoyiRlExternalDecision },
 ): XiaoyiRlAdvisorResponse => {
   const externalDecision = external?.decision;
-  const recommendation = mergeExternalDecision(selectProfile(request.objectiveId, request), externalDecision);
+  const fallback = selectProfile(request.objectiveId, request);
+  fallback.parameters.rewardThroughput = getRlObjectivePreset(request.objectiveId).weights.throughput;
+  const recommendation = mergeExternalDecision(fallback, externalDecision);
   const source = externalDecision ? 'xiaoyi-ai-live' : 'embedded-xiaoyi-advisor';
   return {
     protocolVersion: 'xiaoyi-rl-advisor.v1', generatedAt: new Date().toISOString(), source,

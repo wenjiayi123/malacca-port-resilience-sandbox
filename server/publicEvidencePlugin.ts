@@ -589,7 +589,7 @@ const consultXiaoyiAi = async (payload: XiaoyiRlAdvisorRequest) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        question: `你是港航控制算法训练顾问。当前优化目标是“${payload.objectiveLabel ?? payload.objectiveId ?? '均衡韧性'}”，峰值拥堵${payload.scenario?.peakCongestionPercent ?? 0}%，峰值延误${payload.scenario?.peakDelayMinutes ?? 0}分钟。只返回一个JSON对象，不要Markdown。字段为 algorithmId（q-learning/sarsa/expected-sarsa/dyna-q/mpc）、baselineId（q-learning/sarsa/expected-sarsa/dyna-q/mpc）、settingId、policyTestCaseId、confidencePercent、operatorSummary、reasons字符串数组、parameters数值对象。参数只使用 learningRate、discountGamma、maxEpisodes、wallClockHours、seed、rewardDelay、rewardCongestion、rewardCarbon、rewardSafety、rewardResilience。四种RL与一个MPC控制基线共享训练切分；不虚构深度网络指标，不执行生产下发。`,
+        question: `你是港航控制算法训练顾问。当前优化目标是“${payload.objectiveLabel ?? payload.objectiveId ?? '均衡韧性'}”，峰值拥堵${payload.scenario?.peakCongestionPercent ?? 0}%，峰值延误${payload.scenario?.peakDelayMinutes ?? 0}分钟。只返回一个JSON对象，不要Markdown。字段为 algorithmId（q-learning/sarsa/expected-sarsa/dyna-q/mpc）、baselineId（q-learning/sarsa/expected-sarsa/dyna-q/mpc）、settingId（network-snapshot/vessel-state/event-disturbance/weather-sea-state/congestion-delay/carbon-reward/dispatch-action/micro-validation）、policyTestCaseId、confidencePercent、operatorSummary、reasons字符串数组、parameters数值对象。参数只使用 learningRate、discountGamma、tuningTrials、maxEpisodes、wallClockHours、seed、rewardDelay、rewardCongestion、rewardCarbon、rewardSafety、rewardResilience、rewardThroughput。四种RL与一个MPC控制基线共享训练切分；不虚构深度网络指标，不执行生产下发。`,
         mode: 'expert',
         top_k: 5,
         strict_evidence: false,
