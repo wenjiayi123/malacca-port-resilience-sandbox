@@ -25,8 +25,10 @@ if [[ ! -f "${GODOT_PROJECT}/export_presets.cfg" ]]; then
 fi
 
 mkdir -p "${RUNTIME_ROOT}"
-EXPORT_STAMP="$(date -u +%Y%m%dT%H%M%SZ)-$$"
-STAGING_DIR="$(mktemp -d "${RUNTIME_ROOT}/staging-${EXPORT_STAMP}.XXXXXX")"
+STAGING_DIR="$(mktemp -d "${RUNTIME_ROOT}/staging-$(date -u +%Y%m%dT%H%M%SZ)-$$.XXXXXX")"
+# Git Bash can reuse a PID within one second. Give source copies and backups
+# the same unique suffix as their staging directory, including on retries.
+EXPORT_STAMP="${STAGING_DIR##*/staging-}"
 BACKUP_DIR="${RUNTIME_ROOT}/backup-${EXPORT_STAMP}"
 SOURCE_COPY="${RUNTIME_ROOT}/source-${EXPORT_STAMP}"
 SOURCE_PROVENANCE="${RUNTIME_ROOT}/source-${EXPORT_STAMP}.json"

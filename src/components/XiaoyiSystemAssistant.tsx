@@ -273,8 +273,8 @@ const xiaoyiActions: Record<string, XiaoyiAction> = {
   },
   'rl-configure': {
     id: 'rl-configure',
-    label: '让小懿配置 RL 训练',
-    summary: '打开训练中心，并调用现有小懿 RL 顾问生成推荐配置。',
+    label: '让舷鸥配置 RL 训练',
+    summary: '打开训练中心，并调用现有舷鸥 RL 顾问生成推荐配置。',
     steps: [
       moduleStep('sandbox', '沙盘推演'),
       {
@@ -289,13 +289,13 @@ const xiaoyiActions: Record<string, XiaoyiAction> = {
       },
       {
         target: 'rl-xiaoyi-configure',
-        label: '点击“小懿智能配置”',
+        label: '点击“舷鸥智能配置”',
         verification: {
           mode: 'attribute',
           attribute: 'data-xiaoyi-state',
           expected: ['ready'],
           requireRevisionChange: true,
-          description: '小懿推荐已返回并绑定当前目标',
+          description: '舷鸥推荐已返回并绑定当前目标',
           timeoutMs: 15_000,
         },
       },
@@ -320,13 +320,23 @@ const xiaoyiActions: Record<string, XiaoyiAction> = {
       },
       {
         target: 'rl-start-training',
-        label: '点击“启动训练”',
-        skipWhenState: 'running',
+        label: '点击“复核并准备启动”',
         verification: {
           mode: 'attribute',
           attribute: 'data-xiaoyi-state',
+          expected: ['approval'],
+          description: '人工训练确认门已打开',
+        },
+      },
+      {
+        target: 'rl-confirm-training',
+        label: '人工确认后点击“启动训练”',
+        verification: {
+          mode: 'attribute',
+          target: 'rl-start-training',
+          attribute: 'data-xiaoyi-state',
           expected: ['queued', 'running', 'completed'],
-          description: '后端训练任务已受理',
+          description: '人工确认后端训练任务已受理',
           timeoutMs: 15_000,
         },
       },
@@ -451,7 +461,7 @@ const xiaoyiActions: Record<string, XiaoyiAction> = {
   },
   'operations-handoff': {
     id: 'operations-handoff',
-    label: '生成小懿运行交班',
+    label: '生成舷鸥运行交班',
     summary: '读取同一后端权威快照，生成带模型连接状态、证据哈希和生产权限边界的运行交班。',
     steps: [
       moduleStep('evidence', '证据与闭环'),
@@ -481,7 +491,7 @@ const xiaoyiActions: Record<string, XiaoyiAction> = {
   },
 };
 
-const quickCommands = ['进入沙盘推演', '运行港口拥堵演示', '打开监管韧性', '运行RL策略测试', '打开训练中心', '生成小懿运行交班'];
+const quickCommands = ['进入沙盘推演', '运行港口拥堵演示', '打开监管韧性', '让舷鸥配置 RL 训练', '运行RL策略测试', '打开训练中心', '生成舷鸥运行交班'];
 
 const delay = (milliseconds: number) => new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
 const getRuntimeTimestamp = () => window.performance.now();
@@ -533,8 +543,8 @@ const formatRuntimeTime = (date: Date) => date.toLocaleTimeString('zh-CN', { hou
 const normalize = (value: string) => value.toLowerCase().replace(/[\s，。！？、,.!?：:；;“”"']/g, '');
 
 const resolveXiaoyiAction = (command: string): XiaoyiAction | null => {
-  const text = normalize(command).replace(/^小懿(请|帮我|现在)?/, '');
-  if (/运行交班|交班报告|小懿交班|生成.*交班/.test(text)) return xiaoyiActions['operations-handoff'];
+  const text = normalize(command).replace(/^舷鸥(请|帮我|现在)?/, '');
+  if (/运行交班|交班报告|舷鸥交班|生成.*交班/.test(text)) return xiaoyiActions['operations-handoff'];
   if (/监管韧性|监管延误|海事.*检查|海关.*查验|放行.*恢复/.test(text)) return xiaoyiActions.regulatory;
   if (/证据与闭环|证据中心|审计闭环/.test(text)) return xiaoyiActions.evidence;
   if (/导出.*报告|下载.*报告|闭环报告/.test(text)) return xiaoyiActions['export-report'];
@@ -562,10 +572,10 @@ const resolveXiaoyiAction = (command: string): XiaoyiAction | null => {
 };
 
 const calculateIntentConfidence = (command: string, action: XiaoyiAction) => {
-  const normalizedCommand = normalize(command).replace(/^小懿(请|帮我|现在)?/, '');
+  const normalizedCommand = normalize(command).replace(/^舷鸥(请|帮我|现在)?/, '');
   const normalizedLabel = normalize(action.label);
   if (normalizedCommand === normalizedLabel || normalizedCommand.includes(normalizedLabel)) return 98;
-  const intentCore = normalizedLabel.replace(/^(打开|运行|开始|启动|推进|注入|重置|让小懿)/, '');
+  const intentCore = normalizedLabel.replace(/^(打开|运行|开始|启动|推进|注入|重置|让舷鸥)/, '');
   if (intentCore.length >= 4 && normalizedCommand.includes(intentCore)) return 95;
   return 91;
 };
@@ -703,6 +713,7 @@ export function XiaoyiSystemAssistant() {
     setProgress(40);
     setMessage(`操作链已锁定，开始执行 1/${action.steps.length}。每一步都会定位目标、校验状态、触发点击并等待页面回写。`);
     setVisibleSteps(reportSteps);
+    document.dispatchEvent(new CustomEvent('malacca:xiaoyi-automation', { detail: { active: true, actionId: action.id } }));
 
     let activeTarget: HTMLElement | null = null;
     try {
@@ -716,12 +727,12 @@ export function XiaoyiSystemAssistant() {
         activeTarget = target;
         target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
         target.classList.add('xiaoyi-system-target');
-        await delay(900);
+        await delay(180);
         assertActiveRun(runId, currentRun);
 
         updateExecutionStep(index, 'validating', '目标已定位 · 正在校验可见性、禁用状态与运行上下文');
         setMessage(`安全校验 ${index + 1}/${action.steps.length}：目标已登记，正在检查按钮状态和重复执行条件。`);
-        await delay(750);
+        await delay(120);
         assertActiveRun(runId, currentRun);
         const targetStyle = window.getComputedStyle(target);
         const targetRect = target.getBoundingClientRect();
@@ -744,7 +755,7 @@ export function XiaoyiSystemAssistant() {
           updateExecutionStep(index, 'skipped', `当前已满足目标状态 · 已阻止重复点击`);
           setMessage(`${step.label}：当前已经处于目标状态，跳过重复点击。`);
           setProgress(Math.round(40 + ((index + 1) / action.steps.length) * 60));
-          await delay(700);
+          await delay(120);
           assertActiveRun(runId, currentRun);
           continue;
         }
@@ -762,7 +773,7 @@ export function XiaoyiSystemAssistant() {
 
         updateExecutionStep(index, 'clicking', '校验通过 · 正在触发受控 UI 点击');
         setMessage(`确认可执行，正在触发 ${index + 1}/${action.steps.length}：${step.label}`);
-        await delay(800);
+        await delay(150);
         assertActiveRun(runId, currentRun);
         const clickStyle = window.getComputedStyle(target);
         const clickRect = target.getBoundingClientRect();
@@ -786,7 +797,7 @@ export function XiaoyiSystemAssistant() {
         setProgress(Math.round(40 + ((index + 1) / action.steps.length) * 60));
         if (index < action.steps.length - 1) {
           setMessage(`第 ${index + 1} 步已完成，正在将页面状态交给下一步。`);
-          await delay(650);
+          await delay(100);
         }
       }
       assertActiveRun(runId, currentRun);
@@ -841,6 +852,7 @@ export function XiaoyiSystemAssistant() {
       setReviewRecorded(false);
       setIsExecutionReportOpen(true);
     } finally {
+      document.dispatchEvent(new CustomEvent('malacca:xiaoyi-automation', { detail: { active: false, actionId: action.id } }));
       if (currentRun.current.id === runId) {
         setIsRunning(false);
         executionInProgress.current = false;
@@ -875,22 +887,22 @@ export function XiaoyiSystemAssistant() {
     setMessage('正在解析自然语言指令，提取目标对象、操作类型和状态影响。');
 
     const continueRun = () => currentRun.current.id === runId && !currentRun.current.cancelled;
-    await delay(700);
+    await delay(220);
     if (!continueRun()) return;
     setProgress(15);
     setMessage(`已识别目标意图：“${action.label}”。正在与 ${actionCount} 项受控动作注册表进行语义匹配。`);
-    await delay(750);
+    await delay(220);
     if (!continueRun()) return;
     setProgress(24);
     setMessage(`动作匹配完成：${action.id} · 置信度 ${confidence}%。正在检查执行边界与页面状态约束。`);
-    await delay(700);
+    await delay(180);
     if (!continueRun()) return;
 
     setPhase('planning');
     setProgress(31);
     setVisibleSteps(createVisibleSteps(action));
     setMessage(`正在生成 ${action.steps.length} 步受控操作链，并为每一步绑定唯一页面动作标识。`);
-    await delay(850);
+    await delay(220);
     if (!continueRun()) return;
     setVisibleSteps((steps) => steps.map((step) => ({ ...step, detail: `已绑定 ${step.target} · 执行前将再次校验` })));
     setProgress(action.requiresConfirmation ? 38 : 40);
@@ -904,7 +916,7 @@ export function XiaoyiSystemAssistant() {
     }
 
     setMessage('操作链规划完成，白名单与当前页面状态校验通过。即将开始逐步执行。');
-    await delay(700);
+    await delay(180);
     if (!continueRun()) return;
     await executeAction(action, runId);
   };
@@ -991,6 +1003,9 @@ export function XiaoyiSystemAssistant() {
 
   const phaseTrackIndex = phase === 'understanding' ? 0 : phase === 'planning' || phase === 'confirming' ? 2 : phase === 'executing' ? 3 : phase === 'reviewing' || phase === 'complete' ? 4 : -1;
   const reviewPending = Boolean(executionReport && !reviewRecorded);
+  const rlConfigureGuideState = executionReport?.actionId === 'rl-configure'
+    ? executionReport.status === 'success' ? 'ready' : 'failed'
+    : isRunning && activeAction?.id === 'rl-configure' ? 'running' : 'idle';
 
   const handleAvatarPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
     if (event.button !== 0) return;
@@ -1043,26 +1058,26 @@ export function XiaoyiSystemAssistant() {
   return (
     <aside
       className={`xiaoyi-system-assistant${isOpen ? ' is-open' : ''}${isDragging ? ' is-dragging' : ''}${isLeftSide ? ' is-left-side' : ''}`}
-      aria-label="小懿全系统联动助手"
+      aria-label="舷鸥全系统联动助手"
       style={dragPosition ? { left: dragPosition.x, top: dragPosition.y, right: 'auto', bottom: 'auto' } : undefined}
     >
       {isRunning && activeAction && (
         <div className="xiaoyi-system-execution-hud" aria-live="polite">
           <span className="xiaoyi-system-execution-hud__icon"><LoaderCircle size={18} /></span>
-          <span><small>小懿正在联动沙盘 · {phaseLabels[phase]}</small><strong>{activeAction.label}</strong></span>
+          <span><small>舷鸥正在联动沙盘 · {phaseLabels[phase]}</small><strong>{activeAction.label}</strong></span>
           <em>{progress}%</em>
           <i><b style={{ width: `${progress}%` }} /></i>
         </div>
       )}
       {isOpen && (
-        <section className="xiaoyi-system-panel" aria-label="小懿对话指令面板">
+        <section className="xiaoyi-system-panel" aria-label="舷鸥对话指令面板">
           <header className="xiaoyi-system-panel__header">
             <span className="xiaoyi-system-panel__identity">
               <Sparkles size={15} />
-              <span><strong>小懿AI · 系统联动</strong><span>{actionCount} 个动作 · STEP-BY-STEP LINKAGE</span></span>
+              <span><strong>舷鸥 · GullMate · 系统联动</strong><span>{actionCount} 个动作 · STEP-BY-STEP LINKAGE</span></span>
             </span>
-            {isRunning && <button className="xiaoyi-system-close" aria-label="停止小懿联动" title="停止后续页面操作" onClick={stopExecution} type="button"><Square size={13} /></button>}
-            <button className="xiaoyi-system-close" aria-label="收起小懿系统助手" onClick={() => setIsOpen(false)} type="button"><X size={14} /></button>
+            {isRunning && <button className="xiaoyi-system-close" aria-label="停止舷鸥联动" title="停止后续页面操作" onClick={stopExecution} type="button"><Square size={13} /></button>}
+            <button className="xiaoyi-system-close" aria-label="收起舷鸥系统助手" onClick={() => setIsOpen(false)} type="button"><X size={14} /></button>
           </header>
           <div className="xiaoyi-system-message">
             <span className={isRunning ? 'is-running' : ''}>{isRunning ? <Sparkles size={13} /> : pendingAction || phase === 'failed' ? <CircleAlert size={13} /> : <CheckCircle2 size={13} />}</span>
@@ -1080,7 +1095,7 @@ export function XiaoyiSystemAssistant() {
                 <span><small>任务总进度</small><strong>{progress}%</strong></span>
                 <i><b style={{ width: `${progress}%` }} /></i>
               </div>
-              <div className="xiaoyi-system-phase-track" aria-label="小懿执行阶段">
+              <div className="xiaoyi-system-phase-track" aria-label="舷鸥执行阶段">
                 {phaseStages.map(({ label, Icon }, index) => (
                   <span className={phaseTrackIndex > index ? 'is-done' : phaseTrackIndex === index ? 'is-active' : ''} key={label}>
                     <Icon size={11} /><small>{label}</small>
@@ -1115,15 +1130,24 @@ export function XiaoyiSystemAssistant() {
                 <strong>{reviewRecorded ? '人工验收已归档' : executionReport.status === 'success' ? '执行报告待人工确认' : '异常报告待人工确认'}</strong>
                 <em>{executionReport.id} · {executionReport.completedSteps}/{executionReport.steps.length} 步</em>
               </div>
-              <button onClick={() => setIsExecutionReportOpen(true)} type="button">{reviewRecorded ? '查看报告' : '打开并确认'}</button>
+              <button data-demo-action="xiaoyi-report-open" data-demo-state={reviewRecorded ? 'archived' : 'pending'} onClick={() => setIsExecutionReportOpen(true)} type="button">{reviewRecorded ? '查看报告' : '打开并确认'}</button>
             </div>
           )}
           <form className="xiaoyi-system-form" onSubmit={handleCommand}>
-            <input aria-label="输入小懿系统指令" disabled={isRunning || Boolean(pendingAction) || reviewPending} onChange={(event) => setCommand(event.currentTarget.value)} placeholder="例如：小懿，运行港口拥堵演示" value={command} />
-            <button aria-label="让小懿执行指令" disabled={isRunning || Boolean(pendingAction) || reviewPending || !command.trim()} type="submit"><Send size={14} /></button>
+            <input aria-label="输入舷鸥系统指令" disabled={isRunning || Boolean(pendingAction) || reviewPending} onChange={(event) => setCommand(event.currentTarget.value)} placeholder="例如：舷鸥，运行港口拥堵演示" value={command} />
+            <button aria-label="让舷鸥执行指令" disabled={isRunning || Boolean(pendingAction) || reviewPending || !command.trim()} type="submit"><Send size={14} /></button>
           </form>
           <div className="xiaoyi-system-quick">
-            {quickCommands.map((item) => <button disabled={isRunning || Boolean(pendingAction) || reviewPending} key={item} onClick={() => handleQuickCommand(item)} type="button">{item}</button>)}
+            {quickCommands.map((item) => (
+              <button
+                data-demo-action={item === '让舷鸥配置 RL 训练' ? 'xiaoyi-quick-rl-configure' : undefined}
+                data-demo-state={item === '让舷鸥配置 RL 训练' ? rlConfigureGuideState : undefined}
+                disabled={isRunning || Boolean(pendingAction) || reviewPending}
+                key={item}
+                onClick={() => handleQuickCommand(item)}
+                type="button"
+              >{item}</button>
+            ))}
           </div>
           <footer className="xiaoyi-system-footer"><CircleAlert size={12} />仅操作当前沙盘 UI；自动步骤完成后由人工验收闭环 · HUMAN-IN-THE-LOOP</footer>
         </section>
@@ -1148,7 +1172,7 @@ export function XiaoyiSystemAssistant() {
               </dl>
               <label className="xiaoyi-system-confirm-dialog__check">
                 <input checked={confirmationAcknowledged} onChange={(event) => setConfirmationAcknowledged(event.currentTarget.checked)} type="checkbox" />
-                <span><strong>我已了解上述影响，并授权小懿执行本次操作链</strong><small>确认动作、审批编号和每一步执行结果将保留在当前任务记录中。</small></span>
+                <span><strong>我已了解上述影响，并授权舷鸥执行本次操作链</strong><small>确认动作、审批编号和每一步执行结果将保留在当前任务记录中。</small></span>
               </label>
             </div>
             <footer>
@@ -1227,10 +1251,10 @@ export function XiaoyiSystemAssistant() {
                 </div>
               ) : (
                 <label className="xiaoyi-system-report-check">
-                  <input checked={reviewAcknowledged} onChange={(event) => setReviewAcknowledged(event.currentTarget.checked)} type="checkbox" />
+                  <input data-demo-action="xiaoyi-review-acknowledge" data-demo-state={reviewAcknowledged ? 'acknowledged' : 'pending'} checked={reviewAcknowledged} onChange={(event) => setReviewAcknowledged(event.currentTarget.checked)} type="checkbox" />
                   <span>
                     <strong>{executionReport.status === 'success' ? '我已核对真实页面状态，确认本次操作结果符合业务意图' : '我已查看失败步骤和异常原因，确认知晓本次操作未完成'}</strong>
-                    <small>小懿只提交执行证据，不代替人工做最终业务验收；本次确认将写入报告。</small>
+                    <small>舷鸥只提交执行证据，不代替人工做最终业务验收；本次确认将写入报告。</small>
                   </span>
                 </label>
               )}
@@ -1240,8 +1264,8 @@ export function XiaoyiSystemAssistant() {
                 <button onClick={() => setIsExecutionReportOpen(false)} type="button">关闭报告</button>
               ) : (
                 <>
-                  <button onClick={() => setIsExecutionReportOpen(false)} type="button">返回页面检查</button>
-                  <button disabled={!reviewAcknowledged} onClick={confirmExecutionReview} type="button">
+                  <button data-demo-action="xiaoyi-report-return" onClick={() => setIsExecutionReportOpen(false)} type="button">返回页面检查</button>
+                  <button data-demo-action="xiaoyi-review-confirm" disabled={!reviewAcknowledged} onClick={confirmExecutionReview} type="button">
                     <ShieldCheck size={14} />{executionReport.status === 'success' ? '人工确认执行完成' : '确认异常并归档'}
                   </button>
                 </>
@@ -1252,18 +1276,19 @@ export function XiaoyiSystemAssistant() {
       )}
       <button
         className="xiaoyi-system-avatar"
-        aria-label="打开或拖动小懿全系统联动助手"
+        aria-label="打开或拖动舷鸥全系统联动助手"
         aria-expanded={isOpen}
+        data-demo-action="xiaoyi-system-avatar"
         onClick={handleAvatarClick}
         onPointerCancel={handleAvatarPointerEnd}
         onPointerDown={handleAvatarPointerDown}
         onPointerMove={handleAvatarPointerMove}
         onPointerUp={handleAvatarPointerEnd}
-        title="点击对话 · 拖动小懿 / Click or drag Xiaoyi"
+        title="点击对话 · 拖动舷鸥 / Click or drag GullMate"
         type="button"
       >
         <span className="xiaoyi-system-speech" aria-hidden="true">
-          <strong>小懿已接入全系统</strong>
+          <strong>舷鸥已接入全系统</strong>
           <span>说出指令，我会逐步点击 · COMMAND LINKAGE</span>
           <span className="xiaoyi-system-wave"><i /><i /><i /><i /><i /><i /><i /></span>
         </span>

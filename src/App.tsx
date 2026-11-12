@@ -2,6 +2,7 @@ import { checkGodotWebExport, isGodotValidationResult } from './integrations/god
 import { useNativeGodotValidation } from './hooks/useNativeGodotValidation';
 import { formatCarbonDeltaTons } from './ui/formatCarbonDelta';
 import {
+  Activity as ReactActivity,
   lazy,
   Suspense,
   useCallback,
@@ -20,11 +21,13 @@ import {
   Activity,
   AlertTriangle,
   Anchor,
+  ArrowLeft,
   Bell,
   CalendarClock,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  CircleAlert,
   CircleGauge,
   Clock,
   CloudSun,
@@ -47,6 +50,7 @@ import {
   Route,
   RotateCcw,
   Settings,
+  ShieldCheck,
   Ship,
   Sparkles,
   ThermometerSun,
@@ -86,15 +90,22 @@ import {
   type PortBusinessDecisionReport,
   type PortBusinessRuntimeDecision,
 } from './integrations/portBusinessRlAdapter';
-import type {
-  CoreOperationsChampionStatus,
-  CoreOperationsDecisionReport,
-  CoreOperationsRuntimeDecision,
+import {
+  fetchCoreOperationsChampionStatus,
+  type CoreOperationsChampionStatus,
+  type CoreOperationsDecisionReport,
+  type CoreOperationsRuntimeDecision,
 } from './integrations/coreOperationsRlAdapter';
 import {
   requestXiaoyiRlAdvice,
   type XiaoyiRlAdvisorResponse,
 } from './integrations/xiaoyiRlAdvisorAdapter';
+import { useWorkspaceNavigation } from './hooks/useWorkspaceNavigation';
+import { PortNetworkMap } from './components/PortNetworkMap';
+import { networkPortName } from './ui/networkPresentation';
+import { WorkspaceHeading, WorkspaceNavigation } from './components/WorkspaceNavigation';
+import { isWorkspacePanelVisible, workspaceModules as dashboardModules, type WorkspaceId } from './ui/workspaces';
+import { DemoGuide } from './components/DemoGuide';
 import { XiaoyiSystemAssistant } from './components/XiaoyiSystemAssistant';
 import {
   getRlObjectivePreset,
@@ -170,6 +181,103 @@ const portDataStatusTone: Record<PortDataConnectionStatus, StatusTone> = {
 };
 
 const GODOT_SIMULATOR_URL = '/godot-simulator/index.html';
+const XIAOYI_RETURN_STORAGE_KEY = 'malacca_xiaoyi_return_v1';
+
+interface TrainingDatasetEvidence {
+  id: string;
+  label: string;
+  source: string;
+  sourceUrl: string;
+  license: string;
+  fingerprint: string;
+  portId: string;
+  recordCount: number;
+  trainRecordCount: number;
+  validationRecordCount: number;
+  testRecordCount: number;
+  split: Record<string, unknown>;
+  quality: {
+    rawRecordCount?: number;
+    rejectedRecordCount?: number;
+    duplicateTimestampCount?: number;
+    capacityMode?: string;
+    operationalClaimAllowed?: boolean;
+  };
+}
+
+let trainingDatasetEvidenceCache: TrainingDatasetEvidence | null = null;
+let trainingDatasetEvidenceRequest: Promise<TrainingDatasetEvidence> | null = null;
+
+const loadTrainingDatasetEvidence = () => {
+  if (trainingDatasetEvidenceCache) return Promise.resolve(trainingDatasetEvidenceCache);
+  if (trainingDatasetEvidenceRequest) return trainingDatasetEvidenceRequest;
+  trainingDatasetEvidenceRequest = fetch('/api/rl/datasets', { headers: { Accept: 'application/json' } })
+    .then(async (response) => {
+      if (!response.ok) throw new Error(`训练数据接口返回 HTTP ${response.status}`);
+      const payload = await response.json() as { datasets?: TrainingDatasetEvidence[] };
+      const dataset = payload.datasets?.[0];
+      if (!dataset || !dataset.fingerprint || !Number.isFinite(dataset.recordCount)) {
+        throw new Error('训练数据接口缺少数据指纹或记录量');
+      }
+      trainingDatasetEvidenceCache = dataset;
+      return dataset;
+    })
+    .finally(() => {
+      trainingDatasetEvidenceRequest = null;
+    });
+  return trainingDatasetEvidenceRequest;
+};
+
+type XiaoyiReturnContext = {
+  returnUrl: string;
+  trace: string;
+  surface: string;
+  expiresAt: number;
+};
+
+function safeXiaoyiReturnUrl(value: string | null | undefined) {
+  if (!value) return '';
+  try {
+    const url = new URL(value);
+    const localHost = url.hostname === '127.0.0.1' || url.hostname === 'localhost';
+    return localHost && url.port === '8010' && (url.protocol === 'http:' || url.protocol === 'https:')
+      ? url.href
+      : '';
+  } catch {
+    return '';
+  }
+}
+
+function resolveXiaoyiReturnContext(): XiaoyiReturnContext | null {
+  const params = new URLSearchParams(window.location.search);
+  const explicitReturn = safeXiaoyiReturnUrl(params.get('xiaoyi_return'));
+  if (explicitReturn) {
+    const context = {
+      returnUrl: explicitReturn,
+      trace: params.get('xiaoyi_trace') ?? `trace-${Date.now()}`,
+      surface: params.get('xiaoyi_surface') ?? 'dashboard',
+      expiresAt: Date.now() + 2 * 60 * 60 * 1000,
+    };
+    window.sessionStorage.setItem(XIAOYI_RETURN_STORAGE_KEY, JSON.stringify(context));
+    return context;
+  }
+  try {
+    const stored = JSON.parse(window.sessionStorage.getItem(XIAOYI_RETURN_STORAGE_KEY) ?? 'null') as XiaoyiReturnContext | null;
+    const returnUrl = safeXiaoyiReturnUrl(stored?.returnUrl);
+    if (stored && returnUrl && stored.expiresAt > Date.now()) return { ...stored, returnUrl };
+    window.sessionStorage.removeItem(XIAOYI_RETURN_STORAGE_KEY);
+  } catch {
+    window.sessionStorage.removeItem(XIAOYI_RETURN_STORAGE_KEY);
+  }
+  const referrer = safeXiaoyiReturnUrl(document.referrer);
+  if (!referrer || params.get('xiaoyi_source') !== 'system-linkage') return null;
+  return {
+    returnUrl: referrer,
+    trace: params.get('xiaoyi_trace') ?? `trace-${Date.now()}`,
+    surface: 'dashboard',
+    expiresAt: Date.now() + 2 * 60 * 60 * 1000,
+  };
+}
 
 const riskLevelLabelByTone: Record<StatusTone, string> = {
   ok: '低',
@@ -487,16 +595,7 @@ const passiveEventImpactProfile: SandboxEventImpactProfile = {
   summary: '演示记录事件，不额外改写推演参数',
 };
 
-const dashboardModules = [
-  { id: 'overview', label: '态势总览', icon: Activity },
-  { id: 'sandbox', label: '沙盘推演', icon: Play },
-  { id: 'resilience', label: '韧性评估', icon: Gauge },
-  { id: 'dispatch', label: '调度优化', icon: Route },
-  { id: 'emergency', label: '应急预案', icon: AlertTriangle },
-  { id: 'evidence', label: '证据与闭环', icon: CircleGauge },
-] as const;
-
-type DashboardModuleId = (typeof dashboardModules)[number]['id'];
+type DashboardModuleId = WorkspaceId;
 
 type ValidationSelection =
   | { type: 'vessel'; id: string }
@@ -1979,7 +2078,7 @@ interface SimulationMapViewport {
 
 const SIMULATION_MAP_MIN_ZOOM = 0.42;
 const SIMULATION_MAP_MAX_ZOOM = 3.2;
-const SIMULATION_MAP_OVERVIEW_ZOOM = 0.58;
+const SIMULATION_MAP_OVERVIEW_ZOOM = 0.95;
 const SIMULATION_MAP_BASE_WIDTH = 1000;
 const SIMULATION_MAP_BASE_HEIGHT = 720;
 
@@ -2093,7 +2192,7 @@ const carbonTonsPerFuelTon = 3.114;
 
 const getPortNodeTitle = (port: PortNode) =>
   [
-    `${port.name} / ${port.englishName}`,
+    `${networkPortName(port)} / ${port.englishName}`,
     `经纬度 ${formatCoordinate(port.geo.lat)}, ${formatCoordinate(port.geo.lon)}`,
     `船舶 ${port.vesselCount} 艘 / 排队 ${port.queueVessels} 艘 / 平均等待 ${port.averageWaitingHours}h`,
     `吞吐 ${port.dailyThroughputMillionTons} 百万吨 / 碳强度 ${port.carbonIntensityKgPerTon} kg/t`,
@@ -2557,20 +2656,20 @@ function RlTrainingCard({
           {xiaoyiApplied && (
             <span className="rl-training-card__applied-badge" role="status">
               <CheckCircle2 size={11} />
-              小懿已配置
+              舷鸥已配置
             </span>
           )}
           {onAskXiaoyi && (
             <button
-              aria-label={`让小懿推荐${label}`}
+              aria-label={`让舷鸥推荐${label}`}
               className={`rl-card-xiaoyi-button${xiaoyiSelected ? ' rl-card-xiaoyi-button--active' : ''}`}
               disabled={xiaoyiBusy}
               onClick={() => onAskXiaoyi(id)}
-              title={`无需理解算法，让小懿按当前优化目标推荐${label}`}
+              title={`无需理解算法，让舷鸥按当前优化目标推荐${label}`}
               type="button"
             >
               <Sparkles size={11} />
-              <span>{xiaoyiBusy && xiaoyiSelected ? '分析中' : '小懿推荐'}</span>
+              <span>{xiaoyiBusy && xiaoyiSelected ? '分析中' : '舷鸥推荐'}</span>
             </button>
           )}
           <button
@@ -2598,6 +2697,7 @@ function RlTrainingCard({
 }
 
 export function App() {
+  const [xiaoyiReturnContext] = useState<XiaoyiReturnContext | null>(resolveXiaoyiReturnContext);
   const [baseScenario, setBaseScenario] = useState(defaultPortScenario);
   const sceneSupportsBuiltInEvents = baseScenario.profileId === 'malacca-strait';
   const [portDataConfig, setPortDataConfig] = useState<PortDataConfig>(() => ({
@@ -2638,12 +2738,17 @@ export function App() {
     rlTraining,
     policyRecovery,
   } = sandboxRuntime;
-  const [activeModule, setActiveModule] = useState<DashboardModuleId>('overview');
+  const [activeModule, setActiveModule] = useWorkspaceNavigation();
   const [validationSelection, setValidationSelection] = useState<ValidationSelection>({
     type: 'vessel',
     id: baseScenario.vesselMarkers[0]?.id ?? '',
   });
-  const [activeMapView, setActiveMapView] = useState<MapViewMode>('operations');
+  const [selectedMapView, setActiveMapView] = useState<MapViewMode>('operations');
+  const activeMapView: MapViewMode = activeModule === 'resilience' ? 'congestion'
+    : activeModule === 'dispatch' ? 'carbon'
+      : activeModule === 'emergency' ? 'emergency'
+        : activeModule === 'sandbox' ? selectedMapView : 'operations';
+  const [mapPresentation, setMapPresentation] = useState<'network' | 'layers'>('network');
   const [mapSurfaceMode, setMapSurfaceMode] = useState<MapSurfaceMode>('reproducible-simulation');
   const [simulationMapViewport, setSimulationMapViewport] =
     useState<SimulationMapViewport>(createSimulationMapOverview);
@@ -2653,6 +2758,13 @@ export function App() {
     useState<VesselCategoryFilter>('all');
   const [selectedPortId, setSelectedPortId] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isTrainingDatasetEvidenceOpen, setIsTrainingDatasetEvidenceOpen] = useState(false);
+  const [trainingDatasetEvidence, setTrainingDatasetEvidence] = useState<TrainingDatasetEvidence | null>(trainingDatasetEvidenceCache);
+  const [trainingDatasetEvidenceStatus, setTrainingDatasetEvidenceStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>(trainingDatasetEvidenceCache ? 'ready' : 'idle');
+  const [trainingDatasetEvidenceError, setTrainingDatasetEvidenceError] = useState('');
+  const [isRlContractEvidenceOpen, setIsRlContractEvidenceOpen] = useState(false);
+  const [isApiContractEvidenceOpen, setIsApiContractEvidenceOpen] = useState(false);
+  const [isRlTrainingApprovalOpen, setIsRlTrainingApprovalOpen] = useState(false);
   const [showCoreClosure, setShowCoreClosure] = useState(false);
   const [showLegend, setShowLegend] = useState(true);
   const [motionEnabled, setMotionEnabled] = useState(true);
@@ -2750,6 +2862,7 @@ export function App() {
   const rlPolicyTestControllerRef = useRef<AbortController | null>(null);
   const rlBackendCheckGenerationRef = useRef(0);
   const rlBackendCheckControllerRef = useRef<AbortController | null>(null);
+  const xiaoyiDeepLinkSeenRef = useRef(false);
 
   const invalidateRlPolicyTestRequests = () => {
     rlPolicyTestRequestGenerationRef.current += 1;
@@ -2777,6 +2890,23 @@ export function App() {
       cancelDetachedRlTrainingJob(rlTraining.jobId, rlTraining.backend.authToken);
     }
   };
+  useEffect(() => {
+    if (xiaoyiDeepLinkSeenRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('xiaoyi_surface') !== 'rl-config') return;
+    xiaoyiDeepLinkSeenRef.current = true;
+    setActiveModule('sandbox');
+    setIsXiaoyiAssistantOpen(true);
+    setIsXiaoyiAssistantMinimized(false);
+    setIsRlDecisionPanelOpen(false);
+    setRlTrainingWindowState((windowState) => ({
+      ...windowState,
+      isOpen: true,
+      isMinimized: false,
+      isCollapsed: false,
+    }));
+    setRlBenchmarkMessage(`舷鸥跨系统定位完成：RL 训练配置已展开 · ${params.get('xiaoyi_action') ?? 'capability-matrix'}。`);
+  }, [setActiveModule]);
   useEffect(() => () => {
     godotImportGenerationRef.current += 1;
     rlTrainingRequestGenerationRef.current += 1;
@@ -2784,6 +2914,20 @@ export function App() {
     rlBackendCheckGenerationRef.current += 1;
     rlPolicyTestControllerRef.current?.abort();
     rlBackendCheckControllerRef.current?.abort();
+  }, []);
+
+  useEffect(() => {
+    const dismissTransientPanels = () => {
+      setExpandedPanelTitle(null);
+      setInspectorPanel(null);
+      setIsSettingsOpen(false);
+    };
+    window.addEventListener('popstate', dismissTransientPanels);
+    window.addEventListener('hashchange', dismissTransientPanels);
+    return () => {
+      window.removeEventListener('popstate', dismissTransientPanels);
+      window.removeEventListener('hashchange', dismissTransientPanels);
+    };
   }, []);
   const godotResultReceiverRef = useRef<(result: GodotValidationResult) => void>(() => undefined);
   const receiveNativeGodotResult = useCallback((result: GodotValidationResult) => godotResultReceiverRef.current(result), []);
@@ -2809,7 +2953,7 @@ export function App() {
   };
 
   const handleSimulationMapWheel = (event: ReactWheelEvent<HTMLElement>) => {
-    if (mapSurfaceMode !== 'reproducible-simulation') return;
+    if (mapSurfaceMode !== 'reproducible-simulation' || mapPresentation !== 'layers') return;
     const target = event.target as Element;
     if (target.closest('.simulation-render-layer, .event-impact-banner, .legend-box, .simulation-map-viewport-controls')) {
       return;
@@ -2823,7 +2967,7 @@ export function App() {
   };
 
   const handleSimulationMapPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
-    if (mapSurfaceMode !== 'reproducible-simulation' || event.button !== 0) return;
+    if (mapSurfaceMode !== 'reproducible-simulation' || mapPresentation !== 'layers' || event.button !== 0) return;
     const target = event.target as Element;
     if (target.closest('button, [role="button"], .simulation-render-layer, .event-impact-banner, .legend-box')) {
       return;
@@ -3468,9 +3612,10 @@ export function App() {
           return runtime;
         }
 
+        const replayBatchSize = Math.max(1, Math.ceil(rlPolicyEvaluation.trace.length / 4));
         const nextCursor = Math.min(
           rlPolicyEvaluation.trace.length - 1,
-          runtime.rlTraining.policyTest.logCursor + 1,
+          runtime.rlTraining.policyTest.logCursor + replayBatchSize,
         );
         const nextProgress = (nextCursor + 1) / Math.max(1, rlPolicyEvaluation.trace.length) * 100;
         const isCompleted = nextCursor >= rlPolicyEvaluation.trace.length - 1;
@@ -3489,13 +3634,17 @@ export function App() {
           },
         };
       });
-    }, 650);
+    }, 180);
 
     return () => window.clearInterval(timer);
   }, [rlPolicyEvaluation, rlTraining.policyTest.status]);
 
+  const previousTrainingStatus = useRef(rlTraining.status);
   useEffect(() => {
-    if (rlTraining.status !== 'completed') {
+    const justCompleted = rlTraining.status === 'completed' &&
+      (previousTrainingStatus.current === 'running' || previousTrainingStatus.current === 'queued');
+    previousTrainingStatus.current = rlTraining.status;
+    if (!justCompleted) {
       return undefined;
     }
 
@@ -3595,6 +3744,9 @@ export function App() {
     void fetchPortBusinessChampionStatus(portDataConfig.apiKey, controller.signal)
       .then((champion) => setPortBusinessEvidence((current) => ({ ...current, champion })))
       .catch(() => setPortBusinessEvidence((current) => ({ ...current, champion: null })));
+    void fetchCoreOperationsChampionStatus(portDataConfig.apiKey, controller.signal)
+      .then((coreChampion) => setPortBusinessEvidence((current) => ({ ...current, coreChampion })))
+      .catch(() => setPortBusinessEvidence((current) => ({ ...current, coreChampion: null })));
     return () => controller.abort();
   }, [portDataConfig.apiKey]);
 
@@ -3966,9 +4118,7 @@ export function App() {
   const channelById = new Map(scenario.channels.map((channel) => [channel.id, channel]));
   const routeById = new Map(scenario.routeOverlays.map((route) => [route.id, route]));
   const maxRouteVolume = Math.max(...scenario.routeOverlays.map((route) => route.vesselVolume));
-  const trendValues = scenario.carbon.hourlyTrend.length > 0
-    ? scenario.carbon.hourlyTrend
-    : [{ hour: '待接入', value: 0 }];
+  const trendValues = scenario.carbon.hourlyTrend.filter(item => Number.isFinite(item.value));
   const maxTrendValue = Math.max(1, ...trendValues.map((item) => item.value));
   const trendPolyline = trendValues
     .map((item, index) => {
@@ -3981,10 +4131,10 @@ export function App() {
     .filter((item, index) => index === 0 || index === trendValues.length - 1 ||
       ['06时', '12时', '18时'].includes(item.hour))
     .map((item) => item.hour);
-  const carbonLatestTrend = trendValues[trendValues.length - 1];
-  const carbonPeakTrend = trendValues.reduce((peak, item) =>
+  const carbonLatestTrend = trendValues[trendValues.length - 1] ?? null;
+  const carbonPeakTrend = trendValues.length ? trendValues.reduce((peak, item) =>
     item.value > peak.value ? item : peak,
-  );
+  ) : null;
   const windDirectionDeg =
     windDirectionDegreesByName[scenario.weather.windDirection] ?? 0;
   const weatherCards = [
@@ -4064,28 +4214,28 @@ export function App() {
   const overviewStats = [
     {
       id: 'port-count',
-      label: '港口数量',
+      label: '场景港口范围',
       value: scenario.overview.portCount,
       unit: '座',
-      detail: `核心节点 ${scenario.ports.length}`,
+      detail: `模板范围；图中展示 ${scenario.ports.length} 个节点`,
       icon: Anchor,
       tone: 'ok',
     },
     {
       id: 'channel-count',
-      label: '航道数量',
+      label: '配置航道',
       value: scenario.overview.channelCount,
       unit: '条',
-      detail: `动态航线 ${scenario.routeOverlays.length}`,
+      detail: `图中 ${scenario.routeOverlays.length} 条起讫航段`,
       icon: Route,
       tone: 'ok',
     },
     {
       id: 'anchorage-count',
-      label: '锚地数量',
+      label: '模板锚地',
       value: scenario.overview.anchorageCount,
       unit: '处',
-      detail: '覆盖海峡全域',
+      detail: '场景范围配置，未逐点展示',
       icon: MapPinned,
       tone: 'warning',
     },
@@ -6960,12 +7110,15 @@ export function App() {
   const rlPolicyTestTraceLogs = (rlPolicyEvaluation?.trace ?? []).map((point) =>
     `${point.timestamp} · ${point.actionLabel} · queue ${point.queueVessels.toFixed(1)} · delay ${point.delayHours.toFixed(2)}h · reward ${point.reward.toFixed(3)}`,
   );
+  const revealedRlPolicyTestLogs = rlPolicyTestTraceLogs.slice(0, Math.max(0, rlTraining.policyTest.logCursor + 1));
   const visibleRlPolicyTestLogs =
     rlTraining.policyTest.status === 'idle' || rlTraining.policyTest.status === 'locked'
       ? rlPolicyTestHeaderLogs
       : [
           ...rlPolicyTestHeaderLogs,
-          ...rlPolicyTestTraceLogs.slice(0, Math.max(0, rlTraining.policyTest.logCursor + 1)),
+          ...(revealedRlPolicyTestLogs.length > 12
+            ? [`已回放 ${revealedRlPolicyTestLogs.length - 12} 步；以下保留最近 12 步现场日志`, ...revealedRlPolicyTestLogs.slice(-12)]
+            : revealedRlPolicyTestLogs),
         ];
   const askXiaoyiForRlTraining = async (scope: RlTrainingCardId | 'all') => {
     const requestedObjectiveId = rlTraining.selectedObjectiveId;
@@ -7052,7 +7205,7 @@ export function App() {
               mode: recommendation.backendMode,
               endpoint: recommendation.backendEndpoint,
               status: 'disconnected' as RlBackendStatus,
-              lastMessage: `小懿已按「${activeRlTrainingObjective.label}」配置服务模式，等待测试接入。`,
+              lastMessage: `舷鸥已按「${activeRlTrainingObjective.label}」配置服务模式，等待测试接入。`,
             }
           : runtime.rlTraining.backend;
       const nextTraining: RlTrainingRuntimeState = {
@@ -7654,6 +7807,10 @@ export function App() {
     }));
   };
   const openRlTrainingWindow = () => {
+    setIsSettingsOpen(false);
+    setIsTrainingDatasetEvidenceOpen(false);
+    setIsRlContractEvidenceOpen(false);
+    setIsApiContractEvidenceOpen(false);
     setActiveModule('sandbox');
     setIsXiaoyiAssistantOpen(true);
     setIsRlDecisionPanelOpen(false);
@@ -7665,6 +7822,31 @@ export function App() {
       isMinimized: false,
       isCollapsed: false,
     }));
+  };
+  const openTrainingDatasetEvidence = async () => {
+    setIsTrainingDatasetEvidenceOpen(true);
+    setTrainingDatasetEvidenceError('');
+    if (trainingDatasetEvidenceCache) {
+      setTrainingDatasetEvidence(trainingDatasetEvidenceCache);
+      setTrainingDatasetEvidenceStatus('ready');
+      return;
+    }
+    setTrainingDatasetEvidenceStatus('loading');
+    try {
+      const dataset = await loadTrainingDatasetEvidence();
+      setTrainingDatasetEvidence(dataset);
+      setTrainingDatasetEvidenceStatus('ready');
+    } catch (error) {
+      setTrainingDatasetEvidenceStatus('error');
+      setTrainingDatasetEvidenceError(error instanceof Error ? error.message : '训练数据接口暂时不可用');
+    }
+  };
+  const requestRlTrainingStart = () => {
+    if (rlTraining.status === 'queued' || rlTraining.status === 'running') return;
+    setIsRlContractEvidenceOpen(false);
+    setIsTrainingDatasetEvidenceOpen(false);
+    setIsApiContractEvidenceOpen(false);
+    setIsRlTrainingApprovalOpen(true);
   };
   const closeRlTrainingWindow = () => {
     setRlTrainingWindowState((windowState) => ({
@@ -7928,7 +8110,7 @@ export function App() {
       id: `metric-${item.id}`,
       title: item.label,
       subtitle: item.detail,
-      body: `指标已联动到底部${dashboardModules.find((module) => module.id === targetModule)?.label ?? '模块'}。${item.trendLabel}`,
+      body: `指标已联动到${dashboardModules.find((module) => module.id === targetModule)?.label ?? '模块'}。${item.trendLabel}`,
       tone: item.tone,
       metrics: [
         { label: '当前值', value: item.value, unit: item.unit, tone: item.tone },
@@ -7965,9 +8147,9 @@ export function App() {
     setActiveModule('resilience');
     openInspectorPanel({
       id: `port-${port.id}`,
-      title: port.name,
+      title: networkPortName(port),
       subtitle: `${port.englishName} / ${port.country}`,
-      body: `${port.name}已设为地图关注节点。右侧关键节点监控和底部韧性评估将用于判断它的排队、恢复和风险扩散压力。`,
+      body: `${networkPortName(port)}已设为地图关注节点。关键节点监控和韧性评估可用于判断它的排队、恢复和风险扩散压力。`,
       tone,
       metrics: [
         { label: '船舶', value: formatInteger(port.vesselCount), unit: '艘' },
@@ -8107,7 +8289,7 @@ export function App() {
       metrics: [
         { label: '总碳排', value: isOperationalSceneTelemetryPending ? '--' : totalCarbonTons.toFixed(0), unit: 't' },
         { label: '较基准', value: isOperationalSceneTelemetryPending ? '--' : `${totalCarbonChangePercent > 0 ? '+' : ''}${totalCarbonChangePercent.toFixed(1)}%`, tone: emissionPanelTone },
-        { label: '峰值时段', value: isOperationalSceneTelemetryPending ? '--' : carbonPeakTrend.hour },
+        { label: '峰值时段', value: isOperationalSceneTelemetryPending ? '--' : (carbonPeakTrend?.hour ?? '--') },
       ],
       action: { label: '查看调度优化', module: 'dispatch' },
     });
@@ -8200,10 +8382,41 @@ export function App() {
     },
   });
 
+  const resetDemoGuideAll = () => {
+    resetSimulation();
+    resetRlTraining();
+    setActiveModule('overview');
+    setIsSettingsOpen(false);
+    setIsTrainingDatasetEvidenceOpen(false);
+    setIsRlContractEvidenceOpen(false);
+    setIsApiContractEvidenceOpen(false);
+    setIsRlTrainingApprovalOpen(false);
+    setIsEventInjectionPanelOpen(false);
+    setIsRlDecisionPanelOpen(false);
+    setIsGodotSimulatorOpen(false);
+    setInspectorPanel(null);
+    setExpandedPanelTitle(null);
+  };
+
+  const stopDemoGuideActivity = () => {
+    if (isSimulationRunning) toggleSimulation();
+    if (rlTraining.status === 'queued' || rlTraining.status === 'running') resetRlTraining();
+    if (nativeGodot.busy) void nativeGodot.cancel();
+    setIsRlTrainingApprovalOpen(false);
+  };
+
+  const returnToXiaoyi = () => {
+    if (!xiaoyiReturnContext) return;
+    window.sessionStorage.removeItem(XIAOYI_RETURN_STORAGE_KEY);
+    const returnUrl = new URL(xiaoyiReturnContext.returnUrl);
+    returnUrl.searchParams.set('xiaoyi_resume', 'system-linkage');
+    window.location.assign(returnUrl.href);
+  };
+
   return (
     <main
       className={[
-        'dashboard-shell',
+        'dashboard-shell dashboard-shell--workspace',
         `dashboard-shell--view-${activeMapView}`,
         `dashboard-shell--module-${activeModule}`,
         motionEnabled ? '' : 'dashboard-shell--motion-paused',
@@ -8215,6 +8428,29 @@ export function App() {
         .filter(Boolean)
         .join(' ')}
     >
+      <WorkspaceNavigation
+        activeModule={activeModule}
+        onNavigate={(id) => { setExpandedPanelTitle(null); setInspectorPanel(null); setIsSettingsOpen(false); setActiveModule(id); }}
+        isRunning={isSimulationRunning}
+        elapsedMinutes={elapsedMinutes}
+      />
+      <DemoGuide onResetAll={resetDemoGuideAll} onStopAll={stopDemoGuideActivity} />
+      {xiaoyiReturnContext && (
+        <section
+          aria-label="舷鸥与马六甲沙盘双向联动"
+          className="xiaoyi-return-dock"
+          data-xiaoyi-return-dock="ready"
+          role="status"
+        >
+          <div className="xiaoyi-return-dock__title"><strong>舷鸥双向联动</strong><small>{xiaoyiReturnContext.trace.slice(0, 18)}</small></div>
+          <div aria-label="舷鸥联动进度" className="xiaoyi-return-dock__track">
+            <span className="is-done"><i>1</i><b>目标已接收</b></span><em />
+            <span className="is-done"><i>2</i><b>{xiaoyiReturnContext.surface === 'rl-config' ? 'RL配置已定位' : '沙盘已打开'}</b></span><em />
+            <span className="is-active"><i>3</i><b>返回舷鸥</b></span>
+          </div>
+          <button onClick={returnToXiaoyi} type="button"><ArrowLeft size={13} />返回舷鸥并恢复联动中心</button>
+        </section>
+      )}
       <header className="top-bar">
         <div className="top-bar__left">
           <button
@@ -8256,6 +8492,7 @@ export function App() {
           </div>
         </div>
         <div className="top-bar__right">
+          {isSimulationRunning && <button aria-label="暂停当前沙盘推演" data-xiaoyi-action="workspace-pause" onClick={toggleSimulation} type="button"><Pause size={14} /><span>暂停推演</span></button>}
           <button
             aria-label="系统设置"
             aria-expanded={isSettingsOpen}
@@ -8312,7 +8549,9 @@ export function App() {
         </div>
       </header>
 
-      {expandedPanelTitle && (
+      <WorkspaceHeading activeModule={activeModule} onNavigate={(id) => { setExpandedPanelTitle(null); setInspectorPanel(null); setActiveModule(id); }} />
+
+      {expandedPanelTitle && isWorkspacePanelVisible(activeModule, expandedPanelTitle) && (
         <button
           aria-label="关闭放大卡片"
           className="hud-panel-zoom-backdrop"
@@ -8321,7 +8560,111 @@ export function App() {
         />
       )}
 
-      <section className="kpi-bar" aria-label="核心运行指标">
+      {isTrainingDatasetEvidenceOpen && (
+        <div className="demo-evidence-backdrop">
+          <section className="demo-evidence-dialog demo-evidence-dialog--dataset" data-demo-region="training-dataset" role="dialog" aria-modal="true" aria-labelledby="training-dataset-title">
+            <header>
+              <div><small>OFFICIAL DATASET & TRAINING SNAPSHOT</small><strong id="training-dataset-title">RL 训练数据集 · 来源、切分与校验</strong></div>
+              <button aria-label="关闭训练数据集" onClick={() => setIsTrainingDatasetEvidenceOpen(false)} type="button"><X size={15} /></button>
+            </header>
+            {trainingDatasetEvidenceStatus === 'loading' && <div className="demo-evidence-loading"><RefreshCw className="is-spinning" size={18} />正在读取可训练数据快照；同一请求进行中不会重复提交。</div>}
+            {trainingDatasetEvidenceStatus === 'error' && <div className="demo-evidence-error" role="alert"><strong>数据集接口暂时不可用</strong><span>{trainingDatasetEvidenceError}</span><button onClick={() => void openTrainingDatasetEvidence()} type="button">重新读取</button></div>}
+            {trainingDatasetEvidence && trainingDatasetEvidenceStatus === 'ready' && (
+              <div className="demo-dataset-evidence-grid">
+                <section className="demo-evidence-hero">
+                  <span><small>Dataset</small><strong>{trainingDatasetEvidence.label}</strong><em>{trainingDatasetEvidence.id}</em></span>
+                  <span><small>Source</small><strong>{trainingDatasetEvidence.source}</strong><em>377 个月 · 4,064,858 艘次</em>{trainingDatasetEvidence.sourceUrl.split(/\s*;\s*/).filter(url => /^https?:\/\//.test(url)).map((url,index) => <a key={url} href={url} rel="noreferrer" target="_blank">官方来源 {index + 1} <ExternalLink size={11} /></a>)}</span>
+                  <span><small>License</small><strong>{trainingDatasetEvidence.license}</strong><em>训练快照只用于离线研究与工程验证</em></span>
+                  <span><small>Port / Evidence</small><strong>{trainingDatasetEvidence.portId}</strong><em>{trainingDatasetEvidence.quality.operationalClaimAllowed ? 'operator-supplied' : 'public-aggregate-proxy'}</em></span>
+                </section>
+                <section className="demo-dataset-counts" aria-label="训练数据切分">
+                  <span><small>总记录</small><strong>{formatInteger(trainingDatasetEvidence.recordCount)}</strong></span>
+                  <span><small>训练集</small><strong>{formatInteger(trainingDatasetEvidence.trainRecordCount)}</strong><em>70%</em></span>
+                  <span><small>验证集</small><strong>{formatInteger(trainingDatasetEvidence.validationRecordCount)}</strong><em>15%</em></span>
+                  <span><small>最终测试</small><strong>{formatInteger(trainingDatasetEvidence.testRecordCount)}</strong><em>15% · 封存</em></span>
+                </section>
+                <section className="demo-dataset-lineage">
+                  <div><small>SHA-256 前 16 位 / Snapshot ID</small><code>{trainingDatasetEvidence.fingerprint}</code></div>
+                  <div><small>时间切分契约</small><code>{JSON.stringify(trainingDatasetEvidence.split)}</code></div>
+                  <div><small>质量校验</small><strong>原始 {formatInteger(trainingDatasetEvidence.quality.rawRecordCount ?? trainingDatasetEvidence.recordCount)} · 拒绝 {formatInteger(trainingDatasetEvidence.quality.rejectedRecordCount ?? 0)} · 重复时间戳 {formatInteger(trainingDatasetEvidence.quality.duplicateTimestampCount ?? 0)}</strong></div>
+                  <div><small>容量字段</small><strong>{trainingDatasetEvidence.quality.capacityMode ?? 'empirical-proxy'} · 训练段校准，禁止未来信息泄漏</strong></div>
+                </section>
+                <section className="demo-dataset-boundary">
+                  <article><strong>官方原始锚点</strong><p>MPA 月度到港船舶与总吨位；来源链接、数据期和许可保留。</p></article>
+                  <article><strong>独立验证证据</strong><p>公开 AIS 研究/轨迹用于独立校验，不把船位研究样本写成 MPA 训练月报。</p></article>
+                  <article><strong>工程派生字段</strong><p>容量代理、气象风险、队列与碳强度逐字段标注；不冒充马六甲现场测量。</p></article>
+                  <article><strong>结果边界</strong><p>公开数据锚定的离线仿真；production_authority=false，不能证明现场收益。</p></article>
+                </section>
+              </div>
+            )}
+          </section>
+        </div>
+      )}
+
+      {isRlContractEvidenceOpen && (
+        <div className="demo-evidence-backdrop">
+          <section className="demo-evidence-dialog demo-evidence-dialog--contract" data-demo-region="rl-contract" role="dialog" aria-modal="true" aria-labelledby="rl-contract-title">
+            <header>
+              <div><small>STATE · ACTION · REWARD · SAFETY</small><strong id="rl-contract-title">强化学习训练契约</strong></div>
+              <button aria-label="关闭RL训练契约" onClick={() => setIsRlContractEvidenceOpen(false)} type="button"><X size={15} /></button>
+            </header>
+            <div className="demo-rl-contract-grid">
+              <section><header><span>01</span><strong>State / 观测空间</strong><em>{activeRlTrainingRequest.observationSpace.length} 维聚合状态</em></header><ol>{activeRlTrainingRequest.observationSpace.map((item, index) => <li key={item}><b>{String(index + 1).padStart(2, '0')}</b><span>{item}</span></li>)}</ol></section>
+              <section><header><span>02</span><strong>Action / 动作空间</strong><em>{activeRlTrainingRequest.actionSpace.length} 个有界建议</em></header><ol>{activeRlTrainingRequest.actionSpace.map((item, index) => <li key={item}><b>{String(index + 1).padStart(2, '0')}</b><span>{item}</span></li>)}</ol></section>
+              <section><header><span>03</span><strong>Reward / 奖励权重</strong><em>{activeRlTrainingRequest.objectiveLabel}</em></header><div className="demo-contract-rewards">{Object.entries(activeRlTrainingRequest.rewardWeights).map(([key, value]) => <span key={key}><small>{key}</small><strong>{Number(value).toFixed(2)}</strong><i><b style={{ width: `${Number(value) * 100}%` }} /></i></span>)}</div></section>
+              <section><header><span>04</span><strong>训练与验证</strong><em>{activeRlTrainingRequest.protocolVersion}</em></header><dl>
+                <div><dt>主算法</dt><dd>{activeRlTrainingRequest.algorithmId}</dd></div>
+                <div><dt>对照</dt><dd>{activeRlTrainingRequest.baselineId} · 四种 RL + MPC</dd></div>
+                <div><dt>Episode</dt><dd>{formatInteger(activeRlTrainingRequest.trainingParameters.maxEpisodes)} / RL 算法</dd></div>
+                <div><dt>Seed</dt><dd>{activeRlTrainingRequest.trainingParameters.seed}</dd></div>
+                <div><dt>数据切分</dt><dd>train 70% / validation 15% / sealed test 15%</dd></div>
+                <div><dt>Checkpoint</dt><dd>完成训练和验证选优后生成；测试显式触发</dd></div>
+              </dl></section>
+            </div>
+            <footer className="demo-contract-safety"><ShieldCheck size={18} /><div><strong>安全与权限边界</strong><span>动作只进入数字孪生和离线回放；主管机关放行、避碰、危险品、身份审批、独立联锁和物理执行由外部确定性门禁控制。</span></div><em>dispatch_allowed=false · production_authority=false</em></footer>
+          </section>
+        </div>
+      )}
+
+      {isRlTrainingApprovalOpen && (
+        <div className="demo-evidence-backdrop demo-evidence-backdrop--approval">
+          <section className="demo-training-approval" data-demo-region="training-approval" role="dialog" aria-modal="true" aria-labelledby="training-approval-title">
+            <header><ShieldCheck size={21} /><div><small>HUMAN APPROVAL REQUIRED</small><strong id="training-approval-title">确认离线 RL 训练任务</strong></div></header>
+            <div className="demo-training-approval__summary">
+              <span><small>目标</small><strong>{activeRlTrainingRequest.objectiveLabel}</strong></span>
+              <span><small>算法 / 对照</small><strong>{activeRlTrainingRequest.algorithmId} / {activeRlTrainingRequest.baselineId}</strong></span>
+              <span><small>训练量</small><strong>{formatInteger(activeRlTrainingRequest.trainingParameters.maxEpisodes)} episodes × 4 RL</strong></span>
+              <span><small>数据</small><strong>{trainingDatasetEvidence?.id ?? 'MPA monthly public aggregate'} · 70/15/15</strong></span>
+              <span><small>奖励</small><strong>delay {activeRlTrainingRequest.rewardWeights.delay} · carbon {activeRlTrainingRequest.rewardWeights.carbon} · safety {activeRlTrainingRequest.rewardWeights.safety} · throughput {activeRlTrainingRequest.rewardWeights.throughput}</strong></span>
+              <span><small>权限</small><strong>offline training only · production_authority=false</strong></span>
+            </div>
+            <p><CircleAlert size={15} />确认只会创建本机离线训练任务，不会向 VTS、TOS、ECDIS、船舶或港口设备下发控制指令。最终测试段保持封存，需在训练完成后显式运行。</p>
+            <footer><button onClick={() => setIsRlTrainingApprovalOpen(false)} type="button">返回修改</button><button className="is-primary" data-demo-action="rl-confirm-training" data-xiaoyi-action="rl-confirm-training" onClick={() => { setIsRlTrainingApprovalOpen(false); void startRlTraining(); }} type="button"><Play size={14} />人工确认并启动训练</button></footer>
+          </section>
+        </div>
+      )}
+
+      {isApiContractEvidenceOpen && (
+        <div className="demo-evidence-backdrop">
+          <section className="demo-evidence-dialog demo-evidence-dialog--api" data-demo-region="api-contract" role="dialog" aria-modal="true" aria-labelledby="api-contract-title">
+            <header><div><small>OPENAPI · REPLACEABLE ADAPTERS · FAIL CLOSED</small><strong id="api-contract-title">标准接口与现场替换边界</strong></div><button aria-label="关闭API契约" onClick={() => setIsApiContractEvidenceOpen(false)} type="button"><X size={15} /></button></header>
+            <div className="demo-api-contract-grid">
+              {[
+                ['公开数据快照', 'GET /api/public-data/snapshot', 'MPA、海洋场、AIS 研究与 IMO 因子；只读'],
+                ['运行态与建议', 'GET /api/operations/snapshot · /recommendations', '后端权威模拟状态与受控候选'],
+                ['RL 数据与训练', 'GET /api/rl/datasets · POST /api/rl/jobs', '数据指纹、真实训练进度、检查点与取消'],
+                ['策略评估', 'POST /api/rl/jobs/:id/evaluate · /api/rl/policy/infer', '封存测试、情景推理与安全弃权'],
+                ['审计回放', 'GET /api/operations/audit', '任务、回执、回滚、时间戳与哈希链'],
+                ['现场适配', 'terminal-operations.v2 · operator adapters', '37 字段映射、签名、时序和质量门'],
+              ].map(([name, endpoint, detail]) => <article key={name}><span>{name}</span><code>{endpoint}</code><p>{detail}</p></article>)}
+            </div>
+            <footer><a href="/api/openapi.json" target="_blank" rel="noreferrer">查看可机读 OpenAPI <ExternalLink size={12} /></a><span>本机回环无需令牌；非回环监听必须配置强随机令牌。</span><em>接口存在 ≠ 现场授权 · dispatch_allowed=false</em></footer>
+          </section>
+        </div>
+      )}
+
+      <div className="workspace-content" aria-labelledby="workspace-title" tabIndex={-1}>
+      {(activeModule === 'overview' || activeModule === 'sandbox') && <section className="kpi-bar" aria-label="核心运行指标">
         {displayedMetrics.map((item) => {
           const Icon = kpiIconById[item.id as keyof typeof kpiIconById] ?? Activity;
 
@@ -8350,9 +8693,11 @@ export function App() {
             </article>
           );
         })}
-      </section>
+      </section>}
 
+      <div className="workspace-canvas" hidden={activeModule === 'evidence'}>
       <aside
+        hidden={activeModule === 'dispatch' || activeModule === 'resilience'}
         className={`side-rail side-rail--left${[
           '港航网络总览',
           '船舶态势',
@@ -8360,6 +8705,7 @@ export function App() {
           '风险预警',
         ].includes(expandedPanelTitle ?? '') ? ' side-rail--has-expanded' : ''}`}
       >
+        {isWorkspacePanelVisible(activeModule, '港航网络总览') && (
         <Panel title="港航网络总览" {...getPanelExpandProps('港航网络总览')}>
           <div className="network-overview">
             <div className="mini-map" aria-label="港航网络小地图">
@@ -8374,12 +8720,12 @@ export function App() {
               </svg>
               {scenario.ports.map((port) => (
                 <button
-                  aria-label={`小地图查看港口 ${port.name}`}
+                  aria-label={`小地图查看港口 ${networkPortName(port)}`}
                   className={`mini-map__port mini-map__port--${port.role} mini-map__port--${port.tone}${selectedPort?.id === port.id ? ' mini-map__port--selected' : ''}`}
                   key={port.id}
                   onClick={() => openPortInspector(port)}
                   style={{ left: port.position.x, top: port.position.y }}
-                  title={`${port.name} / 船舶 ${port.vesselCount} 艘 / ${port.status}`}
+                  title={`${networkPortName(port)} / 船舶 ${port.vesselCount} 艘 / ${port.status}`}
                   type="button"
                 />
               ))}
@@ -8417,7 +8763,9 @@ export function App() {
             </ul>
           </div>
         </Panel>
+        )}
 
+        {isWorkspacePanelVisible(activeModule, '船舶态势') && (
         <Panel title="船舶态势" {...getPanelExpandProps('船舶态势')}>
           <div className="ship-status">
             <ul className="metric-list">
@@ -8477,7 +8825,9 @@ export function App() {
                 : '合成场景分类，仅用于界面验证'}
           </p>
         </Panel>
+        )}
 
+        {isWorkspacePanelVisible(activeModule, '航道通航状态') && (
         <Panel title="航道通航状态" {...getPanelExpandProps('航道通航状态')}>
           <ul className="status-list">
             {scenario.channels.map((item) => (
@@ -8510,7 +8860,9 @@ export function App() {
             ))}
           </ul>
         </Panel>
+        )}
 
+        {isWorkspacePanelVisible(activeModule, '风险预警') && (
         <Panel title="风险预警" {...getPanelExpandProps('风险预警')}>
           <ul className="risk-list">
             {displayedRiskAlerts.map((item) => (
@@ -8540,6 +8892,7 @@ export function App() {
             ))}
           </ul>
         </Panel>
+        )}
       </aside>
 
       {activeModule !== 'evidence' && (
@@ -8568,7 +8921,7 @@ export function App() {
       )}
 
       <section
-        className={`map-stage${mapSurfaceMode === 'satellite-live' ? ' map-stage--satellite-live' : ' map-stage--simulation'}${isSimulationMapDragging ? ' map-stage--dragging' : ''}`}
+        className={`map-stage${mapSurfaceMode === 'satellite-live' ? ' map-stage--satellite-live' : ' map-stage--simulation'}${mapSurfaceMode === 'reproducible-simulation' && mapPresentation === 'network' ? ' map-stage--network' : ''}${isSimulationMapDragging ? ' map-stage--dragging' : ''}`}
         aria-label={`${scenario.regionLabel ?? scenario.name}沙盘地图`}
         aria-hidden={activeModule === 'evidence'}
         inert={activeModule === 'evidence'}
@@ -8589,6 +8942,33 @@ export function App() {
 
         {mapSurfaceMode === 'reproducible-simulation' && (
           <>
+            <nav className="map-presentation-tabs" aria-label="态势图展示方式">
+              <button data-demo-action="network-map-open" aria-pressed={mapPresentation === 'network'} onClick={() => setMapPresentation('network')} type="button"><Route size={14} />科技态势与航线详情</button>
+              <button data-demo-action="network-layers-open" aria-pressed={mapPresentation === 'layers'} onClick={() => setMapPresentation('layers')} type="button"><Layers size={14} />仿真分析图层</button>
+              <small>先读清关系，再查看细节</small>
+            </nav>
+            {mapPresentation === 'network' && <PortNetworkMap
+              region={scenario.regionLabel ?? scenario.name}
+              clock={scenarioClockLabel}
+              ports={scenario.ports}
+              routes={scenario.routeOverlays}
+              channels={scenario.channels}
+              vessels={scenario.vesselMarkers}
+              congestion={portCongestionSimulations}
+              delays={vesselDelaySimulations}
+              pending={isOperationalSceneTelemetryPending}
+              eventLabel={activeInjectedEventTemplate?.label ?? activeDemoCase?.label}
+              eventDescription={latestInjectedEvent?.impact.summary}
+              affectedVessels={affectedVesselIdSet.size}
+              affectedVesselIds={Array.from(affectedVesselIdSet)}
+              backgroundAsset={scenario.mapBackgroundAsset}
+              onValidateRoute={selectValidationRoute}
+              onValidateVessel={selectValidationVessel}
+              onInspectPort={openPortInspector}
+              onOpenLayers={() => setMapPresentation('layers')}
+            />}
+            <div className="simulation-detail-map" hidden={mapPresentation !== 'layers'} inert={mapPresentation !== 'layers'}>
+
             <div
               aria-hidden="true"
               className="simulation-map-background"
@@ -8629,7 +9009,7 @@ export function App() {
               <Activity size={11} />
               <strong>公开校准仿真</strong>
               <span>模拟潮流 {scenario.weather.currentSpeedKnots.toFixed(1)} kn</span>
-              <em>{scenario.vesselMarkers.length} 艘动画验证船</em>
+              <em>{scenario.vesselMarkers.length} {portDataStatus === 'live' ? '艘适配器船舶' : '艘工程样船 · 名称/IMO为演示模板'}</em>
             </div>
 
         {(scenario.mapLabels ?? []).map((label) => (
@@ -9014,7 +9394,7 @@ export function App() {
               type="button"
             >
               <Ship size={12} />
-              <span>{delaySimulation?.delayMinutes ?? 0}</span>
+              <span>{delaySimulation?.delayMinutes ?? 0}分</span>
               {isVesselAffected && activeInjectedEventTemplate && (
                 <em>{rlVesselRecoveryLabel}</em>
               )}
@@ -9051,7 +9431,7 @@ export function App() {
 
         {scenario.ports.map((port) => (
           <button
-            aria-label={`查看港口 ${port.name}`}
+            aria-label={`查看港口 ${networkPortName(port)}`}
             className={`port-marker${selectedPort?.id === port.id ? ' port-marker--selected' : ''}`}
             key={port.name}
             onClick={() => openPortInspector(port)}
@@ -9062,7 +9442,7 @@ export function App() {
             <span>
               <Anchor size={15} />
             </span>
-            <strong>{port.name}</strong>
+            <strong>{networkPortName(port)}</strong>
             <em>{port.englishName}</em>
           </button>
         ))}
@@ -9617,6 +9997,7 @@ export function App() {
             </table>
           </section>
         )}
+            </div>
           </>
         )}
 
@@ -9699,6 +10080,7 @@ export function App() {
       {activeModule === 'sandbox' && isRlDecisionPanelOpen && (
         <section
           aria-label="在线策略推理舱"
+          data-demo-state={rlInferenceStatus}
           className={`rl-decision-cockpit rl-decision-cockpit--${rlInferenceStatus}${rlPolicyApplied ? ' rl-decision-cockpit--applied' : ''}`}
           style={
             {
@@ -10026,7 +10408,7 @@ export function App() {
             </div>
             <div className="rl-training-window__controls">
               <button
-                aria-label="让小懿按优化目标智能配置训练"
+                aria-label="让舷鸥按优化目标智能配置训练"
                 className="rl-xiaoyi-global-button"
                 data-xiaoyi-action="rl-xiaoyi-configure"
                 data-xiaoyi-state={xiaoyiAdvisorStatus}
@@ -10036,7 +10418,7 @@ export function App() {
                 type="button"
               >
                 <Sparkles size={12} />
-                <span>{xiaoyiAdvisorStatus === 'thinking' ? '小懿分析中' : '小懿智能配置'}</span>
+                <span>{xiaoyiAdvisorStatus === 'thinking' ? '舷鸥分析中' : '舷鸥智能配置'}</span>
               </button>
               {hiddenRlTrainingCardCount > 0 && (
                 <button aria-label="恢复全部训练卡片" onClick={restoreRlTrainingCards} type="button">
@@ -10102,7 +10484,7 @@ export function App() {
                   </div>
                   <section className="port-business-champion-strip" aria-label="全核心联合强化学习冠军证据">
                     <div>
-                      <small>CORE OPERATIONS RL V1 · ACTIVE OFFLINE CHAMPION · PORT BUSINESS RL V3 · OFFLINE CHAMPION RETAINED</small>
+                      <small>CORE OPERATIONS RL · ACTIVE OFFLINE CHAMPION · PORT BUSINESS RL V3 · OFFLINE CHAMPION RETAINED</small>
                       <strong>
                         {portBusinessEvidence.coreChampion
                           ? `${portBusinessEvidence.coreChampion.champion.algorithmId} / ${portBusinessEvidence.coreChampion.champion.attemptId}`
@@ -10146,8 +10528,11 @@ export function App() {
                       </strong>
                       <button
                         className={rlTraining.status === 'running' || rlTraining.status === 'queued' ? 'is-running' : ''}
+                        data-demo-state={isRlTrainingApprovalOpen ? 'approval' : rlTraining.status}
+                        data-xiaoyi-action="rl-start-training"
+                        data-xiaoyi-state={isRlTrainingApprovalOpen ? 'approval' : rlTraining.status}
                         disabled={rlTraining.status === 'running' || rlTraining.status === 'queued'}
-                        onClick={startRlTraining}
+                        onClick={requestRlTrainingStart}
                         type="button"
                       >
                         <Play size={16} />
@@ -10202,10 +10587,22 @@ export function App() {
                       <strong>{activeRlTrainingStageProgress.toFixed(1)}%</strong>
                       <div><b aria-hidden="true" /></div>
                       <small>{activeRlTrainingStage.detail}</small>
-                      <button onClick={resetRlTraining} type="button">
+                      <button data-demo-action="rl-reset-training" onClick={resetRlTraining} type="button">
                         <RotateCcw size={13} />
                         重置训练
                       </button>
+                    </div>
+                    <div className="rl-training-command-center__evidence-actions">
+                      <button
+                        data-demo-action="show-rl-contract"
+                        onClick={() => setIsRlContractEvidenceOpen(true)}
+                        type="button"
+                      >查看 RL 训练契约</button>
+                      <button
+                        data-demo-action="rl-show-curves"
+                        onClick={() => document.querySelector<HTMLElement>('.rl-training-card--curves')?.scrollIntoView({ behavior: 'auto', block: 'center' })}
+                        type="button"
+                      >查看训练曲线</button>
                     </div>
                   </section>
                 </div>
@@ -10636,10 +11033,11 @@ export function App() {
                     <div className="rl-training-actions">
                       <button
                         className={`control-button control-button--primary${rlTraining.status === 'running' || rlTraining.status === 'queued' ? ' control-button--active' : ''}`}
+                        data-demo-state={isRlTrainingApprovalOpen ? 'approval' : rlTraining.status}
                         data-xiaoyi-action="rl-start-training"
-                        data-xiaoyi-state={rlTraining.status}
+                        data-xiaoyi-state={isRlTrainingApprovalOpen ? 'approval' : rlTraining.status}
                         disabled={rlTraining.status === 'running' || rlTraining.status === 'queued'}
-                        onClick={startRlTraining}
+                        onClick={requestRlTrainingStart}
                         type="button"
                       >
                         <Play size={15} />
@@ -10653,7 +11051,7 @@ export function App() {
                           }
                         />
                       </button>
-                      <button className="control-button" onClick={resetRlTraining} type="button">
+                      <button className="control-button" data-demo-action="rl-reset-training" onClick={resetRlTraining} type="button">
                         <RotateCcw size={15} />
                         <BilingualText text="重置训练" />
                       </button>
@@ -10866,7 +11264,7 @@ export function App() {
                             }
                           />
                         </button>
-                        <button className="control-button" onClick={resetRlPolicyTest} type="button">
+                        <button className="control-button" data-demo-action="rl-reset-policy-test" onClick={resetRlPolicyTest} type="button">
                           <RotateCcw size={15} />
                           <BilingualText text="重置测试" />
                         </button>
@@ -11002,7 +11400,7 @@ export function App() {
 
       {activeModule === 'sandbox' && rlTrainingWindowState.isOpen && isXiaoyiAssistantOpen && (
         <section
-          aria-label="可拖拽的小懿RL训练助手"
+          aria-label="可拖拽的舷鸥RL训练助手"
           className={`xiaoyi-rl-assistant${isXiaoyiAssistantMinimized ? ' xiaoyi-rl-assistant--minimized' : ''} xiaoyi-rl-assistant--${xiaoyiAdvisorStatus}${xiaoyiApplyFeedback.status === 'success' ? ' xiaoyi-rl-assistant--applied' : ''}`}
           style={
             {
@@ -11014,9 +11412,9 @@ export function App() {
           {isXiaoyiAssistantMinimized ? (
             <div className="xiaoyi-rl-assistant__mini-handle" onMouseDown={startXiaoyiAssistantDrag}>
               <GripVertical size={12} />
-              <button aria-label="展开小懿RL训练助手" onClick={() => setIsXiaoyiAssistantMinimized(false)} type="button">
-                <img alt="小懿AI港航训练助手" src="/assets/xiaoyi-ai-port-hero.png" />
-                <span>小懿</span>
+              <button aria-label="展开舷鸥RL训练助手" onClick={() => setIsXiaoyiAssistantMinimized(false)} type="button">
+                <img alt="舷鸥 · GullMate港航训练助手" src="/assets/xiaoyi-ai-port-hero.png" />
+                <span>舷鸥</span>
               </button>
             </div>
           ) : (
@@ -11024,25 +11422,25 @@ export function App() {
               <header className="xiaoyi-rl-assistant__header" onMouseDown={startXiaoyiAssistantDrag}>
                 <GripVertical size={13} />
                 <span>
-                  <strong>小懿AI · 控制算法训练助理</strong>
+                  <strong>舷鸥 · GullMate · 控制算法训练助理</strong>
                   <small>拖拽移动 · 操作员友好配置</small>
                 </span>
                 <i className={xiaoyiRlAdvice?.externalConnected ? 'is-online' : ''} />
-                <button aria-label="最小化小懿助手" onClick={() => setIsXiaoyiAssistantMinimized(true)} type="button">
+                <button aria-label="最小化舷鸥助手" onClick={() => setIsXiaoyiAssistantMinimized(true)} type="button">
                   <Minimize size={12} />
                 </button>
-                <button aria-label="关闭小懿助手" onClick={() => setIsXiaoyiAssistantOpen(false)} type="button">
+                <button aria-label="关闭舷鸥助手" onClick={() => setIsXiaoyiAssistantOpen(false)} type="button">
                   <X size={12} />
                 </button>
               </header>
               <div className="xiaoyi-rl-assistant__hero">
-                <img alt="小懿AI港航训练助手动画形象" src="/assets/xiaoyi-ai-port-hero.png" />
+                <img alt="舷鸥 · GullMate港航训练助手动画形象" src="/assets/xiaoyi-ai-port-hero.png" />
                 <span className="xiaoyi-rl-assistant__scan" />
                 <i className="xiaoyi-rl-assistant__pulse xiaoyi-rl-assistant__pulse--one" />
                 <i className="xiaoyi-rl-assistant__pulse xiaoyi-rl-assistant__pulse--two" />
                 <div>
-                  <strong>小懿AI</strong>
-                  <span>{xiaoyiRlAdvice?.externalConnected ? '已连接小懿AI 8010' : '内置规则顾问（非大模型）'}</span>
+                  <strong>舷鸥 · GullMate</strong>
+                  <span>{xiaoyiRlAdvice?.externalConnected ? '已连接舷鸥 · GullMate 8010' : '内置规则顾问（非大模型）'}</span>
                 </div>
               </div>
               <div className="xiaoyi-rl-assistant__message">
@@ -11118,6 +11516,8 @@ export function App() {
                 )}
                 <button
                   className={`is-primary${xiaoyiApplyFeedback.status === 'success' && xiaoyiApplyFeedback.scope === 'all' ? ' is-applied' : ''}`}
+                  data-demo-action="rl-xiaoyi-apply-all"
+                  data-demo-state={xiaoyiApplyFeedback.scope === 'all' ? xiaoyiApplyFeedback.status : 'idle'}
                   disabled={!xiaoyiRlAdvice || xiaoyiApplyFeedback.status === 'applying'}
                   onClick={() => applyXiaoyiRlAdvice('all')}
                   type="button"
@@ -11142,6 +11542,7 @@ export function App() {
           '关键节点监控',
         ].includes(expandedPanelTitle ?? '') ? ' side-rail--has-expanded' : ''}`}
       >
+        {isWorkspacePanelVisible(activeModule, '气象与海况') && (
         <Panel title="气象与海况" {...getPanelExpandProps('气象与海况')}>
           <div className="weather-grid">
             <div
@@ -11201,7 +11602,9 @@ export function App() {
             })}
           </div>
         </Panel>
+        )}
 
+        {isWorkspacePanelVisible(activeModule, '碳排放监测') && (
         <Panel title="碳排放监测" {...getPanelExpandProps('碳排放监测')}>
           <div
             className="carbon-head"
@@ -11236,36 +11639,40 @@ export function App() {
             </span>
           </div>
           <svg className="chart-line" viewBox="0 0 260 110" aria-hidden="true">
-            <polyline points={trendPolyline} />
+            {trendValues.length > 0 && <polyline points={trendPolyline} />}
           </svg>
           <div className="chart-axis">
             {carbonAxisLabels.map((label) => (
               <span key={label}>{label}</span>
             ))}
           </div>
+          {!trendValues.length && <p className="data-source-note">本次碳排序列未提供，未以零排放曲线替代。</p>}
+          {portDataStatus === 'public' && trendValues.length > 0 && <p className="data-source-note">按模拟小时汇总；当前小时为已发生区间累计，尚未满一小时。</p>}
           <div className="carbon-foot">
             <span>
               <BilingualText text="当前小时" />
-              <small>{carbonLatestTrend.hour}</small>
+              <small>{(carbonLatestTrend?.hour ?? '--')}</small>
               <strong>
                 <RollingMetricValue
-                  value={isOperationalSceneTelemetryPending ? '--' : String(carbonLatestTrend.value)}
+                  value={isOperationalSceneTelemetryPending ? '--' : String(carbonLatestTrend?.value ?? '--')}
                 />
               </strong>
               <em>{scenario.carbon.trendUnit}</em>
             </span>
             <span>
               <BilingualText text="峰值时段" />
-              <strong>{isOperationalSceneTelemetryPending ? '--' : carbonPeakTrend.hour}</strong>
+              <strong>{isOperationalSceneTelemetryPending ? '--' : (carbonPeakTrend?.hour ?? '--')}</strong>
               <em>
                 {isOperationalSceneTelemetryPending
                   ? '等待授权数据'
-                  : `${carbonPeakTrend.value} ${scenario.carbon.trendUnit}`}
+                  : carbonPeakTrend ? `${carbonPeakTrend.value} ${scenario.carbon.trendUnit}` : '序列未提供'}
               </em>
             </span>
           </div>
         </Panel>
+        )}
 
+        {isWorkspacePanelVisible(activeModule, '航道拥堵热力图') && (
         <Panel title="航道拥堵热力图" {...getPanelExpandProps('航道拥堵热力图')}>
           <div className="heatmap-module">
             <div className="heatmap-card" aria-label={scenario.congestionHeatmap.label}>
@@ -11344,7 +11751,9 @@ export function App() {
             </ul>
           </div>
         </Panel>
+        )}
 
+        {isWorkspacePanelVisible(activeModule, '关键节点监控') && (
         <Panel title="关键节点监控" {...getPanelExpandProps('关键节点监控')}>
           <table className="node-table">
             <thead>
@@ -11358,7 +11767,7 @@ export function App() {
             <tbody>
               {monitoredRuntimePorts.map((row) => (
                 <tr
-                  aria-label={`查看关键节点 ${row.name}`}
+                  aria-label={`查看关键节点 ${networkPortName(row)}`}
                   key={row.id}
                   onClick={() => openPortInspector(row)}
                   onKeyDown={(event) => handleValidationKeyDown(event, () => openPortInspector(row))}
@@ -11376,7 +11785,7 @@ export function App() {
                     `排队 ${row.queueVessels} 艘 / 平均等待 ${row.averageWaitingHours}h`,
                   ].join('\n')}
                 >
-                  <td>{row.name}</td>
+                  <td>{networkPortName(row)}</td>
                   <td>{formatInteger(row.vesselCount)}</td>
                   <td>
                     <span className="node-congestion">
@@ -11394,18 +11803,20 @@ export function App() {
             </tbody>
           </table>
         </Panel>
+        )}
       </aside>
 
+      </div>
       <footer className={`bottom-console${isSimulationRunning ? ' bottom-console--running' : ''}${activeModule === 'evidence' ? ' bottom-console--evidence' : ''}`}>
         <section className={`module-panel module-panel--${activeModule}`} aria-live="polite">
-          {activeModule === 'evidence' && (
+          <ReactActivity mode={activeModule === 'evidence' ? 'visible' : 'hidden'}>
             <Suspense fallback={<section className="operational-evidence-center operational-evidence-center--loading"><strong>正在加载证据与闭环中心</strong></section>}>
               <OperationalEvidenceCenter
                 authToken={portDataConfig.apiKey}
                 onBusinessEvidenceChange={handleBusinessEvidenceChange}
               />
             </Suspense>
-          )}
+          </ReactActivity>
           {activeModule === 'overview' && (
             <>
               <div className="event-feed">
@@ -11417,21 +11828,11 @@ export function App() {
                   </span>
                 ))}
               </div>
-              <div className="module-overview-cards" aria-label="态势总览模块摘要">
-                {displayedMetrics.map((item) => (
-                  <button
-                    className={`module-overview-card module-overview-card--${item.tone}`}
-                    key={item.id}
-                    onClick={() => openMetricInspector(item)}
-                    type="button"
-                  >
-                    <small>{item.label}</small>
-                    <strong>
-                      <RollingMetricValue value={item.value} />
-                      <em>{item.unit}</em>
-                    </strong>
-                  </button>
-                ))}
+              <div className="workspace-entry-cards" aria-label="常用工作入口">
+                {dashboardModules.filter((item) => item.id === 'sandbox' || item.id === 'resilience' || item.id === 'evidence').map((item) => {
+                  const Icon = item.icon;
+                  return <button key={item.id} onClick={() => setActiveModule(item.id)} type="button"><Icon size={20} /><strong>{item.label}</strong><span>{item.task}</span></button>;
+                })}
               </div>
             </>
           )}
@@ -11471,7 +11872,7 @@ export function App() {
                     {isSimulationRunning ? <Pause size={17} /> : <Play size={17} />}
                     <BilingualText text={isSimulationRunning ? '暂停' : '开始'} />
                   </button>
-                  <button className="control-button" data-xiaoyi-action="simulation-reset" onClick={resetSimulation} type="button">
+                  <button className="control-button" data-xiaoyi-action="simulation-reset" data-demo-state={injectedEvents.length === 0 && elapsedMinutes === 0 ? 'reset' : 'active'} onClick={resetSimulation} type="button">
                     <RotateCcw size={16} />
                     <BilingualText text="重置" />
                   </button>
@@ -11683,6 +12084,7 @@ export function App() {
                     <div className="micro-validation-action-row">
                       <button
                         className="control-button control-button--primary micro-validation-button"
+                        data-demo-action="micro-generate-stream"
                         disabled={
                           !selectedValidationVessel ||
                           !selectedValidationResolvedRoute ||
@@ -11865,22 +12267,24 @@ export function App() {
                   .join('\n')}
               >
                 <span>
-                  恢复
+                  恢复能力
                   <strong>{resilienceAssessment.congestionRecoveryAbility}%</strong>
                 </span>
                 <span>
-                  压力
+                  关键节点压力
                   <strong>{resilienceAssessment.criticalNodePressure}</strong>
                 </span>
                 <span>
-                  扩散
+                  风险扩散范围
                   <strong>{resilienceAssessment.riskSpreadRangePercent}%</strong>
                 </span>
                 <span>
-                  节点
+                  高压节点数
                   <strong>{resilienceAssessment.stressedNodeCount}</strong>
                 </span>
               </div>
+              <section className="workspace-node-ranking" aria-label="关键节点压力与恢复时间">
+                <header><strong>关键节点</strong><span>压力指数 / 预计恢复</span></header>
               <ul className="module-rank-list">
                 {resilienceAssessment.keyNodePressures.slice(0, 3).map((item) => (
                   <li
@@ -11906,6 +12310,7 @@ export function App() {
                   </li>
                 ))}
               </ul>
+              </section>
             </>
           )}
 
@@ -12110,29 +12515,10 @@ export function App() {
           )}
         </section>
 
-        <nav className="module-switcher" aria-label="Web 页面模块切换">
-          {dashboardModules.map((module) => {
-            const Icon = module.icon;
 
-            return (
-              <button
-                aria-pressed={activeModule === module.id}
-                className={`module-button${activeModule === module.id ? ' module-button--active' : ''}`}
-                data-xiaoyi-action={`module-${module.id}`}
-                key={module.id}
-                onClick={() => {
-                  setExpandedPanelTitle(null);
-                  setActiveModule(module.id);
-                }}
-                type="button"
-              >
-                <Icon size={16} />
-                <BilingualText text={module.label} />
-              </button>
-            );
-          })}
-        </nav>
       </footer>
+
+      </div>
 
       <XiaoyiSystemAssistant />
 
@@ -12225,6 +12611,23 @@ export function App() {
                 </button>
               )}
               {portDataObservedAt && <small>数据时标：{portDataObservedAt}</small>}
+              <div className="demo-settings-evidence-actions">
+                <button
+                  data-demo-action="show-training-dataset"
+                  data-demo-state={trainingDatasetEvidenceStatus}
+                  disabled={trainingDatasetEvidenceStatus === 'loading'}
+                  onClick={() => void openTrainingDatasetEvidence()}
+                  type="button"
+                >
+                  {trainingDatasetEvidenceStatus === 'loading' ? '正在读取训练数据集…' : '训练数据集 · 版本与校验'}
+                </button>
+                <button
+                  data-demo-action="show-api-contract"
+                  data-demo-state={isApiContractEvidenceOpen ? 'ready' : 'idle'}
+                  onClick={() => setIsApiContractEvidenceOpen(true)}
+                  type="button"
+                >标准接口与替换边界</button>
+              </div>
               {publicEvidence && (
                 <div className="public-evidence-list" aria-label="公开数据证据链">
                   <a href={publicEvidence.mpa.url} rel="noreferrer" target="_blank">

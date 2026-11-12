@@ -87,7 +87,7 @@ This is not an animation-only dashboard. Training progress comes from completed 
 
 ## 本次界面与模拟器更新 / UI and simulator update
 
-2026-09-12：修复按钮、训练、报告和小懿联动中的状态与异步响应问题，新增本机独立单船验证。
+2026-09-12：修复按钮、训练、报告和舷鸥联动中的状态与异步响应问题，新增本机独立单船验证。
 在“沙盘推演 → 生成信息流 → 独立模拟器验证”中，当前请求自动传入本地 Godot，结果按请求和船舶关联回写；
 保留内嵌预览，支持取消、关闭及关闭状态同步。本机约 15–16 秒完成启动和约 2 秒的物理验证窗口，
 不代表完成全航程。模拟器工程及生成的二进制需在本地准备，未随源码仓库分发。
@@ -120,8 +120,8 @@ MPA/ERA5/公开AIS参考
 ```
 
 底部“证据与闭环”页面可逐按钮查看实时遥测、物理守恒、预测模型、五类运行控制候选、数据血缘、
-安全治理、小懿运行交班、模型历史、审计链和现场适配器。小懿交班严格读取同一后端快照；未配置或
-无法连接真实小懿模型时只显示可审计状态底稿并明确降级，不把规则文本冒充模型回答。默认每 5 秒推进一个 15 分钟业务步；同一 seed 和 tick
+安全治理、舷鸥运行交班、模型历史、审计链和现场适配器。舷鸥交班严格读取同一后端快照；未配置或
+无法连接真实舷鸥模型时只显示可审计状态底稿并明确降级，不把规则文本冒充模型回答。默认每 5 秒推进一个 15 分钟业务步；同一 seed 和 tick
 可复现。数据失联或模拟器停止时，推荐与执行均失败关闭。完整数据卡、工程假设和现场替换边界见
 [`OPERATIONAL_SIMULATOR_DATA_CARD.md`](docs/OPERATIONAL_SIMULATOR_DATA_CARD.md)，逐按钮验收见
 [`TESTING.md`](docs/TESTING.md)。
@@ -220,9 +220,9 @@ simulation_mode=true · live_data_verified=false · dispatch_allowed=false · pr
   *The 377 MPA monthly records and ERA5 forcing use a 70/15/15 temporal split. Capacity proxies fit on train only; the first validation segment tunes and the second selects; final test remains sealed.*
 - <strong>训练与展示解耦</strong>：训练过程为 headless；测试完成后才由真实留出轨迹驱动地图回放。<br>
   *Training is headless; only completed holdout traces drive map replay.*
-- <strong>受控的小懿联动</strong>：白名单界面执行器与 RL 参数顾问是两个独立层；自动步骤完成后生成执行
+- <strong>受控的舷鸥联动</strong>：白名单界面执行器与 RL 参数顾问是两个独立层；自动步骤完成后生成执行
   报告，最终由人工确认或归档异常。<br>
-  *The allowlisted Xiaoyi UI executor and RL advisor are separate layers. Automation produces an execution report, followed by human confirmation or exception archiving.*
+  *The allowlisted GullMate UI executor and RL advisor are separate layers. Automation produces an execution report, followed by human confirmation or exception archiving.*
 - <strong>可替换港口而非写死港口</strong>：CSV/JSON 字段合同、港口选择、单位和质量规则独立于算法实现。<br>
   *CSV/JSON contracts, port selection, units, and quality rules are independent of algorithm code.*
 - <strong>面向发布的工程边界</strong>：只读静态服务、Bearer 门禁、强 Token 校验、请求上限、限流、探针、
@@ -302,7 +302,7 @@ benchmark.
 
 | 画面 / Surface | 可见工程能力 / Visible engineering capability | 证据锚点 / Evidence anchor |
 |---|---|---|
-| 多层 UI + 小懿联动 | 沙盘、训练矩阵、参数顾问、白名单动作执行器 | [`XiaoyiSystemAssistant.tsx`](src/components/XiaoyiSystemAssistant.tsx)、[`xiaoyiRlAdvisorAdapter.ts`](src/integrations/xiaoyiRlAdvisorAdapter.ts) |
+| 多层 UI + 舷鸥联动 | 沙盘、训练矩阵、参数顾问、白名单动作执行器 | [`XiaoyiSystemAssistant.tsx`](src/components/XiaoyiSystemAssistant.tsx)、[`xiaoyiRlAdvisorAdapter.ts`](src/integrations/xiaoyiRlAdvisorAdapter.ts) |
 | 训练完成遥测 | episode、环境步、更新数、时间切分、Checkpoint | [`rlTrainingJobs.ts`](server/rlTrainingJobs.ts)、[`rlTrainingEngine.ts`](server/rlTrainingEngine.ts) |
 | 核心闭环与人工门禁 | 事件传播、策略回放、执行报告、最终人工确认 | [`public_evidence_rl_operation.md`](docs/public_evidence_rl_operation.md)、[`MODEL_CARD.md`](docs/MODEL_CARD.md) |
 
@@ -328,8 +328,8 @@ flowchart TB
   end
   subgraph Governance["交互与治理 / Interaction and governance"]
     direction LR
-    XADV["小懿RL顾问<br/>RL advisor"]
-    XEXEC["小懿白名单执行器<br/>allowlisted executor"]
+    XADV["舷鸥RL顾问<br/>RL advisor"]
+    XEXEC["舷鸥白名单执行器<br/>allowlisted executor"]
     UI["React数字孪生沙盘<br/>digital-twin UI"]
     REPLAY["封存测试轨迹回放<br/>sealed-test replay"]
     REVIEW["执行报告与人工确认<br/>report + human review"]
@@ -345,13 +345,13 @@ flowchart TB
 ```
 
 <p align="center">
-  <img src="docs/assets/xiaoyi-multi-ui-linkage.jpg" alt="马六甲沙盘完整界面、训练中心、小懿训练顾问与系统联动助手同屏" width="100%" />
+  <img src="docs/assets/xiaoyi-multi-ui-linkage.jpg" alt="马六甲沙盘完整界面、训练中心、舷鸥训练顾问与系统联动助手同屏" width="100%" />
 </p>
 
 <p align="center">
-  <sub><strong>小懿多层 UI 联动完整截图：</strong>主沙盘、五方法训练矩阵、小懿 RL 参数顾问与白名单页面执行器
-  同屏工作；原版小懿形象保持不变，训练结论仍以服务器任务、检查点和版本化报告为准。<br />
-  <strong>Xiaoyi multi-surface linkage:</strong> the sandbox, five-method matrix, RL advisor, and
+  <sub><strong>舷鸥多层 UI 联动完整截图：</strong>主沙盘、五方法训练矩阵、舷鸥 RL 参数顾问与白名单页面执行器
+  同屏工作；原版舷鸥形象保持不变，训练结论仍以服务器任务、检查点和版本化报告为准。<br />
+  <strong>GullMate multi-surface linkage:</strong> the sandbox, five-method matrix, RL advisor, and
   allowlisted executor operate together while evidence remains anchored to backend artifacts.</sub>
 </p>
 
@@ -526,11 +526,11 @@ attestation、CodeQL 与 OSSF Scorecard。安全说明见 [`SECURITY.md`](SECURI
 Version-tag workflows build the static application, SPDX SBOM, and distribution bundle. GitHub Actions also run provenance attestation, CodeQL, and OSSF Scorecard. See [`SECURITY.md`](SECURITY.md) for security information and [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md) for model limitations.
 
 <p align="center">
-  <img src="docs/assets/human-review-gate.jpg" alt="小懿执行报告、异常归档与最终人工确认门禁" width="100%" />
+  <img src="docs/assets/human-review-gate.jpg" alt="舷鸥执行报告、异常归档与最终人工确认门禁" width="100%" />
 </p>
 
 <p align="center">
-  <sub><strong>执行报告与人工门禁：</strong>小懿完成白名单步骤后生成可复核报告，异常可归档，
+  <sub><strong>执行报告与人工门禁：</strong>舷鸥完成白名单步骤后生成可复核报告，异常可归档，
   最终策略应用仍由人工确认，不将界面联动等同于无人值守生产控制。<br />
   <strong>Human-governed execution:</strong> allowlisted steps produce a reviewable report;
   exceptions are archived and final application remains human-confirmed.</sub>
@@ -552,20 +552,20 @@ Version-tag workflows build the static application, SPDX SBOM, and distribution 
   *`reports/` retains all five methods’ holdout results and core-code fingerprints; one best run cannot stand in for the conclusion.*
 - Godot Web 二进制因体积与独立资产许可不进入源码仓库，仅保留接口与重建说明；<br>
   *Godot Web binaries are excluded because of size and separate asset licensing; contracts and rebuild instructions remain.*
-- 外部小懿服务不可用时使用确定性规则顾问，并在界面明确显示，不伪装成大模型在线结果。<br>
-  *When external Xiaoyi is unavailable, the UI explicitly identifies the deterministic rule advisor rather than presenting it as an online LLM.*
+- 外部舷鸥服务不可用时使用确定性规则顾问，并在界面明确显示，不伪装成大模型在线结果。<br>
+  *When external GullMate is unavailable, the UI explicitly identifies the deterministic rule advisor rather than presenting it as an online LLM.*
 
 ## 项目结构 / Repository map
 
 ```text
-src/                         React沙盘、状态机、小懿与回放 / sandbox, state, Xiaoyi, replay
+src/                         React沙盘、状态机、舷鸥与回放 / sandbox, state, GullMate, replay
 server/                      数据网关、训练、检查点与服务 / gateway, jobs, checkpoints, server
 shared/                      遥测、运行、目标函数稳定合同 / stable telemetry and control contracts
 data/rl/                     MPA月度公开快照 / reproducible monthly public snapshot
 tests/                       算法、隔离、恢复、合同与安全 / algorithms, isolation, recovery, contracts
 reports/                     带证据等级的RL报告 / evidence-labelled offline RL reports
 docs/                        模型卡、数据契约与审计 / model card, data, interoperability, audit
-public/assets/               小懿原版形象与项目视觉资产 / canonical Xiaoyi and project visuals
+public/assets/               舷鸥原版形象与项目视觉资产 / canonical GullMate and project visuals
 .github/                     CI、安全与发布工作流 / CI, security, release workflows
 ```
 

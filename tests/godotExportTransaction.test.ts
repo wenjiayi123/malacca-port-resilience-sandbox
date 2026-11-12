@@ -51,7 +51,8 @@ entry.write_text('<script>const GODOT_CONFIG = '+json.dumps(config)+';</script>'
     env: { ...process.env, GODOT_PROJECT: source, GODOT_BIN: fakeEngine, GODOT_TEST_FAIL: fail ? '1' : '0' },
     encoding: 'utf8', timeout: 10_000,
   });
-  assert.equal(run(true).status, 1);
+  const failed = run(true);
+  assert.equal(failed.status, 1, failed.stdout + failed.stderr);
   assert.equal(await readFile(path.join(active, 'index.html'), 'utf8'), 'previous-export');
   assert.equal(await stat(path.join(source, 'generated.gd.uid')).then(() => true, () => false), false);
   const success = run(false);

@@ -8,6 +8,10 @@ const uiFiles = [
   'src/components/LiveSatelliteMap.tsx',
   'src/components/OperationalEvidenceCenter.tsx',
   'src/components/XiaoyiSystemAssistant.tsx',
+  'src/components/WorkspaceNavigation.tsx',
+  'src/components/DemoGuide.tsx',
+  'src/components/PortNetworkMap.tsx',
+  'src/components/PortHolographicScene.tsx',
 ];
 
 const jsxAttributeNames = (node: ts.JsxOpeningLikeElement, source: ts.SourceFile) =>
@@ -45,7 +49,7 @@ test('every native button has an action and every custom click target has a keyb
   assert.deepEqual(failures, []);
 });
 
-test('Xiaoyi action registry covers every declared step with an observable verification contract', async () => {
+test('GullMate action registry covers every declared step with an observable verification contract', async () => {
   const actionSourceText = await readFile('src/components/XiaoyiSystemAssistant.tsx', 'utf8');
   const actionSource = ts.createSourceFile(
     'src/components/XiaoyiSystemAssistant.tsx',
@@ -97,11 +101,11 @@ test('Xiaoyi action registry covers every declared step with an observable verif
     source.includes(`data-xiaoyi-action="${target}"`);
   const literalTargets = [...actionSourceText.matchAll(/target:\s*'([^']+)'/g)].map((match) => match[1]);
   for (const target of literalTargets) {
-    assert.equal(supportedTarget(target), true, `Xiaoyi target is not registered: ${target}`);
+    assert.equal(supportedTarget(target), true, `GullMate target is not registered: ${target}`);
   }
 });
 
-test('Xiaoyi resolver keeps handoff, regulatory evidence, RL configuration, policy test and report export routes distinct', async () => {
+test('GullMate resolver keeps handoff, regulatory evidence, RL configuration, policy test and report export routes distinct', async () => {
   const source = await readFile('src/components/XiaoyiSystemAssistant.tsx', 'utf8');
   const resolverStart = source.indexOf('const resolveXiaoyiAction');
   const resolverEnd = source.indexOf('const calculateIntentConfidence');
@@ -129,7 +133,7 @@ test('changing the selected training algorithm detaches stale jobs before the ne
   assert.match(source, /isXiaoyiAssistantMinimized, setIsXiaoyiAssistantMinimized\]\s*=\s*useState\(true\)/);
 });
 
-test('Xiaoyi training advice matches the six-factor reward contract', async () => {
+test('GullMate training advice matches the six-factor reward contract', async () => {
   const advisorSource = await readFile('server/xiaoyiRlAdvisor.ts', 'utf8');
   assert.match(advisorSource, /六项奖励权重/);
   assert.doesNotMatch(advisorSource, /五项奖励权重/);
@@ -167,6 +171,56 @@ test('compact interview viewport keeps map-view and fullscreen controls operable
   assert.match(styles, /\.xiaoyi-system-assistant \{ right: 8px; bottom: 205px; \}/);
 });
 
+test('xiaoyi system-linkage handoff exposes a persistent safe return dock', async () => {
+  const [source, styles] = await Promise.all([
+    readFile('src/App.tsx', 'utf8'),
+    readFile('src/styles/global.css', 'utf8'),
+  ]);
+  assert.match(source, /data-xiaoyi-return-dock="ready"/);
+  assert.match(source, /malacca_xiaoyi_return_v1/);
+  assert.match(source, /url\.port === '8010'/);
+  assert.match(source, /返回舷鸥并恢复联动中心/);
+  assert.match(source, /returnUrl\.searchParams\.set\('xiaoyi_resume', 'system-linkage'\)/);
+  assert.match(styles, /\.xiaoyi-return-dock \{/);
+  assert.match(styles, /z-index: 1200/);
+});
+
+test('field demo guide drives native controls, follows direct clicks and remains recoverable', async () => {
+  const [guide, app, assistant, styles] = await Promise.all([
+    readFile('src/components/DemoGuide.tsx', 'utf8'),
+    readFile('src/App.tsx', 'utf8'),
+    readFile('src/components/XiaoyiSystemAssistant.tsx', 'utf8'),
+    readFile('src/styles/global.css', 'utf8'),
+  ]);
+
+  for (const id of ['opening', 'dataset', 'xiaoyi-command', 'contract', 'training-review', 'training-start', 'convergence', 'policy-test', 'handoff', 'audit', 'godot', 'api']) {
+    assert.match(guide, new RegExp(`id: '${id}'`));
+  }
+  assert.match(guide, /\[data-demo-action="\$\{action\}"\], \[data-xiaoyi-action="\$\{action\}"\]/);
+  assert.match(guide, /document\.addEventListener\('click', syncDirectClick, true\)/);
+  assert.match(guide, /document\.addEventListener\('malacca:xiaoyi-automation'/);
+  assert.match(guide, /xiaoyiAutomationRef\.current/);
+  assert.match(assistant, /new CustomEvent\('malacca:xiaoyi-automation'/);
+  assert.match(guide, /new MutationObserver\(check\)/);
+  assert.doesNotMatch(guide, /setInterval/);
+  assert.match(guide, /重试本步/);
+  assert.match(guide, /重置本步/);
+  assert.match(guide, /重置全部/);
+  assert.match(guide, /保底下一步/);
+  assert.match(guide, /全部停止/);
+  assert.match(guide, /production_authority=false/);
+
+  assert.match(app, /data-demo-action="show-training-dataset"/);
+  assert.match(app, /data-demo-action="show-rl-contract"/);
+  assert.match(app, /data-xiaoyi-action="rl-confirm-training"/);
+  assert.match(app, /data-demo-action="show-api-contract"/);
+  assert.match(assistant, /data-demo-action="xiaoyi-system-avatar"/);
+  assert.match(assistant, /data-demo-action="xiaoyi-report-return"/);
+  assert.match(assistant, /'让舷鸥配置 RL 训练'/);
+  assert.match(styles, /\.malacca-demo-guide-open \.dashboard-shell/);
+  assert.match(styles, /\.malacca-demo-target/);
+});
+
 test('closure exports disclose incomplete workflows and simulated approval identity', async () => {
   const [source, evidenceCenter] = await Promise.all([
     readFile('src/App.tsx', 'utf8'),
@@ -189,7 +243,7 @@ test('business champion and production-readiness gates are connected to the prim
   ]);
   assert.match(app, /portBusinessRuntime: portBusinessEvidence/);
   assert.match(app, /PORT BUSINESS RL V3 · OFFLINE CHAMPION/);
-  assert.match(app, /CORE OPERATIONS RL V1 · ACTIVE OFFLINE CHAMPION/);
+  assert.match(app, /CORE OPERATIONS RL · ACTIVE OFFLINE CHAMPION/);
   assert.match(evidenceCenter, /33维观测 · 11个有界动作 · 10项奖励 · 5随机种子冠军集成/);
   assert.match(evidenceCenter, /全核心十域联合强化学习运行执行链/);
   assert.match(evidenceCenter, /coreChampion\.contract\.observationCount/);

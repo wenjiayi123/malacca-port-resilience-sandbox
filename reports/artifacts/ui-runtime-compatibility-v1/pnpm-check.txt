@@ -206,7 +206,8 @@ $ node --experimental-strip-types --experimental-specifier-resolution=node --tes
 ℹ duration_ms 6089.594836
 $ tsc -b && vite build
 vite v8.1.5 building client environment for production...
-[2Ktransforming...✓ 1801 modules transformed.
+[2K
+transforming...✓ 1801 modules transformed.
 rendering chunks...
 computing gzip size...
 dist/index.html                                      0.54 kB │ gzip:   0.35 kB

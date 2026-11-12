@@ -1,0 +1,40 @@
+{
+  "at": "2026-10-24T03:27:54.517Z",
+  "horizontalOverflow": false,
+  "overlapping": [],
+  "ports": [
+    "查看港口 槟城港",
+    "查看港口 巴生港",
+    "查看港口 新加坡港",
+    "查看港口 丹戎帕拉帕斯港",
+    "查看港口 杜迈港",
+    "查看港口 Belawan 港"
+  ],
+  "routes": [
+    {
+      "id": "main-route-north",
+      "text": "R01槟城港新加坡港西北入口至新加坡主通道 · 主干通道封航管制171艘/日 · 模拟流量45 分钟航段延误"
+    },
+    {
+      "id": "main-route-south",
+      "text": "R02新加坡港Belawan 港苏门答腊侧西行主通道 · 主干通道封航管制144艘/日 · 模拟流量51 分钟航段延误"
+    },
+    {
+      "id": "secondary-route-klang-singapore",
+      "text": "R03巴生港新加坡港巴生港至新加坡东向航线 · 港间接续封航管制105艘/日 · 模拟流量56 分钟航段延误"
+    },
+    {
+      "id": "secondary-route-dumai",
+      "text": "R04杜迈港丹戎帕拉帕斯港杜迈港支线接入航线 · 港间接续封航管制50艘/日 · 模拟流量62 分钟航段延误"
+    },
+    {
+      "id": "traffic-separation-singapore",
+      "text": "R05丹戎帕拉帕斯港新加坡港新加坡分道通航接续区 · 分道通航封航管制83艘/日 · 模拟流量68 分钟航段延误"
+    }
+  ],
+  "url": "http://127.0.0.1:5174/#/overview",
+  "viewport": {
+    "height": 732,
+    "width": 787
+  }
+}

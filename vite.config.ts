@@ -8,6 +8,7 @@ import { productionAuthorityPlugin } from './server/productionAuthorityPlugin.ts
 import { portBusinessRlPlugin } from './server/portBusinessRlPlugin.ts';
 import { godotWebBridgePlugin } from './server/godotWebBridgePlugin.ts';
 import { nativeGodotValidationPlugin } from './server/nativeGodotValidationPlugin.ts';
+import { shanghaiLabPlugin } from './server/shanghaiLabV1.ts';
 
 export default defineConfig(({ mode }) => {
   const localEnvironment = loadEnv(mode, process.cwd(), '');
@@ -36,6 +37,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
+      shanghaiLabPlugin(),
       godotWebBridgePlugin(),
       nativeGodotValidationPlugin(),
       portBusinessRlPlugin(),

@@ -50,7 +50,7 @@ interface OwnedJob { public: NativeGodotJob; child?: ChildProcess; directory: st
 export interface NativeGodotOptions {
   projectRoot?: string; enginePath?: string; exportDirectory?: string; runtimeDirectory?: string;
   /** Tests only: never accepted from HTTP or enabled from a browser-supplied request. */
-  headless?: boolean; timeoutMs?: number; pollMs?: number;
+  headless?: boolean; timeoutMs?: number; pollMs?: number; enginePrefixArgs?: string[];
 }
 
 export class NativeGodotValidationService {
@@ -76,7 +76,7 @@ export class NativeGodotValidationService {
       !/^[a-f0-9]{64}$/u.test(manifest.artifacts?.['index.pck']?.sha256 ?? '')) throw new Error('当前 Godot 导出未通过坐标兼容验收，请重新导出');
     const signature = `${engine}:${engineStat.mtimeMs}:${pack}:${packStat.mtimeMs}:${packStat.size}:${raw}`;
     if (signature !== this.verifiedSignature) {
-      const version = (await runFile(engine, ['--version'], { timeout: 5_000, maxBuffer: 4096 })).stdout.trim();
+      const version = (await runFile(engine, [...(this.options.enginePrefixArgs ?? []), '--version'], { windowsHide: true, timeout: 5_000, maxBuffer: 4096 })).stdout.trim();
       if (!version.startsWith('4.7.1.')) throw new Error('本地验证要求与导出匹配的 Godot 4.7.1');
       const hash = createHash('sha256');
       for await (const chunk of createReadStream(pack)) hash.update(chunk);
@@ -110,7 +110,7 @@ export class NativeGodotValidationService {
       await writeFile(path.join(directory, 'lease'), String(Date.now()), { mode: 0o600 });
       const args = [...(this.options.headless ? ['--headless'] : ['--windowed', '--resolution', '1280x720', '--max-fps', '60']), '--main-pack', config.pack, '--script', config.runner, '--log-file', path.join(directory, 'engine.log'), '--', `--request=${path.join(directory, 'request.json')}`, `--result=${path.join(directory, 'result.json')}`, `--status=${path.join(directory, 'status.json')}`, `--lease=${path.join(directory, 'lease')}`];
       if (this.disposed) throw new NativeGodotHttpError(503, '独立模拟器服务已关闭');
-      const child = spawn(config.engine, args, { cwd: directory, shell: false, stdio: ['ignore', 'pipe', 'pipe'] });
+      const child = spawn(config.engine, [...(this.options.enginePrefixArgs ?? []), ...args], { windowsHide: true, cwd: directory, shell: false, stdio: ['ignore', 'pipe', 'pipe'] });
       job.child = child;
       job.leaseTimer = setInterval(() => { void writeFile(path.join(directory, 'lease'), String(Date.now()), { mode: 0o600 }).catch(() => undefined); }, 1000);
       job.leaseTimer.unref();

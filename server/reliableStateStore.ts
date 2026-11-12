@@ -1,6 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
-  appendFileSync,
   closeSync,
   copyFileSync,
   existsSync,
@@ -58,6 +57,9 @@ const atomicWrite = (file: string, body: string) => {
     closeSync(descriptor);
   }
   renameSync(temporary, file);
+  // Win32 does not expose POSIX directory fsync through Node. File data
+  // was flushed before the same-volume atomic rename above.
+  if (process.platform === 'win32') return;
   const directoryDescriptor = openSync(path.dirname(file), 'r');
   try { fsyncSync(directoryDescriptor); } finally { closeSync(directoryDescriptor); }
 };
@@ -142,9 +144,11 @@ export class DurableStateStore<T> {
       previousJournalHash: journal.headHash,
     };
     const record: JournalRecord = { ...recordBase, hash: sha256(canonicalJson(recordBase)) };
-    appendFileSync(this.journalFile, `${JSON.stringify(record)}\n`, { encoding: 'utf8', mode: 0o600 });
-    const descriptor = openSync(this.journalFile, 'r');
-    try { fsyncSync(descriptor); } finally { closeSync(descriptor); }
+    const descriptor = openSync(this.journalFile, 'a', 0o600);
+    try {
+      writeFileSync(descriptor, `${JSON.stringify(record)}\n`, 'utf8');
+      fsyncSync(descriptor);
+    } finally { closeSync(descriptor); }
     return envelope;
   }
 

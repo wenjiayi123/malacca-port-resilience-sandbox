@@ -596,7 +596,7 @@ const consultXiaoyiAi = async (payload: XiaoyiRlAdvisorRequest) => {
       }),
       signal: AbortSignal.timeout(1_200),
     });
-    if (!response.ok) throw new Error(`Xiaoyi HTTP ${response.status}`);
+    if (!response.ok) throw new Error(`GullMate HTTP ${response.status}`);
     const result = await response.json() as { answer?: string };
     return {
       connected: true,
@@ -634,9 +634,9 @@ const generateXiaoyiOperationalHandoff = async (operations: OperationalControlSe
       }),
       signal: AbortSignal.timeout(5_000),
     });
-    if (!response.ok) throw new Error(`Xiaoyi HTTP ${response.status}`);
+    if (!response.ok) throw new Error(`GullMate HTTP ${response.status}`);
     const result = await response.json() as { answer?: string };
-    if (!result.answer?.trim()) throw new Error('Xiaoyi empty answer');
+    if (!result.answer?.trim()) throw new Error('GullMate empty answer');
     return {
       ...grounded,
       xiaoyi_model: {
@@ -653,7 +653,7 @@ const generateXiaoyiOperationalHandoff = async (operations: OperationalControlSe
         status: 'unavailable',
         model_used: false,
         answer: null,
-        disclosure: `小懿模型调用失败，已失败关闭到可审计状态底稿：${error instanceof Error ? error.message : 'unknown error'}`,
+        disclosure: `舷鸥模型调用失败，已失败关闭到可审计状态底稿：${error instanceof Error ? error.message : 'unknown error'}`,
       },
     };
   }
@@ -748,7 +748,7 @@ export const createPublicEvidenceMiddleware = () => {
           '/api/operations/regulatory-resilience/scenario': { post: { summary: '注入预声明监管压力情景；不改变主管机关权力边界', security: [{ bearerAuth: [] }], responses: { '200': { description: '注入后的监管状态链' }, '422': { description: '情景不在白名单' } } } },
           '/api/operations/contracts/telemetry': { get: { summary: '读取稳定逐字段遥测合同和现场适配器槽', responses: { '200': { description: '合同描述' } } } },
           '/api/operations/recommendations': { get: { summary: '读取 FCFS、SOP、运筹优化、MPC 与可选 RL 检查点候选', responses: { '200': { description: '同一输入快照上的控制候选' }, '409': { description: '数据质量或模拟器门禁阻断' } } } },
-          '/api/operations/handoff': { get: { summary: '生成基于同一后端快照的小懿状态底稿，并在配置时真实调用小懿模型', responses: { '200': { description: '状态摘要、预警、策略、交班与模型连接状态' } } } },
+          '/api/operations/handoff': { get: { summary: '生成基于同一后端快照的舷鸥状态底稿，并在配置时真实调用舷鸥模型', responses: { '200': { description: '状态摘要、预警、策略、交班与模型连接状态' } } } },
           '/api/operations/models': { get: { summary: '读取 champion/candidate/rollback/archive/rejected 模型注册表', responses: { '200': { description: '模型生命周期和证据位置' } } } },
           '/api/operations/decisions': {
             get: { summary: '列出模拟决策生命周期记录', security: [{ bearerAuth: [] }], responses: { '200': { description: '决策列表' } } },

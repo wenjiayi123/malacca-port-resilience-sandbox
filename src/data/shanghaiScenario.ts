@@ -44,11 +44,11 @@ export const shanghaiScenario: MalaccaScenario = {
     },
     {
       id: 'berth-utilization',
-      label: '洋山泊位综合利用率',
-      value: '约 84',
-      unit: '%',
-      detail: '公开运营背景值',
-      trendLabel: '不是实时 TOS 遥测',
+      label: '洋山泊位实测利用率',
+      value: '未提供',
+      unit: '',
+      detail: '缺少同口径授权时窗',
+      trendLabel: '模板参数不充当实测利用率',
       tone: 'warning',
     },
     {

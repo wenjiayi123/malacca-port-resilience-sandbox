@@ -125,6 +125,30 @@ const formatValue = (field?: TelemetryField) => {
 
 const shortHash = (value?: string) => value ? `${value.slice(0, 12)}…${value.slice(-6)}` : '--';
 
+interface DemoGuideAuditReceipt {
+  runId: string;
+  updatedAt: string;
+  completed: string[];
+  skipped: string[];
+  productionAuthority: false;
+}
+
+const readDemoGuideAuditReceipt = (): DemoGuideAuditReceipt | null => {
+  try {
+    const parsed = JSON.parse(window.sessionStorage.getItem('malacca.demo-guide.v1') ?? 'null') as Partial<DemoGuideAuditReceipt> | null;
+    if (!parsed?.runId || !parsed.updatedAt || !Array.isArray(parsed.completed) || !Array.isArray(parsed.skipped)) return null;
+    return {
+      runId: parsed.runId,
+      updatedAt: parsed.updatedAt,
+      completed: parsed.completed,
+      skipped: parsed.skipped,
+      productionAuthority: false,
+    };
+  } catch {
+    return null;
+  }
+};
+
 const downloadReport = (report: PortBusinessDecisionReport | CoreOperationsDecisionReport, filename: string) => {
   const url = URL.createObjectURL(new Blob(
     [JSON.stringify(report, null, 2)],
@@ -165,6 +189,7 @@ export function OperationalEvidenceCenter({
   const [actionError, setActionError] = useState<string | null>(null);
   const [activeAction, setActiveAction] = useState<string | null>(null);
   const busy = activeAction !== null;
+  const demoGuideAuditReceipt = activeTab === 'audit' ? readDemoGuideAuditReceipt() : null;
   const actionInFlight = useRef(false);
   const refreshController = useRef<AbortController | null>(null);
 
@@ -291,7 +316,7 @@ export function OperationalEvidenceCenter({
     async () => setRegulatory(await injectRegulatoryScenario(scenario, authToken)),
   );
 
-  const generateHandoff = () => runAction('生成小懿交班报告', async () => {
+  const generateHandoff = () => runAction('生成舷鸥交班报告', async () => {
     setHandoff(null);
     setHandoff(await fetchXiaoyiOperationalHandoff(authToken));
   });
@@ -344,7 +369,7 @@ export function OperationalEvidenceCenter({
 
   if (!snapshot) {
     return (
-      <section className="operational-evidence-center operational-evidence-center--loading">
+      <section className="operational-evidence-center operational-evidence-center--loading" data-demo-state={evidenceErrors.length ? 'error' : 'loading'}>
         <strong>证据与闭环中心正在连接后端</strong>
         <span role={evidenceErrors.length ? 'alert' : 'status'}>{evidenceErrors.join('；') || statusMessage}</span>
         <button disabled={busy} onClick={() => void refresh()} type="button">重新连接后端</button>
@@ -360,7 +385,7 @@ export function OperationalEvidenceCenter({
   };
 
   return (
-    <section className="operational-evidence-center" data-sequence={snapshot.sequence}>
+    <section className="operational-evidence-center" data-demo-state={telemetryAvailable ? 'ready' : 'error'} data-sequence={snapshot.sequence}>
       <header className="operational-evidence-header">
         <div>
           <small>PORT OPERATIONS CONTROL ROOM · {snapshot.protocolVersion}</small>
@@ -932,19 +957,19 @@ export function OperationalEvidenceCenter({
             </section>
             <section className="xiaoyi-operational-handoff">
               <header>
-                <strong>小懿运行解释与交班</strong>
+                <strong>舷鸥运行解释与交班</strong>
                 <em>{handoff?.xiaoyi_model.status ?? '尚未生成'}</em>
               </header>
               <button
-                aria-busy={activeAction === '生成小懿交班报告'}
+                aria-busy={activeAction === '生成舷鸥交班报告'}
                 data-xiaoyi-action="xiaoyi-operational-handoff"
                 data-xiaoyi-revision={handoff ? `${handoff.generated_at}:${handoff.correlation_id}` : ''}
-                data-xiaoyi-state={activeAction === '生成小懿交班报告' ? 'loading' : handoff ? 'ready' : 'idle'}
+                data-xiaoyi-state={activeAction === '生成舷鸥交班报告' ? 'loading' : handoff ? 'ready' : 'idle'}
                 disabled={busy}
                 onClick={() => void generateHandoff()}
                 type="button"
               >
-                {activeAction === '生成小懿交班报告' ? '正在生成并校验证据' : handoff ? '重新基于最新快照生成' : '基于当前后端快照生成'}
+                {activeAction === '生成舷鸥交班报告' ? '正在生成并校验证据' : handoff ? '重新基于最新快照生成' : '基于当前后端快照生成'}
               </button>
               {handoff ? (
                 <div>
@@ -1000,6 +1025,16 @@ export function OperationalEvidenceCenter({
                 </li>
               )) ?? null}
             </ol>
+            {demoGuideAuditReceipt && (
+              <section className="demo-guide-audit-receipt" data-demo-guide-audit="client-session">
+                <header><strong>演示引导会话凭证</strong><em>前端会话留痕 · 非后端哈希链</em></header>
+                <span><small>Trace ID</small><strong>{demoGuideAuditReceipt.runId}</strong></span>
+                <span><small>最后回写</small><strong>{demoGuideAuditReceipt.updatedAt}</strong></span>
+                <span><small>已完成 / 保底</small><strong>{demoGuideAuditReceipt.completed.length} / {demoGuideAuditReceipt.skipped.length}</strong></span>
+                <span><small>生产权限</small><strong>production_authority={String(demoGuideAuditReceipt.productionAuthority)}</strong></span>
+                <p>仅证明本浏览器会话中引导步骤与真实按钮的同步状态；后端业务操作仍以服务器审计记录和 SHA-256 链为准。</p>
+              </section>
+            )}
             {!audit?.record_count && <p>创建决策或注入场景后，这里会显示追加式审计记录。</p>}
           </div>
         )}

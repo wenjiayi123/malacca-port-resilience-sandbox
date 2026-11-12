@@ -39,7 +39,7 @@ const loadRuntime = (query: () => unknown = () => null, tick: () => void = () =>
   return context.runtime as Runtime;
 };
 
-test('all 24 visible Xiaoyi action labels resolve to their registered action', () => {
+test('all 24 visible GullMate action labels resolve to their registered action', () => {
   const runtime = loadRuntime();
   const actions = Object.values(runtime.xiaoyiActions);
   assert.equal(actions.length, 24);
@@ -48,7 +48,7 @@ test('all 24 visible Xiaoyi action labels resolve to their registered action', (
     assert.equal(runtime.resolveXiaoyiAction(command)?.id, 'export-report');
   }
   assert.equal(runtime.resolveXiaoyiAction('运行最终测试集回放')?.id, 'rl-policy-test');
-  assert.equal(runtime.resolveXiaoyiAction('生成小懿运行交班')?.id, 'operations-handoff');
+  assert.equal(runtime.resolveXiaoyiAction('生成舷鸥运行交班')?.id, 'operations-handoff');
   assert.equal(runtime.resolveXiaoyiAction('无法识别的任务'), null);
 });
 
@@ -58,7 +58,7 @@ test('opening settings and event injection declares idempotent state verificatio
   assert.equal(xiaoyiActions['inject-event'].steps[1].skipWhenVerified, true);
 });
 
-test('a cancelled Xiaoyi operation never locates another action target', async () => {
+test('a cancelled GullMate operation never locates another action target', async () => {
   let queries = 0;
   const runtime = loadRuntime(() => { queries += 1; return {}; });
   await assert.rejects(runtime.waitForTarget('module-sandbox', 1, { current: { id: 1, cancelled: true } }), /人工已停止/);

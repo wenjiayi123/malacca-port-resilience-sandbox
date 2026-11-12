@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { createServer, request as sendHttpRequest, type IncomingMessage } from 'node:http';
 import { chmod, copyFile, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import test, { type TestContext } from 'node:test';
 import { NativeGodotValidationService, validateNativeGodotRequest } from '../server/nativeGodotValidation.ts';
@@ -38,7 +39,9 @@ if 'mismatch' in request['requestId']: response['requestId']='different-request'
 result.write_text(json.dumps(response))
 `);
   await chmod(engine, 0o755);
-  const service = new NativeGodotValidationService({ projectRoot: root, enginePath: engine, runtimeDirectory: path.join(root, 'jobs'), headless: true, pollMs: 5 });
+  const service = new NativeGodotValidationService({ projectRoot: root, enginePath: process.platform === 'win32'
+    ? execFileSync('python', ['-c', 'import sys; print(sys.executable)'], { encoding: 'utf8', windowsHide: true }).trim()
+    : engine, enginePrefixArgs: process.platform === 'win32' ? [engine] : [], runtimeDirectory: path.join(root, 'jobs'), headless: true, pollMs: 5 });
   context.after(async () => { await service.dispose(); await rm(root, { recursive: true, force: true }); });
   return { root, service };
 }

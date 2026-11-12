@@ -235,7 +235,7 @@ for (const legacyAsset of [
   if (applicationReferences.includes(legacyAsset)) errors.push(`应用仍引用已停用的历史图片：${legacyAsset}`);
 }
 if (!applicationReferences.includes('/assets/xiaoyi-ai-port-hero.png')) {
-  errors.push('应用没有引用小懿 AI 原版港航形象');
+  errors.push('应用没有引用舷鸥 · GullMate 原版港航形象');
 }
 
 for (const error of errors) process.stderr.write(`ERROR ${error}\n`);

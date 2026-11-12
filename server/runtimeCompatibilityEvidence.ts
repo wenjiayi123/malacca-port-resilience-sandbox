@@ -78,7 +78,11 @@ export async function readRuntimeCompatibilityEvidence(root = process.cwd()) {
     if (file === 'server/publicEvidencePlugin.ts' && current.toString() !== baseline.toString()
       .replace('）、settingId、policyTestCaseId', '）、settingId（network-snapshot/vessel-state/event-disturbance/weather-sea-state/congestion-delay/carbon-reward/dispatch-action/micro-validation）、policyTestCaseId')
       .replace('learningRate、discountGamma、maxEpisodes', 'learningRate、discountGamma、tuningTrials、maxEpisodes')
-      .replace('rewardSafety、rewardResilience。四种RL', 'rewardSafety、rewardResilience、rewardThroughput。四种RL')) {
+      .replace('rewardSafety、rewardResilience。四种RL', 'rewardSafety、rewardResilience、rewardThroughput。四种RL')
+      .replace('小懿模型调用失败', '舷鸥模型调用失败')
+      .replaceAll('Xiaoyi HTTP ${response.status}', 'GullMate HTTP ${response.status}')
+      .replace('Xiaoyi empty answer', 'GullMate empty answer')
+      .replace('小懿状态底稿，并在配置时真实调用小懿模型', '舷鸥状态底稿，并在配置时真实调用舷鸥模型')) {
       throw new Error('RUNTIME_COMPATIBILITY_API_CHANGE_NOT_ADVISOR_PROMPT_ONLY');
     }
   }
@@ -92,7 +96,7 @@ export async function isVerifiedRuntimeSourceExtension(archivedReport: string, f
   if (!(COMPATIBLE_RUNTIME_SOURCES as readonly string[]).includes(file)) return false;
   try {
     const { report, preserved } = await readRuntimeCompatibilityEvidence();
-    const reportPath = path.relative(process.cwd(), path.resolve(archivedReport));
+    const reportPath = path.relative(process.cwd(), path.resolve(archivedReport)).split(path.sep).join('/');
     const historical = preserved.get(reportPath);
     const reportedDigest = historical?.upgrade?.sourceFiles[file]
       ?? historical?.sourceFingerprint?.files?.[file] ?? historical?.verification?.sourceSha256?.[file];

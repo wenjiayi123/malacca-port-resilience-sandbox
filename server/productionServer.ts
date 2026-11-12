@@ -14,6 +14,7 @@ import { validateRuntimeSecurityConfiguration } from './runtimeSecurity.ts';
 import { createGodotWebBridgeMiddleware } from './godotWebBridgePlugin.ts';
 import { NativeGodotValidationService } from './nativeGodotValidation.ts';
 import { createNativeGodotValidationMiddleware } from './nativeGodotValidationPlugin.ts';
+import { createShanghaiLabMiddleware } from './shanghaiLabV1.ts';
 
 const host = process.env.HOST || '127.0.0.1';
 const port = Number(process.env.PORT || 4173);
@@ -110,10 +111,12 @@ const apiMiddleware = createPublicEvidenceMiddleware();
 const godotWebBridgeMiddleware = createGodotWebBridgeMiddleware(path.join(distributionDirectory, 'godot-simulator'));
 const nativeGodotService = new NativeGodotValidationService();
 const nativeGodotMiddleware = createNativeGodotValidationMiddleware(nativeGodotService);
+const shanghaiLabMiddleware = createShanghaiLabMiddleware();
 const server = createServer(async (request, response) => {
   const startedAt = performance.now();
   try {
-    await nativeGodotMiddleware(request, response, () => undefined);
+    await shanghaiLabMiddleware(request, response, () => undefined);
+    if (!response.writableEnded) await nativeGodotMiddleware(request, response, () => undefined);
     if (!response.writableEnded) await portBusinessRlMiddleware(request, response, () => undefined);
     if (!response.writableEnded) await productionAuthorityMiddleware(request, response, () => undefined);
     if (!response.writableEnded) await vesselTrafficSafetyMiddleware(request, response, () => undefined);

@@ -11,10 +11,10 @@
   "characters": {
     "xiaoyiMaritimeOfficer": {
       "path": "/assets/xiaoyi-ai-port-hero.png",
-      "source": "Xiaoyi AI original repository asset",
+      "source": "GullMate original repository asset",
       "width": 1024,
       "height": 1536,
-      "purpose": "Canonical Xiaoyi maritime officer identity"
+      "purpose": "Canonical GullMate maritime officer identity"
     }
   },
   "reserved": {

@@ -85,7 +85,9 @@ test('production HTTP serves map resources and completes the isolated operationa
   const largeAsset = await open(path.join(temporary, 'large.pck'), 'w');
   await largeAsset.truncate(256 * 1024 * 1024);
   await largeAsset.close();
-  const residentKib = () => Number(execFileSync('ps', ['-o', 'rss=', '-p', String(child.pid)], { encoding: 'utf8' }).trim());
+  const residentKib = () => process.platform === 'win32'
+    ? Number(execFileSync('powershell.exe', ['-NoProfile', '-Command', `[int64]((Get-Process -Id ${child.pid}).WorkingSet64 / 1KB)`], { encoding: 'utf8', windowsHide: true }).trim())
+    : Number(execFileSync('ps', ['-o', 'rss=', '-p', String(child.pid)], { encoding: 'utf8' }).trim());
   const memoryBeforeHead = residentKib();
   const largeHead = await fetch(`${base}/large.pck`, { method: 'HEAD' });
   assert.equal(largeHead.headers.get('content-length'), String(256 * 1024 * 1024));

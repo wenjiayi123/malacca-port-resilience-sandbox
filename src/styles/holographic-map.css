@@ -1,0 +1,137 @@
+.port-network-map { background: radial-gradient(ellipse at 40% 0, #0b3243 0, #071c2b 52%, #071522 100%); }
+.network-map-heading h3 { color: #d5f5ff; text-shadow: 0 0 22px #4dcfff35; }
+.network-map-main { border-color: #276079; background: #051827; box-shadow: 0 0 22px #15a9e810, inset 0 0 0 1px #79dfff06; }
+.network-presentation-picker { display: flex; align-items: center; gap: 7px; min-height: 43px; padding: 7px 11px; border-bottom: 1px solid #28556a; background: linear-gradient(90deg, #102e40, #081c2c); }
+.network-presentation-picker > button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid #2b5166; border-radius: 4px; color: #87b5cb; background: #092031; font: inherit; font-size: 11px; cursor: pointer; }
+.network-presentation-picker > button[aria-pressed="true"] { color: #cbf8ff; border-color: #55bcda; background: #124151; box-shadow: inset 0 0 14px #36c4ea18, 0 0 12px #31bdd512; }
+.network-presentation-picker > small { margin-left: auto; color: #608fa6; font-size: 9px; }
+.holo-scene-shell { min-width: 0; }
+.holo-layer-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; padding: 7px 11px; background: #071c2ce6; border-bottom: 1px solid #26536966; }
+.holo-layer-toolbar > span { display: flex; align-items: center; gap: 5px; margin-right: 5px; color: #537d94; font-size: 10px; }
+.holo-layer-toolbar > button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 5px 8px; border: 1px solid #1c4258; border-radius: 3px; color: #5b849d; background: #071927; font: inherit; font-size: 10px; cursor: pointer; }
+.holo-layer-toolbar > button[aria-pressed="true"] { color: #8fdde9; border-color: #28637b; background: #0d3142; }
+.holo-scene { position: relative; width: 100%; aspect-ratio: 3 / 2; min-height: 460px; overflow: clip; isolation: isolate; background: #020d1b; touch-action: pan-y; }
+.holo-scene.is-zoomed { cursor: grab; touch-action: none; }
+.holo-scene.is-zoomed:active { cursor: grabbing; }
+.holo-scene::before { position: absolute; z-index: 3; inset: 10px; content: ''; pointer-events: none; border: 1px solid #53d9f725; clip-path: polygon(0 0, 90px 0, 90px 1px, calc(100% - 90px) 1px, calc(100% - 90px) 0, 100% 0, 100% 100%, calc(100% - 70px) 100%, calc(100% - 70px) calc(100% - 1px), 70px calc(100% - 1px), 70px 100%, 0 100%); box-shadow: inset 0 0 45px #001320; }
+.holo-scene::after { position: absolute; z-index: 3; inset: 0; content: ''; pointer-events: none; background: linear-gradient(#021120c9 0%, transparent 20%, transparent 78%, #020e1dc9 100%); }
+.holo-world { position: absolute; inset: 0; transform-origin: center; will-change: transform; }
+.holo-terrain { position: absolute; inset: 0; background-size: 100% 100%; background-position: center; filter: saturate(.95) brightness(.84) contrast(1.08); }
+.holo-grid { position: absolute; inset: 0; background-image: linear-gradient(#56c5e00c 1px, transparent 1px), linear-gradient(90deg, #56c5e00c 1px, transparent 1px); background-size: 8.33% 12.5%; mask-image: linear-gradient(transparent, #000 24%, #000 80%, transparent); pointer-events: none; }
+.holo-radar-rings { position: absolute; left: 50%; top: 49%; width: 56%; aspect-ratio: 1; border-radius: 50%; border: 1px solid #40d2f516; transform: translate(-50%, -50%); box-shadow: 0 0 0 48px #11c3f006, 0 0 0 49px #40d2f50d, 0 0 0 100px #11c3f003, 0 0 0 101px #40d2f50a; pointer-events: none; }
+.holo-radar-sweep { position: absolute; left: 15%; top: -5%; width: 78%; aspect-ratio: 1; opacity: .25; border-radius: 50%; background: conic-gradient(from 0deg, transparent 0deg 320deg, #34d5ff00 321deg, #34d5ff26 357deg, #7ae7ff44 360deg); mask-image: radial-gradient(closest-side, transparent 12%, #000 60%, transparent 100%); animation: holo-scan 24s linear infinite; pointer-events: none; }
+.holo-map-vectors { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.holo-region-labels { pointer-events: none; text-anchor: middle; fill: #91b8c1; opacity: .45; letter-spacing: 5px; font: 15px sans-serif; text-shadow: 0 2px 8px #00111f; }
+.holo-region-labels text:nth-child(even) { font: 8px ui-monospace, monospace; letter-spacing: 4px; fill: #6c9bab; }
+.holo-region-labels .holo-strait-label { letter-spacing: 4px; font: 11px ui-monospace, monospace; fill: #a4eaff; opacity: .6; }
+.holo-route { --holo-route: #52deff; color: var(--holo-route); transition: opacity .18s; }
+.holo-route--secondary { --holo-route: #a1b4ff; }
+.holo-route--traffic-separation { --holo-route: #f6ca78; }
+.holo-route.is-muted { opacity: .14; pointer-events: none; }
+.holo-route.is-impacted { --holo-route: #ffac65; }
+.holo-route-glow, .holo-route-line, .holo-route-flow, .holo-route-hit { fill: none; stroke: var(--holo-route); vector-effect: non-scaling-stroke; }
+.holo-route-glow { stroke-width: 8; opacity: .35; }
+.holo-route-line { stroke-width: 1.2; opacity: .62; }
+.holo-route--secondary .holo-route-line { stroke-dasharray: 5 6; }
+.holo-route--traffic-separation .holo-route-line { stroke-width: 2.3; }
+.holo-route-flow { stroke-width: 2; stroke-dasharray: 12 26; opacity: .9; animation: holo-route-stream 8s linear infinite; pointer-events: none; }
+.holo-route.is-selected .holo-route-line { stroke: #e9fcff; stroke-width: 2.5; opacity: 1; }
+.holo-route-hit { stroke-width: 18; stroke: transparent; cursor: pointer; pointer-events: stroke; }
+.holo-route-hit:focus-visible { stroke: #a9f3ff28; outline: none; }
+.holo-route-code-button { --holo-route: #52deff; position: absolute; z-index: 3; display: flex; align-items: center; justify-content: center; gap: 6px; width: 55px; height: 24px; padding: 0; border: 1px solid var(--holo-route); border-radius: 4px; color: #d4f7ff; background: #042338ee; box-shadow: 0 0 10px #47c9ff16; transform: translate(-50%, -50%) scale(var(--holo-counter-scale, 1)); cursor: pointer; }
+.holo-route-code-button > span { font: 600 10px ui-monospace, monospace; }
+.holo-route-code-button > svg { color: var(--holo-route); }
+.holo-route-code-button.is-selected { border-color: #f3ffff; background: #126075; }
+.holo-route-code-button.is-muted { opacity: .14; pointer-events: none; }
+.holo-label-leader { fill: none; stroke: #85cce577; stroke-width: .8; stroke-dasharray: 2 3; pointer-events: none; }
+.holo-port-anchor { --beacon: #57e6f1; color: var(--beacon); pointer-events: none; }
+.holo-port-anchor.is-warning { --beacon: #ffd081; }
+.holo-port-anchor.is-danger { --beacon: #ff9787; }
+.holo-port-anchor.is-observation { --beacon: #81b3ce; }
+.holo-beacon-outer { fill: currentColor; fill-opacity: .06; stroke: currentColor; stroke-opacity: .45; stroke-width: .8; }
+.holo-beacon-inner { fill: currentColor; fill-opacity: .1; stroke: currentColor; stroke-opacity: .8; stroke-width: 1; }
+.holo-beacon-core { fill: #e3fbff; filter: drop-shadow(0 0 4px currentColor); }
+.holo-pressure { pointer-events: none; mix-blend-mode: screen; }
+.holo-port-label { position: absolute; z-index: 2; display: grid; gap: 4px; width: clamp(94px, 15.2%, 126px); min-height: 54px; padding: 7px 8px; border: 1px solid #4199b699; border-left: 2px solid #5bd6e5; border-radius: 2px 8px 2px 8px; background: linear-gradient(110deg, #041c2eeb, #082c40d9); box-shadow: 0 3px 15px #0009, inset 0 0 12px #2ac4e50c; color: #cff2fa; text-align: left; transform: translate(-50%, -50%) scale(var(--holo-counter-scale, 1)); cursor: pointer; backdrop-filter: blur(5px); }
+.holo-port-label.is-warning { border-left-color: #f6ca78; }
+.holo-port-label.is-danger { border-left-color: #ff9787; }
+.holo-port-label.is-observation { border-style: dashed; border-left-style: solid; border-color: #4d7c9299; }
+.holo-port-label:hover, .holo-port-label.is-selected { z-index: 4; border-color: #aeedff; background: linear-gradient(110deg, #073049f5, #0d4657e6); box-shadow: 0 0 18px #4ae5ff22, inset 0 0 12px #2ac4e518; }
+.holo-port-label > span { display: flex; align-items: center; gap: 4px; font-size: 8px; color: #70adc1; }
+.holo-port-label > span em { margin-left: auto; color: #8ca8bd; font: inherit; }
+.holo-port-label > strong { font-size: 12px; line-height: 1.3; font-weight: 500; letter-spacing: .04em; }
+.holo-port-label > small { font-size: 8px; line-height: 1.5; color: #9cc5d4; }
+.holo-vessel { position: absolute; z-index: 1; display: flex; align-items: center; gap: 3px; padding: 3px; color: #d8faff; background: #06304a55; border: 1px solid transparent; border-radius: 3px; transform: translate(-50%, -50%) scale(var(--holo-counter-scale, 1)); cursor: pointer; filter: drop-shadow(0 0 3px #5fe8ff); }
+.holo-vessel > span { display: none; font: 8px ui-monospace, monospace; text-shadow: 0 1px 3px #001020; }
+.holo-vessel:hover > span, .holo-vessel.is-selected > span { display: inline; }
+.holo-vessel:hover, .holo-vessel.is-selected { z-index: 5; border-color: #a8f2ff; background: #0b3b50; }
+.holo-vessel.is-impacted { color: #ffbc80; filter: drop-shadow(0 0 3px #ff7f44); }
+.holo-hud-title, .holo-hud-clock, .holo-compass, .holo-minimap, .holo-camera-controls, .holo-data-boundary { position: absolute; z-index: 4; }
+.holo-hud-title { top: 23px; left: 24px; display: grid; gap: 7px; color: #c3effb; pointer-events: none; }
+.holo-hud-title > small { color: #73bdd0; font: 8px ui-monospace, monospace; letter-spacing: 2px; }
+.holo-hud-title > strong { display: flex; align-items: center; gap: 9px; font-size: 19px; font-weight: 500; letter-spacing: .13em; text-shadow: 0 0 14px #4bdfff55; }
+.holo-hud-title i { padding: 3px 6px; border: 1px solid #2c7186; color: #8dd4e1; background: #05304999; font-style: normal; font-size: 8px; letter-spacing: 0; }
+.holo-hud-title > span { color: #759eb3; font-size: 9px; letter-spacing: .04em; }
+.holo-hud-clock { top: 23px; right: 24px; display: grid; grid-template-columns: 14px auto; align-items: center; gap: 6px; color: #8fd5dc; font: 9px ui-monospace, monospace; pointer-events: none; }
+.holo-hud-clock > small { grid-column: 1 / -1; color: #5f94aa; text-align: right; font-size: 9px; }
+.holo-hud-clock > small.holo-hud-event { max-width: 220px; color: #e9bd7a; white-space: normal; line-height: 1.6; }
+.holo-compass { right: 25px; top: 89px; display: grid; place-items: center; gap: 5px; color: #75becf; pointer-events: none; }
+.holo-compass > span { font: 9px ui-monospace, monospace; }
+.holo-compass > svg { transform: rotate(-45deg); }
+.holo-minimap { left: 22px; bottom: 34px; width: 100px; height: 66px; padding: 0; overflow: hidden; border: 1px solid #3e8ba799; border-radius: 3px; background-size: 100% 100%; background-color: #052235; box-shadow: 0 0 12px #0005; cursor: pointer; }
+.holo-minimap > i { position: absolute; border: 1px solid #8ae8fd; background: #32bded18; box-shadow: 0 0 4px #78dfff33; pointer-events: none; }
+.holo-minimap > span { position: absolute; bottom: 0; left: 0; right: 0; padding: 3px; color: #9ed5e2; background: #021b2ad9; font: 8px ui-monospace, monospace; pointer-events: none; }
+.holo-camera-controls { bottom: 28px; right: 23px; display: flex; gap: 4px; align-items: center; padding: 5px; border: 1px solid #376c8299; border-radius: 5px; background: #031c2ce8; box-shadow: 0 0 12px #0006; }
+.holo-camera-controls > button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; width: 29px; height: 28px; padding: 0; border: 1px solid #2d6079; border-radius: 3px; color: #b2e7f5; background: #0b2a3d; font-size: 10px; cursor: pointer; }
+.holo-camera-controls > button:last-child { width: auto; padding: 0 8px; }
+.holo-camera-controls > span { min-width: 39px; text-align: center; color: #8fc8d8; font: 10px ui-monospace, monospace; }
+.holo-data-boundary { bottom: 13px; left: 23px; right: 23px; color: #63899f; font-size: 8px; letter-spacing: .03em; pointer-events: none; }
+.holo-context { display: flex; align-items: center; gap: 10px; min-height: 61px; padding: 11px 13px; border-top: 1px solid #2b617a; background: linear-gradient(90deg, #0b2a3b, #061b2c); color: #68c9dc; }
+.holo-context > div { display: grid; flex: 1; min-width: 0; gap: 6px; }
+.holo-context strong { color: #bfe8f3; font-size: 11px; line-height: 1.5; font-weight: 500; overflow-wrap: anywhere; }
+.holo-context span { color: #6b9db3; font-size: 9px; line-height: 1.6; overflow-wrap: anywhere; }
+.holo-context > button { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; padding: 7px 9px; border: 1px solid #2d657d; border-radius: 3px; color: #9fdbe7; background: #0c3448; font: inherit; font-size: 10px; cursor: pointer; }
+.is-motion-paused .holo-radar-sweep, .is-motion-paused .holo-route-flow { animation-play-state: paused; }
+@keyframes holo-scan { to { transform: rotate(360deg); } }
+@keyframes holo-route-stream { to { stroke-dashoffset: -152; } }
+.port-network-map--immersive { position: fixed; z-index: 2200; inset: 12px; padding: 16px; gap: 12px; border: 1px solid #36829d; border-radius: 8px; box-shadow: 0 0 0 100vmax #020b17ed, 0 0 40px #19b9e51a; overflow: hidden; }
+.dashboard-shell--workspace .map-stage:has(.port-network-map--immersive) { z-index: 3000; }
+.port-network-map--immersive .network-map-heading p, .port-network-map--immersive .network-map-summary, .port-network-map--immersive .network-route-directory, .port-network-map--immersive .network-map-boundary, .port-network-map--immersive .network-observation-ports, .port-network-map--immersive .network-event-strip { display: none; }
+.port-network-map--immersive .network-map-heading h3 { margin-bottom: 0; font-size: 19px; }
+.port-network-map--immersive .network-map-workbench { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 280px; align-items: stretch; }
+.port-network-map--immersive .network-map-main { min-height: 0; display: flex; flex-direction: column; }
+.port-network-map--immersive .holo-scene-shell { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.port-network-map--immersive .holo-scene { flex: 1; min-height: 0; aspect-ratio: auto; }
+.port-network-map--immersive .network-map-detail { overflow: auto; min-height: 0; }
+.port-network-map--immersive .network-map-legend { padding: 8px 11px; gap: 10px; }
+.port-network-map--immersive .network-map-legend > small { display: none; }
+.port-network-map--immersive .network-diagram { flex: 1; min-height: 0; }
+.port-network-map--immersive:not(:has(.holo-scene)) .network-observation-ports { display: flex; }
+@media (max-width: 1000px) {
+  .port-network-map--immersive .network-map-workbench { grid-template-columns: minmax(0, 1fr); }
+  .port-network-map--immersive .network-map-detail { display: none; }
+  .holo-context { flex-wrap: wrap; }
+  .holo-context > div { flex-basis: calc(100% - 35px); }
+  .holo-context > button:first-of-type { margin-left: 26px; }
+}
+@media (max-width: 650px) {
+  .network-presentation-picker > small { display: none; }
+  .holo-scene { min-height: 440px; }
+  .holo-port-label { width: 23%; min-height: 51px; padding: 6px; }
+  .holo-port-label > strong { font-size: 10px; }
+  .holo-port-label > span, .holo-port-label > small { font-size: 7px; }
+  .holo-hud-title { left: 16px; top: 17px; }
+  .holo-hud-title > strong { font-size: 16px; }
+  .holo-hud-clock { right: 15px; top: 21px; font-size: 7px; }
+  .holo-hud-clock > small { font-size: 8px; }
+  .holo-compass { right: 17px; top: 78px; }
+  .holo-minimap { width: 76px; height: 51px; left: 16px; }
+  .holo-camera-controls { right: 15px; }
+  .holo-data-boundary { left: 16px; font-size: 7px; }
+  .port-network-map--immersive { inset: 5px; padding: 10px; }
+  .port-network-map--immersive .network-map-heading h3 { font-size: 16px; }
+  .port-network-map--immersive .network-mode { padding: 7px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .holo-radar-sweep, .holo-route-flow { animation: none; }
+}

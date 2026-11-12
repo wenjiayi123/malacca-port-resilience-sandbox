@@ -1,6 +1,6 @@
 {
   "schemaVersion": "ui-runtime-compatibility.v1",
-  "generatedAt": "2026-09-12T10:41:42.717Z",
+  "generatedAt": "2026-11-06T04:31:07.527Z",
   "baselineCommit": "bacb580bda5295f0c3e3d87cd0549643c84969ad",
   "preservedArtifacts": {
     "reports/core-operations-rl-champion-v1.json": "5bf798cc296afb6d31152bd2c9ea13e2e7d21e9f11f8d28dc0458a495947fd85",
@@ -24,7 +24,7 @@
     "src/components/OperationalEvidenceCenter.tsx": {
       "baselineArtifact": "reports/artifacts/ui-runtime-compatibility-v1/sources/src/components/OperationalEvidenceCenter.tsx.snapshot",
       "baselineSha256": "887ba6d76644218edd08ecb560ad6c57034d2a895ba3c7c00380d86bb3402e4b",
-      "currentSha256": "2c1e9bce56836a340ded6caf9980f5fca48a4761f03a8fd2fbc853e43f90fdea",
+      "currentSha256": "4b11ca9ea648a9ff0e0486eeda55cc3d8f8cdbe82a1ab04ea9f9e3aa5e6eb90e",
       "reason": "Reject stale reads and reports; retain independently visible endpoint errors; preserve approval/execution transitions."
     },
     "src/integrations/coreOperationsRlAdapter.ts": {
@@ -48,8 +48,8 @@
     "src/App.tsx": {
       "baselineArtifact": "reports/artifacts/ui-runtime-compatibility-v1/sources/src/App.tsx.snapshot",
       "baselineSha256": "9a0912b4b32ccd782fbb459b407543dbc2b0d1fd37bdcc44fdb76091fe62941f",
-      "currentSha256": "7a4c604c4ddff9424b8344a07e909bbe47bb11ea25dba4438539cda5683bb61e",
-      "reason": "Correlate Godot results and advisor/training responses; repair UI controls and local-time labels without changing learned policies."
+      "currentSha256": "523f05c1b4a4117e0aac0cfb3b247d370eb098309e699716437759e469531456",
+      "reason": "Correlate Godot results and advisor/training responses; preserve GullMate deep links, loopback-only return and native demo controls; separate six task workspaces with hash navigation, focused panels and retained evidence state; open completed training only on a new completion transition; present configured port-route relationships, explicit metric scopes and native validation entry points with retained night-map visual assets, selectable scene layers and a focused display mode, without changing scenario datasets. Learned policies, model bytes and backend execution gates remain unchanged."
     },
     "src/integrations/operationsControlAdapter.ts": {
       "baselineArtifact": "reports/artifacts/ui-runtime-compatibility-v1/sources/src/integrations/operationsControlAdapter.ts.snapshot",
@@ -66,13 +66,13 @@
     "server/publicEvidencePlugin.ts": {
       "baselineArtifact": "reports/artifacts/ui-runtime-compatibility-v1/sources/server/publicEvidencePlugin.ts.snapshot",
       "baselineSha256": "ee06a324f9e655b489fb928ee9940bd67b3a5781c5802a30d6213e23870dcec0",
-      "currentSha256": "4c83311d3e58ecd04599e820a6c4dd27f85dac0633b32731a6cc6d88dd1970b9",
-      "reason": "Only complete advisor prompt setting identifiers and existing tuning/reward fields; exact string substitutions are enforced."
+      "currentSha256": "44734c2ef38361e392a551c58b510f5e62f5fd98eeb8fdfc5241e5e47f38b6c7",
+      "reason": "Complete advisor prompt settings and use the current GullMate display name in the disclosure and OpenAPI summary. Exact string substitutions are enforced."
     }
   },
   "verificationSources": {
-    "server/runtimeCompatibilityEvidence.ts": "8bd408162232df3cb8fc2e312cc4d9964ffb0d6dd46072fcdff1df8ff617391e",
-    "scripts/operations/buildUiRuntimeCompatibility.ts": "26de85c4ec933d2516e444ab5030cb023400054dd1ab5e29abeda8915223fa39",
+    "server/runtimeCompatibilityEvidence.ts": "e91f49c564e674c433c86175c054879a8ca33c4da7c03d90605f54509b54dcdd",
+    "scripts/operations/buildUiRuntimeCompatibility.ts": "b35e7281ceb8ceffdb78185196f007ac81eb422d30e15565cb7844e396f9ee31",
     "tests/runtimeCompatibilityEvidence.test.ts": "27ed9f29b2610d448e3a8430a4a9d5866907f369b4f45b4f9d77c9d15db02a12"
   },
   "authority": {

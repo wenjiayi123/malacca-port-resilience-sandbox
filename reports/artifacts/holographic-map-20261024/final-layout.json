@@ -1,0 +1,14 @@
+{
+  "background": "url(\"http://127.0.0.1:5174/assets/backgrounds/malacca_background_clean.png\")",
+  "controlsOverlap": [],
+  "horizontalOverflow": false,
+  "overlapping": [],
+  "ports": 8,
+  "routes": 5,
+  "sceneScroll": 0,
+  "ships": 7,
+  "viewport": {
+    "height": 720,
+    "width": 1280
+  }
+}

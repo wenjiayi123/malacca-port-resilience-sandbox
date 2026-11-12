@@ -67,7 +67,7 @@ production_authority=false
 瓦片与授权实时 AIS。该接口使用五分钟新鲜度门禁，并始终保持 `navigation_authority=false`、
 `dispatch_allowed=false`、`production_authority=false`。详见 `docs/LIVE_SATELLITE_MAP.md`。
 
-## 小懿运行解释边界
+## 舷鸥运行解释边界
 
 `/api/operations/handoff` 先由 `operations-grounded-explainer.v1` 从同一快照生成状态摘要、阈值预警、
 策略候选、交班门禁和 `trace_id`。该底稿明确 `model_used=false`。只有配置 `XIAOYI_AI_ENDPOINT` 且

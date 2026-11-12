@@ -76,11 +76,11 @@ export const requestXiaoyiRlAdvice = async (
   });
   if (!response.ok) {
     const failure = await response.json().catch(() => null) as unknown;
-    throw new Error(`小懿RL顾问 HTTP ${response.status}${isRecord(failure) && typeof failure.message === 'string' ? `：${failure.message}` : ''}`);
+    throw new Error(`舷鸥RL顾问 HTTP ${response.status}${isRecord(failure) && typeof failure.message === 'string' ? `：${failure.message}` : ''}`);
   }
   const result: unknown = await response.json();
   if (!isAdvisorResponse(result) || result.requestedCard !== payload.requestedCard) {
-    throw new Error('小懿RL顾问返回协议无效');
+    throw new Error('舷鸥RL顾问返回协议无效');
   }
   return result;
 };

@@ -19,9 +19,9 @@ const reasons: Record<string, string> = {
   'src/integrations/coreOperationsRlAdapter.ts': 'Reject malformed transport responses; policy request fields and endpoint semantics remain unchanged.',
   'server/coreOperationsModelRegistry.ts': 'Admit only this verified source extension; preserve pinned model/dataset and automatic rollback checks.',
   'scripts/rl/verifyCoreUpgradeLineage.ts': 'Compose the prior immutable model lineage with the explicitly bounded UI compatibility extension.',
-  'src/App.tsx': 'Correlate Godot results and advisor/training responses; repair UI controls and local-time labels without changing learned policies.',
+  'src/App.tsx': 'Correlate Godot results and advisor/training responses; preserve GullMate deep links, loopback-only return and native demo controls; separate six task workspaces with hash navigation, focused panels and retained evidence state; open completed training only on a new completion transition; present configured port-route relationships, explicit metric scopes and native validation entry points with retained night-map visual assets, selectable scene layers and a focused display mode, without changing scenario datasets. Learned policies, model bytes and backend execution gates remain unchanged.',
   'src/integrations/operationsControlAdapter.ts': 'Reject malformed JSON transport responses while preserving backend gate messages.',
-  'server/publicEvidencePlugin.ts': 'Only complete advisor prompt setting identifiers and existing tuning/reward fields; exact string substitutions are enforced.',
+  'server/publicEvidencePlugin.ts': 'Complete advisor prompt settings and use the current GullMate display name in the disclosure and OpenAPI summary. Exact string substitutions are enforced.',
   'server/operationalSimulator.ts': 'Only render eventLog.time through existing Malaysia-time formatting; the validator enforces exact single-expression equivalence.',
 };
 const report: RuntimeCompatibilityEvidence = {
